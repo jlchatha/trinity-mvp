@@ -1,8 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const ClaudeCodeSDK = require('./src/claude-code-sdk');
-const AGENT_PROMPTS = require('./src/agent-prompts');
+const ClaudeCodeSDK = require('./src/core/claude-integration');
+const AGENT_PROMPTS = require('./src/core/ai-prompts');
 
 // Setup debug logging
 const logDir = path.join(__dirname, 'logs');

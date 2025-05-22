@@ -77,10 +77,19 @@ sync_source_files() {
     mkdir -p "$PUBLIC_DIR/src/utils"
     mkdir -p "$PUBLIC_DIR/src/platform"
     
-    # Copy core files with production names
-    cp "$DEV_DIR/src/claude-code-sdk.js" "$PUBLIC_DIR/src/core/claude-integration.js"
-    cp "$DEV_DIR/src/file-comm-manager.js" "$PUBLIC_DIR/src/core/file-manager.js"
-    cp "$DEV_DIR/src/agent-prompts.js" "$PUBLIC_DIR/src/core/ai-prompts.js"
+    # Copy core files with production names and fix internal require statements
+    if [ -f "$DEV_DIR/src/claude-code-sdk.js" ]; then
+        sed "s|require('./file-comm-manager')|require('./file-manager')|g" \
+            "$DEV_DIR/src/claude-code-sdk.js" > "$PUBLIC_DIR/src/core/claude-integration.js"
+    fi
+    
+    if [ -f "$DEV_DIR/src/file-comm-manager.js" ]; then
+        cp "$DEV_DIR/src/file-comm-manager.js" "$PUBLIC_DIR/src/core/file-manager.js"
+    fi
+    
+    if [ -f "$DEV_DIR/src/agent-prompts.js" ]; then
+        cp "$DEV_DIR/src/agent-prompts.js" "$PUBLIC_DIR/src/core/ai-prompts.js"
+    fi
     
     # Copy UI files
     if [ -d "$DEV_DIR/renderer" ]; then
@@ -92,17 +101,21 @@ sync_source_files() {
         cp "$DEV_DIR/src/cross-platform.js" "$PUBLIC_DIR/src/platform/"
     fi
     
-    success "Source files synced"
+    success "Source files synced with updated require paths"
 }
 
 # Function to sync and clean main application files
 sync_main_files() {
     log "Syncing main application files..."
     
-    # Copy main.js with production modifications
+    # Copy main.js with production modifications and path fixes
     if [ -f "$DEV_DIR/main.js" ]; then
-        # Remove development-specific code and comments
-        sed '/\/\/ DEV:/d; /\/\/ DEBUG:/d; /console\.log.*DEV/d' "$DEV_DIR/main.js" > "$PUBLIC_DIR/main.js"
+        # Remove development-specific code and update require paths
+        sed '/\/\/ DEV:/d; /\/\/ DEBUG:/d; /console\.log.*DEV/d' "$DEV_DIR/main.js" | \
+        sed "s|require('./src/claude-code-sdk')|require('./src/core/claude-integration')|g" | \
+        sed "s|require('./src/agent-prompts')|require('./src/core/ai-prompts')|g" | \
+        sed "s|require('./src/file-comm-manager')|require('./src/core/file-manager')|g" \
+        > "$PUBLIC_DIR/main.js"
     fi
     
     # Copy preload.js if it exists
@@ -110,7 +123,7 @@ sync_main_files() {
         cp "$DEV_DIR/preload.js" "$PUBLIC_DIR/"
     fi
     
-    success "Main application files synced"
+    success "Main application files synced with updated require paths"
 }
 
 # Function to create production package.json

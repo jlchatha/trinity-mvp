@@ -2,7 +2,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { EventEmitter } = require('events');
-const FileCommManager = require('./file-comm-manager');
+const FileCommManager = require('./file-manager');
 
 /**
  * Claude Code SDK Integration for Trinity MVP
