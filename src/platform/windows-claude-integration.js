@@ -57,7 +57,9 @@ class WindowsClaudeIntegration {
 
   getClaudeCommand() {
     if (this.isWindows && this.wslAvailable && this.claudeInWSL) {
-      return 'wsl claude';
+      // Use our WSL wrapper for better path handling
+      const wrapperPath = path.join(__dirname, '..', '..', 'scripts', 'claude-wsl-wrapper.bat');
+      return wrapperPath;
     } else if (this.isWindows) {
       throw new Error('Claude Code requires WSL on Windows. Please install WSL and Claude Code first.');
     } else {
