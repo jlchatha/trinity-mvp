@@ -91,9 +91,10 @@ sync_source_files() {
         cp "$DEV_DIR/src/agent-prompts.js" "$PUBLIC_DIR/src/core/ai-prompts.js"
     fi
     
-    # Copy UI files
+    # Copy UI files to renderer directory (matching main.js expectations)
     if [ -d "$DEV_DIR/renderer" ]; then
-        cp -r "$DEV_DIR/renderer/"* "$PUBLIC_DIR/src/ui/"
+        mkdir -p "$PUBLIC_DIR/renderer"
+        cp -r "$DEV_DIR/renderer/"* "$PUBLIC_DIR/renderer/"
     fi
     
     # Copy utility files (if they exist)

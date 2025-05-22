@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trinity - Your AI Assistant</title>
+    <style>
+        :root {
+            /* Accessible color palette with WCAG AAA contrast ratios */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-accent: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-muted: #6c757d;
+            --accent-primary: #0066cc;
+            --accent-hover: #0056b3;
+            --accent-focus: #004085;
+            --success: #198754;
+            --warning: #fd7e14;
+            --border: #dee2e6;
+            --shadow: rgba(0, 0, 0, 0.1);
+            
+            /* Dark mode variables (for system preference) */
+            --dark-bg-primary: #121212;
+            --dark-bg-secondary: #1e1e1e;
+            --dark-bg-accent: #2a2a2a;
+            --dark-text-primary: #ffffff;
+            --dark-text-secondary: #e0e0e0;
+            --dark-text-muted: #a0a0a0;
+            --dark-accent-primary: #4a9eff;
+            --dark-border: #404040;
+            --dark-shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Respect user's system theme preference */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: var(--dark-bg-primary);
+                --bg-secondary: var(--dark-bg-secondary);
+                --bg-accent: var(--dark-bg-accent);
+                --text-primary: var(--dark-text-primary);
+                --text-secondary: var(--dark-text-secondary);
+                --text-muted: var(--dark-text-muted);
+                --accent-primary: var(--dark-accent-primary);
+                --border: var(--dark-border);
+                --shadow: var(--dark-shadow);
+            }
+        }
+
+        /* Respect user's motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 16px; /* Base 16px for accessibility */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Skip link for keyboard navigation */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: var(--accent-primary);
+            color: white;
+            padding: 8px;
+            text-decoration: none;
+            border-radius: 4px;
+            z-index: 1000;
+            font-weight: 500;
+        }
+
+        .skip-link:focus {
+            top: 6px;
+        }
+
+        .app-container {
+            display: flex;
+            flex: 1;
+            min-height: 100vh;
+        }
+
+        /* Accessible sidebar - hidden by default */
+        .sidebar {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: none;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar.debug-mode {
+            display: flex;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-accent);
+        }
+
+        .trinity-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            margin: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+        }
+
+        .header {
+            padding: 2rem;
+            text-align: center;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .welcome-message {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .welcome-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .placeholder-content {
+            text-align: center;
+            width: 100%;
+        }
+
+        .placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            display: block;
+            /* Use accessible emoji with screen reader support */
+        }
+
+        .placeholder-title {
+            font-size: 1.75rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .placeholder-description {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            min-width: 140px;
+            text-align: center;
+            position: relative;
+        }
+
+        .btn:focus-visible {
+            outline: 3px solid var(--accent-focus);
+            outline-offset: 2px;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            background: var(--accent-focus);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-accent);
+            border-color: var(--text-muted);
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --bg-primary: #ffffff;
+                --bg-secondary: #f0f0f0;
+                --text-primary: #000000;
+                --text-secondary: #333333;
+                --accent-primary: #0000ee;
+                --border: #000000;
+            }
+            
+            .btn {
+                border-width: 3px;
+            }
+        }
+
+        /* Status indicators for debug mode */
+        .status-section {
+            padding: 1rem 1.5rem;
+            flex: 1;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.75rem;
+            background: var(--success);
+            border: 2px solid transparent;
+        }
+
+        .status-dot.warning {
+            background: var(--warning);
+        }
+
+        .status-dot.error {
+            background: #dc3545;
+        }
+
+        .status-label {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1.5rem 1rem;
+            }
+            
+            .content-area {
+                padding: 1.5rem 1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .sidebar,
+            .action-buttons {
+                display: none;
+            }
+        }
+
+        /* Focus management */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <div class="app-container">
+        <aside class="sidebar" role="complementary" aria-label="System status">
+            <div class="sidebar-header">
+                <h2 class="trinity-title">Trinity Debug</h2>
+            </div>
+            
+            <div class="status-section">
+                <h3 class="sr-only">System Components Status</h3>
+                <div class="status-item">
+                    <div class="status-dot" role="img" aria-label="Status: Active"></div>
+                    <div class="status-label">Assistant</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot warning" role="img" aria-label="Status: Starting"></div>
+                    <div class="status-label">Consolidated Worker</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" role="img" aria-label="Status: Active"></div>
+                    <div class="status-label">Memory System</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot error" role="img" aria-label="Status: Disconnected"></div>
+                    <div class="status-label">MCP Server</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" role="img" aria-label="Status: Active"></div>
+                    <div class="status-label">Task Registry</div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content" id="main-content" role="main">
+            <header class="header">
+                <h1 class="welcome-message">Hello there!</h1>
+                <p class="welcome-subtitle">Ready to chat?</p>
+            </header>
+
+            <section class="content-area">
+                <div class="placeholder-content">
+                    <span class="placeholder-icon" role="img" aria-label="Chat bubble">💬</span>
+                    <h2 class="placeholder-title">What's on your mind?</h2>
+                    <p class="placeholder-description">
+                        I'm here to help with anything you'd like to discuss or work on. 
+                        Whether it's planning a project, learning something new, solving a problem, 
+                        or just having a conversation - let's get started!
+                    </p>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-primary" onclick="startConversation()" aria-describedby="chat-description">
+                            Start Chatting
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="showSettings()" aria-describedby="settings-description">
+                            Settings
+                        </button>
+                    </div>
+                    <div class="sr-only">
+                        <p id="chat-description">Begin a new conversation with your AI assistant</p>
+                        <p id="settings-description">Customize your AI assistant preferences</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Application initialization with accessibility focus
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Trinity Accessible Interface Ready');
+            initializeApp();
+            setupAccessibilityFeatures();
+        });
+
+        function setupAccessibilityFeatures() {
+            // Announce when debug mode is toggled
+            const sidebar = document.querySelector('.sidebar');
+            
+            // Enhanced keyboard navigation
+            document.addEventListener('keydown', handleKeyboardNavigation);
+            
+            // Respect user's motion preferences
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.documentElement.style.setProperty('--animation-duration', '0ms');
+            }
+        }
+
+        function handleKeyboardNavigation(e) {
+            // Debug mode toggle (Ctrl+Shift+D)
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                const sidebar = document.querySelector('.sidebar');
+                const isVisible = sidebar.classList.contains('debug-mode');
+                
+                sidebar.classList.toggle('debug-mode');
+                
+                // Announce to screen readers
+                const announcement = isVisible ? 'Debug panel hidden' : 'Debug panel shown';
+                announceToScreenReader(announcement);
+                
+                console.log('Debug mode toggled:', !isVisible);
+            }
+        }
+
+        function announceToScreenReader(message) {
+            const announcement = document.createElement('div');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.setAttribute('aria-atomic', 'true');
+            announcement.className = 'sr-only';
+            announcement.textContent = message;
+            
+            document.body.appendChild(announcement);
+            
+            setTimeout(() => {
+                document.body.removeChild(announcement);
+            }, 1000);
+        }
+
+        function initializeApp() {
+            updateSystemStatus();
+            
+            // Focus management
+            const mainContent = document.getElementById('main-content');
+            if (mainContent && !document.activeElement || document.activeElement === document.body) {
+                mainContent.focus();
+            }
+        }
+
+        function updateSystemStatus() {
+            const statusItems = document.querySelectorAll('.status-dot');
+            
+            setTimeout(() => {
+                statusItems[1].className = 'status-dot';
+                statusItems[1].setAttribute('aria-label', 'Status: Active');
+            }, 1000);
+            
+            setTimeout(() => {
+                statusItems[3].className = 'status-dot';
+                statusItems[3].setAttribute('aria-label', 'Status: Active');
+            }, 2000);
+        }
+
+        function startConversation() {
+            console.log('Starting accessible conversation interface...');
+            announceToScreenReader('Opening chat interface');
+            window.location.href = 'chat.html';
+        }
+
+        function showSettings() {
+            console.log('Opening accessible settings...');
+            announceToScreenReader('Opening settings');
+            // TODO: Implement accessible settings
+            alert('Accessible settings coming soon! You\'ll be able to customize your AI assistant and accessibility preferences.');
+        }
+
+        // Handle Trinity API calls when available
+        if (window.trinityAPI) {
+            window.trinityAPI.system.getSystemInfo().then(info => {
+                console.log('System info:', info);
+            }).catch(err => {
+                console.log('Trinity API not fully initialized yet');
+            });
+        }
+    </script>
+</body>
+</html>
