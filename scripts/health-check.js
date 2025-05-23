@@ -162,10 +162,6 @@ class HealthCheck {
     
     if (passed === total) {
       console.log('\n🎉 Trinity MVP is ready to use!');
-      console.log('\nNext steps:');
-      console.log('  1. Start Trinity MVP: npm start');
-      console.log('  2. Run integration test: npm run test:trinity');
-      console.log('  3. Run full end-to-end test: node test-integration.js');
     } else {
       console.log('\n⚠️  Please resolve the failed checks before using Trinity MVP');
     }

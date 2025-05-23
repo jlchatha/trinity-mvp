@@ -74,11 +74,9 @@ class ClaudeCodeSDK extends EventEmitter {
       return process.env.CLAUDE_API_KEY;
     }
     
-    // API key should be provided via environment variable ANTHROPIC_API_KEY
-    // For development, set your API key: export ANTHROPIC_API_KEY="your-key-here"
-    
-    this.log('error', 'No API key found. Please set ANTHROPIC_API_KEY environment variable');
-    throw new Error('ANTHROPIC_API_KEY environment variable is required');
+    // No fallback API key - users must provide their own
+    this.log('error', 'No ANTHROPIC_API_KEY found. Please set your API key in environment variables.');
+    throw new Error('ANTHROPIC_API_KEY environment variable is required. Please set your Claude API key.');
   }
 
   /**
