@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog, shell, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
@@ -364,32 +364,67 @@ class TrinityMVPApp {
         console.warn('Could not read log files:', logError);
       }
 
+      // Collect queue system status
+      const queueStatus = await this.getQueueSystemStatus();
+
       // Create feedback package
       const feedbackPackage = {
         systemInfo,
         logFiles,
-        timestamp: new Date().toISOString()
+        queueStatus,
+        timestamp: new Date().toISOString(),
+        userIssue: "Undefined responses from Trinity MVP - Claude Code integration issue"
       };
 
-      // Save feedback package to desktop
-      const desktopPath = path.join(require('os').homedir(), 'Desktop');
-      const feedbackFile = path.join(desktopPath, `trinity-mvp-feedback-${Date.now()}.json`);
-      
-      fs.writeFileSync(feedbackFile, JSON.stringify(feedbackPackage, null, 2));
+      const feedbackJSON = JSON.stringify(feedbackPackage, null, 2);
 
-      // Show success message
+      // Show feedback options
       const result = await dialog.showMessageBox(this.mainWindow, {
         type: 'info',
-        title: 'Feedback Package Created',
-        message: 'Feedback package saved successfully!',
-        detail: `A feedback package has been saved to your Desktop:\n${path.basename(feedbackFile)}\n\nPlease attach this file when contacting support.`,
-        buttons: ['Open Desktop', 'OK'],
-        defaultId: 1
+        title: 'Send Feedback - Choose Method',
+        message: 'How would you like to send the feedback?',
+        detail: 'Choose the easiest method for you to send diagnostic information.',
+        buttons: ['Copy to Clipboard', 'Save to Desktop', 'Submit to GitHub', 'Cancel'],
+        defaultId: 0
       });
 
-      if (result.response === 0) {
-        // Open desktop folder
-        shell.showItemInFolder(feedbackFile);
+      switch (result.response) {
+        case 0: // Copy to Clipboard
+          clipboard.writeText(feedbackJSON);
+          dialog.showMessageBox(this.mainWindow, {
+            type: 'info',
+            title: 'Feedback Copied!',
+            message: 'Feedback has been copied to your clipboard.',
+            detail: 'You can now paste it into an email, chat message, or text document.\n\nPress Cmd+V to paste anywhere.',
+            buttons: ['OK']
+          });
+          break;
+
+        case 1: // Save to Desktop
+          const desktopPath = path.join(require('os').homedir(), 'Desktop');
+          const feedbackFile = path.join(desktopPath, `trinity-mvp-feedback-${Date.now()}.json`);
+          fs.writeFileSync(feedbackFile, feedbackJSON);
+          
+          const fileResult = await dialog.showMessageBox(this.mainWindow, {
+            type: 'info',
+            title: 'Feedback Saved to Desktop',
+            message: 'Feedback package saved successfully!',
+            detail: `File saved: ${path.basename(feedbackFile)}\n\nYou can attach this file to emails or messages.`,
+            buttons: ['Open Desktop', 'OK'],
+            defaultId: 1
+          });
+
+          if (fileResult.response === 0) {
+            shell.showItemInFolder(feedbackFile);
+          }
+          break;
+
+        case 2: // Submit to GitHub
+          await this.submitFeedbackToGitHub(feedbackPackage);
+          break;
+
+        case 3: // Cancel
+          return;
       }
 
     } catch (error) {
@@ -399,6 +434,111 @@ class TrinityMVPApp {
         title: 'Feedback Package Failed',
         message: 'Could not create feedback package',
         detail: `Error: ${error.message}`,
+        buttons: ['OK']
+      });
+    }
+  }
+
+  async getQueueSystemStatus() {
+    try {
+      const queueDir = path.join(require('os').homedir(), '.trinity-mvp', 'queue');
+      const status = {
+        queueDirectoryExists: fs.existsSync(queueDir),
+        inputFiles: [],
+        processingFiles: [],
+        outputFiles: [],
+        failedFiles: []
+      };
+
+      if (status.queueDirectoryExists) {
+        const subDirs = ['input', 'processing', 'output', 'failed'];
+        for (const subDir of subDirs) {
+          const dirPath = path.join(queueDir, subDir);
+          if (fs.existsSync(dirPath)) {
+            status[`${subDir}Files`] = fs.readdirSync(dirPath);
+          }
+        }
+      }
+
+      return status;
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
+
+  async submitFeedbackToGitHub(feedbackPackage) {
+    try {
+      // Create issue content
+      const issueTitle = `[macOS Bug Report] Undefined responses - ${new Date().toISOString().split('T')[0]}`;
+      const issueBody = `## Issue Description
+Trinity MVP is running successfully on macOS but returning undefined responses to user messages.
+
+## System Information
+- Platform: ${feedbackPackage.systemInfo.platform}
+- Architecture: ${feedbackPackage.systemInfo.arch}
+- Node.js: ${feedbackPackage.systemInfo.nodeVersion}
+- Electron: ${feedbackPackage.systemInfo.electronVersion}
+- Timestamp: ${feedbackPackage.timestamp}
+
+## Queue System Status
+\`\`\`json
+${JSON.stringify(feedbackPackage.queueStatus, null, 2)}
+\`\`\`
+
+## Recent Logs
+${feedbackPackage.logFiles.map(log => `### ${log.filename}\n\`\`\`\n${log.content.slice(-2000)}\n\`\`\``).join('\n\n')}
+
+## Auto-Generated Report
+This report was automatically generated by Trinity MVP's feedback system.`;
+
+      // Try to create GitHub issue via git command
+      const gitCommand = `cd ${__dirname} && git log --oneline -1`;
+      const gitResult = await new Promise((resolve) => {
+        exec(gitCommand, (error, stdout) => {
+          resolve(stdout || 'Unable to get git info');
+        });
+      });
+
+      // Show GitHub submission dialog
+      const result = await dialog.showMessageBox(this.mainWindow, {
+        type: 'info',
+        title: 'Submit to GitHub',
+        message: 'Ready to submit feedback to GitHub!',
+        detail: `Issue Title: ${issueTitle}\n\nThis will copy the GitHub issue content to your clipboard. You can then paste it at:\nhttps://github.com/jlchatha/trinity-mvp/issues/new`,
+        buttons: ['Copy Issue & Open GitHub', 'Copy Issue Only', 'Cancel'],
+        defaultId: 0
+      });
+
+      if (result.response === 0) {
+        // Copy and open GitHub
+        clipboard.writeText(`${issueTitle}\n\n${issueBody}`);
+        shell.openExternal('https://github.com/jlchatha/trinity-mvp/issues/new');
+        dialog.showMessageBox(this.mainWindow, {
+          type: 'info',
+          title: 'GitHub Issue Ready',
+          message: 'Issue content copied to clipboard!',
+          detail: 'GitHub should open in your browser. Paste the content (Cmd+V) into the issue description.',
+          buttons: ['OK']
+        });
+      } else if (result.response === 1) {
+        // Copy only
+        clipboard.writeText(`${issueTitle}\n\n${issueBody}`);
+        dialog.showMessageBox(this.mainWindow, {
+          type: 'info',
+          title: 'Issue Content Copied',
+          message: 'GitHub issue content copied to clipboard!',
+          detail: 'Visit github.com/jlchatha/trinity-mvp/issues/new to submit the issue.',
+          buttons: ['OK']
+        });
+      }
+
+    } catch (error) {
+      console.error('GitHub submission failed:', error);
+      dialog.showMessageBox(this.mainWindow, {
+        type: 'error',
+        title: 'GitHub Submission Failed',
+        message: 'Could not prepare GitHub submission',
+        detail: `Error: ${error.message}\n\nTry "Copy to Clipboard" instead.`,
         buttons: ['OK']
       });
     }
