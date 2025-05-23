@@ -1,6 +1,7 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { exec } = require('child_process');
 const ClaudeCodeSDK = require('./src/core/claude-integration');
 const AGENT_PROMPTS = require('./src/core/ai-prompts');
 
@@ -196,6 +197,211 @@ class TrinityMVPApp {
 
   handleAppReady() {
     this.createWindow();
+    this.createApplicationMenu();
+  }
+
+  createApplicationMenu() {
+    const template = [
+      {
+        label: 'Trinity MVP',
+        submenu: [
+          {
+            label: 'About Trinity MVP',
+            click: () => {
+              dialog.showMessageBox(this.mainWindow, {
+                type: 'info',
+                title: 'About Trinity MVP',
+                message: 'Trinity MVP - Professional AI Assistant',
+                detail: 'Version 1.0.0\nA context-efficient dual-agent AI system\nBuilt with Claude Code integration'
+              });
+            }
+          },
+          { type: 'separator' },
+          {
+            label: 'Check for Updates',
+            click: () => this.checkForUpdates()
+          },
+          { type: 'separator' },
+          {
+            label: 'Send Feedback',
+            click: () => this.sendFeedback()
+          },
+          { type: 'separator' },
+          process.platform === 'darwin' ? { role: 'hide' } : { role: 'quit' }
+        ]
+      },
+      {
+        label: 'Edit',
+        submenu: [
+          { role: 'undo' },
+          { role: 'redo' },
+          { type: 'separator' },
+          { role: 'cut' },
+          { role: 'copy' },
+          { role: 'paste' },
+          { role: 'selectall' }
+        ]
+      },
+      {
+        label: 'View',
+        submenu: [
+          { role: 'reload' },
+          { role: 'forceReload' },
+          { role: 'toggleDevTools' },
+          { type: 'separator' },
+          { role: 'resetZoom' },
+          { role: 'zoomIn' },
+          { role: 'zoomOut' },
+          { type: 'separator' },
+          { role: 'togglefullscreen' }
+        ]
+      },
+      {
+        label: 'Window',
+        submenu: [
+          { role: 'minimize' },
+          { role: 'close' }
+        ]
+      }
+    ];
+
+    if (process.platform === 'darwin') {
+      template[3].submenu = [
+        { role: 'close' },
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { type: 'separator' },
+        { role: 'front' }
+      ];
+    }
+
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+  }
+
+  async checkForUpdates() {
+    console.log('Checking for Trinity MVP updates...');
+    
+    try {
+      // Execute git pull
+      const gitCommand = 'git pull origin main';
+      const result = await new Promise((resolve, reject) => {
+        exec(gitCommand, { cwd: __dirname }, (error, stdout, stderr) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve({ stdout, stderr });
+          }
+        });
+      });
+
+      // Parse git pull result
+      if (result.stdout.includes('Already up to date') || result.stdout.includes('Already up-to-date')) {
+        dialog.showMessageBox(this.mainWindow, {
+          type: 'info',
+          title: 'Trinity MVP Updates',
+          message: 'Trinity is up to date!',
+          detail: 'You have the latest version of Trinity MVP.',
+          buttons: ['OK']
+        });
+      } else {
+        const updateResult = await dialog.showMessageBox(this.mainWindow, {
+          type: 'info',
+          title: 'Trinity MVP Updates',
+          message: 'Trinity updated successfully!',
+          detail: 'Trinity MVP has been updated to the latest version.\n\nWould you like to restart the application now?',
+          buttons: ['Restart Now', 'Restart Later'],
+          defaultId: 0
+        });
+
+        if (updateResult.response === 0) {
+          app.relaunch();
+          app.exit();
+        }
+      }
+
+    } catch (error) {
+      console.error('Update check failed:', error);
+      dialog.showMessageBox(this.mainWindow, {
+        type: 'error',
+        title: 'Update Check Failed',
+        message: 'Could not check for updates',
+        detail: `Error: ${error.message}\n\nPlease check your internet connection and try again.`,
+        buttons: ['OK']
+      });
+    }
+  }
+
+  async sendFeedback() {
+    console.log('Preparing feedback package...');
+    
+    try {
+      // Collect system information
+      const systemInfo = {
+        platform: process.platform,
+        arch: process.arch,
+        electronVersion: process.versions.electron,
+        nodeVersion: process.versions.node,
+        chromeVersion: process.versions.chrome,
+        appVersion: app.getVersion(),
+        timestamp: new Date().toISOString()
+      };
+
+      // Get log files
+      const logFiles = [];
+      try {
+        const logDir = path.join(__dirname, 'logs');
+        if (fs.existsSync(logDir)) {
+          const files = fs.readdirSync(logDir);
+          files.forEach(file => {
+            if (file.endsWith('.log')) {
+              const content = fs.readFileSync(path.join(logDir, file), 'utf8');
+              logFiles.push({ filename: file, content: content.slice(-5000) }); // Last 5KB
+            }
+          });
+        }
+      } catch (logError) {
+        console.warn('Could not read log files:', logError);
+      }
+
+      // Create feedback package
+      const feedbackPackage = {
+        systemInfo,
+        logFiles,
+        timestamp: new Date().toISOString()
+      };
+
+      // Save feedback package to desktop
+      const desktopPath = path.join(require('os').homedir(), 'Desktop');
+      const feedbackFile = path.join(desktopPath, `trinity-mvp-feedback-${Date.now()}.json`);
+      
+      fs.writeFileSync(feedbackFile, JSON.stringify(feedbackPackage, null, 2));
+
+      // Show success message
+      const result = await dialog.showMessageBox(this.mainWindow, {
+        type: 'info',
+        title: 'Feedback Package Created',
+        message: 'Feedback package saved successfully!',
+        detail: `A feedback package has been saved to your Desktop:\n${path.basename(feedbackFile)}\n\nPlease attach this file when contacting support.`,
+        buttons: ['Open Desktop', 'OK'],
+        defaultId: 1
+      });
+
+      if (result.response === 0) {
+        // Open desktop folder
+        shell.showItemInFolder(feedbackFile);
+      }
+
+    } catch (error) {
+      console.error('Feedback package creation failed:', error);
+      dialog.showMessageBox(this.mainWindow, {
+        type: 'error',
+        title: 'Feedback Package Failed',
+        message: 'Could not create feedback package',
+        detail: `Error: ${error.message}`,
+        buttons: ['OK']
+      });
+    }
   }
 
   handleWindowAllClosed() {
