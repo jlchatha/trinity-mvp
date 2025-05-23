@@ -151,13 +151,25 @@ class ClaudeWatcher {
         this.log(`Executing: wsl ${fullCommand.join(' ')}`);
         
         // Execute via WSL with explicit environment variables
+        const apiKey = process.env.ANTHROPIC_API_KEY;
+        if (!apiKey) {
+          this.log('ERROR: No ANTHROPIC_API_KEY found in environment');
+          return resolve({
+            success: false,
+            output: '',
+            error: 'No ANTHROPIC_API_KEY environment variable found',
+            executionTime: Date.now() - startTime
+          });
+        }
+        
         const wslCommand = [
           '-d', 'Ubuntu-22.04', 
           '-e', 'bash', '-c', 
-          `export ANTHROPIC_API_KEY='${process.env.ANTHROPIC_API_KEY}' && ${claudeCommand}`
+          `export ANTHROPIC_API_KEY='${apiKey}' && ${claudeCommand}`
         ];
         
         this.log(`Executing: wsl ${wslCommand.join(' ')}`);
+        this.log(`API Key present: ${apiKey ? 'YES' : 'NO'} (length: ${apiKey?.length || 0})`);
         
         const proc = spawn('wsl', wslCommand, {
           stdio: ['pipe', 'pipe', 'pipe']
@@ -177,7 +189,15 @@ class ClaudeWatcher {
         proc.on('close', (code) => {
           const executionTime = Date.now() - startTime;
           
-          if (code === 0) {
+          this.log(`Claude Code process finished with exit code: ${code}`);
+          this.log(`Claude Code stdout: ${stdout.trim()}`);
+          this.log(`Claude Code stderr: ${stderr.trim()}`);
+          
+          // Claude Code returns 0 for success, but we should also check if we got actual output
+          const hasOutput = stdout.trim().length > 0;
+          const isSuccess = code === 0 && hasOutput;
+          
+          if (isSuccess) {
             resolve({
               success: true,
               output: stdout.trim(),
@@ -188,7 +208,7 @@ class ClaudeWatcher {
             resolve({
               success: false,
               output: stdout.trim(),
-              error: stderr.trim() || `Process exited with code ${code}`,
+              error: stderr.trim() || `Process exited with code ${code}, no output received`,
               executionTime
             });
           }
