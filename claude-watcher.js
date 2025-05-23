@@ -142,19 +142,25 @@ class ClaudeWatcher {
         // Prepare Claude Code command
         const wslWorkingDir = this.windowsToWSLPath(workingDirectory || process.cwd());
         
-        // Build the command
-        const claudeCommand = `cd "${wslWorkingDir}" && echo '${prompt}' | claude`;
+        // Build the command with proper non-interactive arguments
+        // Use -p flag for prompt mode which is designed for non-interactive use
+        const escapedPrompt = prompt.replace(/'/g, "'\"'\"'"); // Properly escape single quotes
+        const claudeCommand = `cd "${wslWorkingDir}" && claude -p '${escapedPrompt}'`;
         const fullCommand = ['bash', '-c', claudeCommand];
         
         this.log(`Executing: wsl ${fullCommand.join(' ')}`);
         
-        // Execute via WSL
-        const proc = spawn('wsl', ['-d', 'Ubuntu-22.04', '-e'].concat(fullCommand), {
-          stdio: ['pipe', 'pipe', 'pipe'],
-          env: {
-            ...process.env,
-            ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY
-          }
+        // Execute via WSL with explicit environment variables
+        const wslCommand = [
+          '-d', 'Ubuntu-22.04', 
+          '-e', 'bash', '-c', 
+          `export ANTHROPIC_API_KEY='${process.env.ANTHROPIC_API_KEY}' && ${claudeCommand}`
+        ];
+        
+        this.log(`Executing: wsl ${wslCommand.join(' ')}`);
+        
+        const proc = spawn('wsl', wslCommand, {
+          stdio: ['pipe', 'pipe', 'pipe']
         });
         
         let stdout = '';
