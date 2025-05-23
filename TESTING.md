@@ -23,7 +23,7 @@ node test-integration.js
 ```
 
 This tests the complete pipeline:
-- Trinity MVP UI → Claude SDK → File Communication → Claude Watcher → WSL Claude Code → Response
+- Trinity MVP UI → Claude SDK → File Communication → Claude Watcher → Claude Code → Response
 
 ## Expected Results
 
@@ -75,18 +75,19 @@ Next steps:
 ### Common Issues
 
 **Health Check Fails on Claude Code**
-- Run: `wsl -d Ubuntu-22.04 -e claude --version`
-- Should return: `1.0.2 (Claude Code)`
-- If not, run: `scripts/upgrade-nodejs.bat`
+- Run: `claude --version`
+- Should return: `1.0.2` or similar (Claude Code version)
+- If not installed: Visit [claude.ai/code](https://claude.ai/code) for installation
 
 **Integration Test Times Out**
 - Check watcher daemon: Look for `[WATCHER]` logs when running Trinity MVP
 - Check file queue: `ls ~/.trinity-mvp/queue/input/` should be empty after test
-- Check WSL: `wsl -d Ubuntu-22.04 -e echo "WSL working"`
+- Check Claude Code: `claude --help` should show available commands
 
 **API Key Issues**
-- Verify: `echo $ANTHROPIC_API_KEY` in WSL returns your key
-- Alternative: Trinity MVP includes fallback dev key for testing
+- Verify: `echo $ANTHROPIC_API_KEY` returns your key (Linux/macOS)
+- Set key: `export ANTHROPIC_API_KEY="your_key_here"`
+- Make permanent: Add export to `~/.bashrc` or `~/.zshrc`
 
 ## Manual Testing Steps
 

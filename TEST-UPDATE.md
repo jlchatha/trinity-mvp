@@ -1,6 +1,6 @@
 # Trinity MVP - Update Test Instructions
 
-## For Your Cousin (macOS Testing)
+## For macOS Testers
 
 Trinity MVP has been updated with a critical cross-platform fix! Here's how to test:
 
@@ -29,7 +29,7 @@ Trinity MVP has been updated with a critical cross-platform fix! Here's how to t
    - Any error messages you saw
 
 ### What Was Fixed
-- **Problem**: Trinity was using Windows WSL commands on macOS (causing undefined responses)
+- **Problem**: Trinity was using Windows-specific commands on macOS (causing undefined responses)
 - **Solution**: Trinity now uses native Claude Code commands on all platforms
 - **Result**: Trinity should work properly on macOS now!
 

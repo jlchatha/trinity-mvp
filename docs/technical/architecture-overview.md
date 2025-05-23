@@ -53,10 +53,10 @@ Trinity MVP provides persistent memory and local system integration through a la
 ┌─────────────────────────────────────────────────────────────────┐
 │                   Local System Integration                     │
 ├─────────────────────────┬───────────────────────────────────────┤
-│    File System Access  │       Cross-Platform Support         │
-│    • Read/Write Files   │       • Windows (WSL)                │
-│    • Directory Ops     │       • RHEL 8+                      │
-│    • Command Execution │       • macOS 10.15+                  │
+│    File System Access  │       Native Platform Support        │
+│    • Read/Write Files   │       • Linux (RHEL 8+, Ubuntu 20+) │
+│    • Directory Ops     │       • macOS 10.15+ (incl. M1/M2)   │
+│    • Command Execution │       • Cross-Platform Optimization   │
 └─────────────────────────┴───────────────────────────────────────┘
 ```
 
@@ -143,7 +143,7 @@ class ClaudeCodeIntegration {
 - **File Operations**: Read, Write, Edit files with permission management
 - **Command Execution**: Secure local command execution via Claude Code
 - **Directory Navigation**: Project structure understanding and traversal
-- **Cross-Platform**: Consistent behavior across Windows/WSL, Linux, macOS
+- **Cross-Platform**: Consistent behavior across Linux and macOS with native integration
 
 ### 4. Context Optimization Engine
 
@@ -181,50 +181,56 @@ const calculateRelevance = (contextItem, currentRequest) => {
 
 ## Cross-Platform Implementation
 
-### Windows (WSL) Support
+### Linux Support (RHEL 8+, Ubuntu 20+, Fedora 35+)
 
-**Challenge**: Claude Code requires WSL on Windows, not native Windows execution.
+**Native Integration**: Direct Claude Code execution with optimized Linux file operations.
 
-**Solution**: WSL-aware path translation and execution:
+**Features**:
+- Native file system access with standard permissions
+- Direct process management and command execution
+- Optimized for development environments
+- Package manager integration ready (Snap, AppImage)
+
+### macOS Support (10.15+, Apple Silicon M1/M2)
+
+**Native Integration**: Optimized for macOS with platform-specific enhancements:
+
 ```javascript
-class CrossPlatformManager {
+class MacOSIntegration {
   constructor() {
-    this.platform = this.detectPlatform();
-    this.pathMapper = new WSLPathMapper();
+    this.isAppleSilicon = process.arch === 'arm64';
+    this.osVersion = this.getMacOSVersion();
   }
   
   getClaudeCommand() {
-    if (this.platform.isWindows) {
-      return 'wsl /home/alreadyinuse/.claude/local/claude';
-    }
-    return '/home/alreadyinuse/.claude/local/claude';
+    // Native claude command, no virtualization needed
+    return 'claude';
   }
   
-  translatePath(windowsPath) {
-    if (this.platform.isWindows) {
-      // Convert C:\Users\... to /mnt/c/Users/...
-      return this.pathMapper.windowsToWSL(windowsPath);
-    }
-    return windowsPath;
+  optimizeForPlatform() {
+    return {
+      fileSystem: 'native-macos',
+      permissions: 'macos-sandboxed',
+      architecture: this.isAppleSilicon ? 'arm64' : 'x64',
+      packaging: 'dmg-ready'
+    };
   }
 }
 ```
 
-### Linux (RHEL 8+) Support
+**Platform Optimizations**:
+- Apple Silicon (M1/M2) architecture support
+- macOS file system permissions and sandboxing
+- Native app bundle packaging (.dmg distribution)
+- Future: Keychain integration for secure API key storage
 
-**Native Integration**: Direct Claude Code execution with standard Linux file operations.
+### Cross-Platform Abstraction
 
-**Optimizations**:
-- Native file system access
-- Standard process management
-- Direct command execution
-
-### macOS Support
-
-**Native Integration**: Similar to Linux with macOS-specific optimizations:
-- Keychain integration for secure API key storage
-- macOS file system permissions handling
-- Native app bundle packaging
+**Unified Interface**: Platform differences abstracted through consistent APIs:
+- File operations work identically across platforms
+- Process spawning handles platform-specific requirements
+- Configuration management adapts to platform conventions
+- Error handling provides platform-appropriate feedback
 
 ## Performance Characteristics
 
