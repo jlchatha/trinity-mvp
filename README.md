@@ -4,17 +4,15 @@
 
 Trinity MVP transforms your interaction with AI by providing **persistent memory** and **local system integration**. Unlike traditional chat interfaces that forget previous conversations, Trinity builds cumulative knowledge about your projects, preferences, and working patterns.
 
-## 🎬 Demo
+## ✨ **What Makes Trinity Different**
 
-![Trinity MVP Demo](https://via.placeholder.com/600x400/1a1a1a/ffffff?text=Trinity+MVP+Demo+Video)
+**Live Example**: Ask Trinity to "read my project files and suggest improvements" - it actually can! Unlike web-based AI that only sees your messages, Trinity integrates directly with your local system.
 
-*See Trinity MVP in action: persistent memory, local file integration, and professional workflows.*
-
-**Key Demo Highlights:**
-- 💬 Natural conversation with memory retention
-- 📁 Direct file system access and editing  
-- 🔄 Project context that persists across sessions
-- ⚡ 4-6 second response times with full local integration
+**Key Capabilities**:
+- 💬 Remembers your projects and preferences across sessions
+- 📁 Direct file system access - read, write, and modify your files  
+- 🔄 Maintains project context and working patterns
+- ⚡ Local integration with 4-6 second response times
 
 ## 🎯 Why Trinity MVP?
 
