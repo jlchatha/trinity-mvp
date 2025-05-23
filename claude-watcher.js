@@ -139,18 +139,7 @@ class ClaudeWatcher {
     
     return new Promise((resolve) => {
       try {
-        // Prepare Claude Code command
-        const wslWorkingDir = this.windowsToWSLPath(workingDirectory || process.cwd());
-        
-        // Build the command with proper non-interactive arguments
-        // Use -p flag with --output-format for true non-interactive execution
-        const escapedPrompt = prompt.replace(/'/g, "'\"'\"'"); // Properly escape single quotes
-        const claudeCommand = `cd "${wslWorkingDir}" && claude -p --output-format text '${escapedPrompt}'`;
-        const fullCommand = ['bash', '-c', claudeCommand];
-        
-        this.log(`Executing: wsl ${fullCommand.join(' ')}`);
-        
-        // Execute via WSL with explicit environment variables
+        // Get API key
         const apiKey = process.env.ANTHROPIC_API_KEY;
         if (!apiKey) {
           this.log('ERROR: No ANTHROPIC_API_KEY found in environment');
@@ -162,17 +151,21 @@ class ClaudeWatcher {
           });
         }
         
-        const wslCommand = [
-          '-d', 'Ubuntu-22.04', 
-          '-e', 'bash', '-c', 
-          `export ANTHROPIC_API_KEY='${apiKey}' && ${claudeCommand}`
-        ];
+        // Build cross-platform Claude Code command
+        const escapedPrompt = prompt.replace(/'/g, "'\"'\"'"); // Properly escape single quotes
+        const claudeArgs = ['-p', '--output-format', 'text', escapedPrompt];
         
-        this.log(`Executing: wsl ${wslCommand.join(' ')}`);
+        this.log(`Executing: claude ${claudeArgs.join(' ')}`);
         this.log(`API Key present: ${apiKey ? 'YES' : 'NO'} (length: ${apiKey?.length || 0})`);
+        this.log(`Working directory: ${workingDirectory || process.cwd()}`);
         
-        const proc = spawn('wsl', wslCommand, {
-          stdio: ['pipe', 'pipe', 'pipe']
+        const proc = spawn('claude', claudeArgs, {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          cwd: workingDirectory || process.cwd(),
+          env: {
+            ...process.env,
+            ANTHROPIC_API_KEY: apiKey
+          }
         });
         
         let stdout = '';
@@ -248,19 +241,7 @@ class ClaudeWatcher {
     });
   }
   
-  windowsToWSLPath(windowsPath) {
-    if (!windowsPath || typeof windowsPath !== 'string') return '/tmp';
-    
-    // Convert Windows path to WSL path
-    // C:\Users\... -> /mnt/c/Users/...
-    const normalized = windowsPath.replace(/\\/g, '/');
-    if (normalized.match(/^[A-Za-z]:/)) {
-      const drive = normalized.charAt(0).toLowerCase();
-      const pathWithoutDrive = normalized.substring(2);
-      return `/mnt/${drive}${pathWithoutDrive}`;
-    }
-    return normalized;
-  }
+  // WSL path conversion removed - Trinity now uses native Claude Code execution
   
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
