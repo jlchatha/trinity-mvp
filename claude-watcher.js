@@ -104,24 +104,28 @@ class ClaudeWatcher {
     const requestData = JSON.parse(fs.readFileSync(requestPath, 'utf8'));
     this.log(`Request data: ${JSON.stringify(requestData, null, 2)}`);
     
-    const { sessionId, prompt, workingDirectory, userContext } = requestData;
+    const { sessionId, prompt, options = {} } = requestData;
+    const workingDirectory = options.workingDirectory;
+    const userContext = options.userContext || {};
     
     // Execute Claude Code via WSL
     const result = await this.executeClaudeCode(prompt, workingDirectory, userContext);
     
-    // Create response
+    // Create response (matching file manager expected format)
     const responseData = {
       requestId: filename.replace('.json', ''),
       sessionId,
       timestamp: new Date().toISOString(),
       success: result.success,
-      output: result.output,
+      content: result.output, // File manager expects 'content' field
+      output: result.output,  // Keep both for compatibility
       error: result.error,
-      executionTime: result.executionTime
+      executionTime: result.executionTime,
+      duration_ms: result.executionTime // Alternative field name
     };
     
-    // Write response file
-    const outputPath = path.join(this.outputDir, filename.replace('req-', 'resp-'));
+    // Write response file (same name as request for file manager compatibility)
+    const outputPath = path.join(this.outputDir, filename);
     fs.writeFileSync(outputPath, JSON.stringify(responseData, null, 2));
     
     // Remove from processing

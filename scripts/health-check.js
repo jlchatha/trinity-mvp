@@ -76,64 +76,28 @@ class HealthCheck {
     console.log('Checking Claude Code installation...');
     
     return new Promise((resolve) => {
-      const isWindows = process.platform === 'win32';
+      const command = process.platform === 'win32' ? 'wsl claude --version' : 'claude --version';
       
-      if (isWindows) {
-        // First check if WSL is available
-        const wslCheck = spawn('cmd', ['/c', 'wsl --version'], { stdio: 'pipe' });
-        
-        wslCheck.on('close', (wslCode) => {
-          if (wslCode !== 0) {
-            this.fail('Claude Code', 'WSL not found. Run: scripts/setup-claude-code-wsl.bat');
-            resolve();
-            return;
-          }
-          
-          // WSL available, check Claude Code in WSL
-          const claudeCheck = spawn('cmd', ['/c', 'wsl bash -c "claude --version"'], { stdio: 'pipe' });
-          
-          let output = '';
-          claudeCheck.stdout.on('data', (data) => output += data.toString());
-          claudeCheck.stderr.on('data', (data) => output += data.toString());
-          
-          claudeCheck.on('close', (code) => {
-            if (code === 0) {
-              this.pass('Claude Code', 'Installed in WSL and accessible');
-            } else {
-              this.fail('Claude Code', 'Not found in WSL. Run: scripts/setup-claude-code-wsl.bat');
-            }
-            resolve();
-          });
-          
-          setTimeout(() => {
-            claudeCheck.kill();
-            this.fail('Claude Code', 'Check timed out. Run: scripts/setup-claude-code-wsl.bat');
-            resolve();
-          }, 5000);
-        });
-      } else {
-        // Linux/macOS check
-        const proc = spawn('sh', ['-c', 'claude --version'], { stdio: 'pipe' });
-        
-        let output = '';
-        proc.stdout.on('data', (data) => output += data.toString());
-        proc.stderr.on('data', (data) => output += data.toString());
-        
-        proc.on('close', (code) => {
-          if (code === 0) {
-            this.pass('Claude Code', 'Installed and accessible');
-          } else {
-            this.fail('Claude Code', 'Not found or not accessible');
-          }
-          resolve();
-        });
-        
-        setTimeout(() => {
-          proc.kill();
-          this.fail('Claude Code', 'Check timed out');
-          resolve();
-        }, 5000);
-      }
+      const proc = spawn('sh', ['-c', command], { stdio: 'pipe' });
+      
+      let output = '';
+      proc.stdout.on('data', (data) => output += data.toString());
+      proc.stderr.on('data', (data) => output += data.toString());
+      
+      proc.on('close', (code) => {
+        if (code === 0) {
+          this.pass('Claude Code', `Installed and accessible`);
+        } else {
+          this.fail('Claude Code', 'Not found or not accessible');
+        }
+        resolve();
+      });
+      
+      setTimeout(() => {
+        proc.kill();
+        this.fail('Claude Code', 'Check timed out');
+        resolve();
+      }, 5000);
     });
   }
 
@@ -198,6 +162,10 @@ class HealthCheck {
     
     if (passed === total) {
       console.log('\n🎉 Trinity MVP is ready to use!');
+      console.log('\nNext steps:');
+      console.log('  1. Start Trinity MVP: npm start');
+      console.log('  2. Run integration test: npm run test:trinity');
+      console.log('  3. Run full end-to-end test: node test-integration.js');
     } else {
       console.log('\n⚠️  Please resolve the failed checks before using Trinity MVP');
     }
