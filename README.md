@@ -4,6 +4,18 @@
 
 Trinity MVP transforms your interaction with AI by providing **persistent memory** and **local system integration**. Unlike traditional chat interfaces that forget previous conversations, Trinity builds cumulative knowledge about your projects, preferences, and working patterns.
 
+## 🎬 Demo
+
+![Trinity MVP Demo](https://via.placeholder.com/600x400/1a1a1a/ffffff?text=Trinity+MVP+Demo+Video)
+
+*See Trinity MVP in action: persistent memory, local file integration, and professional workflows.*
+
+**Key Demo Highlights:**
+- 💬 Natural conversation with memory retention
+- 📁 Direct file system access and editing  
+- 🔄 Project context that persists across sessions
+- ⚡ 4-6 second response times with full local integration
+
 ## 🎯 Why Trinity MVP?
 
 **The Problem**: Traditional AI assistants waste time re-explaining context, forget your preferences, and can't access your local files or projects.
@@ -12,22 +24,40 @@ Trinity MVP transforms your interaction with AI by providing **persistent memory
 - **🧠 Persistent Memory**: Remembers your projects, decisions, and working patterns
 - **💻 Local Integration**: Direct access to your files and command execution via Claude Code
 - **📋 Professional Workflows**: Optimized for documentation and project coordination
-- **🔄 Cross-Platform**: Works on Windows (WSL), Linux, and macOS
+- **🖥️ Native Support**: Optimized for Linux and macOS with native Claude Code integration
 
 ## ⚡ Quick Start
 
+> **💡 New to GitHub?** Skip the technical setup - download Trinity MVP directly from our [Releases page](https://github.com/jlchatha/trinity-mvp/releases) or watch the [Quick Demo](https://github.com/jlchatha/trinity-mvp#demo) to see Trinity in action.
+
 ### Installation
 
+**Linux:**
+```bash
+# Run automated setup
+curl -sSL https://raw.githubusercontent.com/jlchatha/trinity-mvp/main/scripts/setup-linux.sh | bash
+```
+
+**macOS:**
+```bash
+# Run automated setup  
+curl -sSL https://raw.githubusercontent.com/jlchatha/trinity-mvp/main/scripts/setup-macos.sh | bash
+```
+
+**Manual Installation:**
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/trinity-mvp.git
+git clone https://github.com/jlchatha/trinity-mvp.git
 cd trinity-mvp
 
 # Install dependencies
 npm install
 
+# Set your Claude API key
+export ANTHROPIC_API_KEY="your_api_key_here"
+
 # Start Trinity MVP
-npm run start
+npm start
 ```
 
 ### First Conversation
@@ -49,7 +79,7 @@ npm run start
 - **File Operations**: Read, write, and modify files in your projects
 - **Command Execution**: Run development commands, scripts, and tools
 - **Project Navigation**: Understand and work with your existing project structure
-- **Cross-Platform Support**: Consistent experience across operating systems
+- **Native Performance**: Optimized for Linux and macOS environments
 
 ### Professional Workflows
 - **Documentation**: Generate and maintain technical documentation
@@ -87,17 +117,17 @@ npm run start
 
 ## 🔧 System Requirements
 
-### Minimum Requirements
-- **OS**: Windows 11 (with WSL), RHEL 8+, macOS 10.15+
-- **Node.js**: 18.0+ 
+### Supported Platforms
+- **Linux**: RHEL 8+, Ubuntu 20.04+, Fedora 35+, Arch Linux
+- **macOS**: 10.15+ (including Apple Silicon M1/M2)
+- **Node.js**: 18.0+ (automatically installed by setup scripts)
 - **Memory**: 4GB RAM
 - **Storage**: 1GB available space
 
-### Claude Code Integration
-Trinity MVP requires [Claude Code](https://claude.ai/code) for local system access:
-- **Windows**: Requires WSL (Windows Subsystem for Linux)
-- **Linux/macOS**: Native Claude Code installation
-- **API Key**: Anthropic API key for Claude Code authentication
+### Requirements
+- **[Claude Code](https://claude.ai/code)**: Required for local system access
+- **Anthropic API Key**: Free tier available, see [Claude pricing](https://claude.ai/pricing)
+- **Internet Connection**: Required for Claude API access (local file operations work offline)
 
 ## 🛠️ Development
 
@@ -126,11 +156,12 @@ See [Development Guide](docs/developer/development.md) for contributing guidelin
 
 ## 📈 Roadmap
 
-### Current Release (v1.0)
-- ✅ Basic chat interface with persistent memory
+### Current Release (v1.1)
+- ✅ Professional chat interface with persistent memory
 - ✅ Local file system integration via Claude Code
-- ✅ Cross-platform compatibility (Windows/Linux/macOS)
-- ✅ Professional workflow templates
+- ✅ Native Linux and macOS support
+- ✅ Automated installation scripts
+- ✅ Update mechanism and feedback system
 
 ### Upcoming Features (v1.1+)
 - 🔄 Enhanced memory optimization and context management
