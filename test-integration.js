@@ -5,6 +5,9 @@
  * Tests the complete file communication pipeline from Claude SDK to Watcher
  */
 
+// Load environment variables for secure API key handling
+require('dotenv').config();
+
 const path = require('path');
 const ClaudeCodeSDK = require('./src/core/claude-integration');
 

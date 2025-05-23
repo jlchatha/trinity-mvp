@@ -95,7 +95,7 @@ class ClaudeCodeSDK extends EventEmitter {
       // Get system prompt from agent prompts if not provided
       let systemPrompt = options.systemPrompt;
       if (!systemPrompt) {
-        const agentPrompts = require('./agent-prompts');
+        const agentPrompts = require('./ai-prompts');
         systemPrompt = options.role === 'OVERSEER' ? 
           agentPrompts.OVERSEER.systemPrompt : 
           agentPrompts.WORKER.systemPrompt;

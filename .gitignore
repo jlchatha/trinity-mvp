@@ -75,4 +75,5 @@ debug-*
 *.pem
 *.crt
 *.p12
-config/secrets.*
+config/secrets.*.env
+# Environment files added to .gitignore for security
