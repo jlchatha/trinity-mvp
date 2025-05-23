@@ -143,9 +143,9 @@ class ClaudeWatcher {
         const wslWorkingDir = this.windowsToWSLPath(workingDirectory || process.cwd());
         
         // Build the command with proper non-interactive arguments
-        // Use -p flag for prompt mode which is designed for non-interactive use
+        // Use -p flag with --output-format for true non-interactive execution
         const escapedPrompt = prompt.replace(/'/g, "'\"'\"'"); // Properly escape single quotes
-        const claudeCommand = `cd "${wslWorkingDir}" && claude -p '${escapedPrompt}'`;
+        const claudeCommand = `cd "${wslWorkingDir}" && claude -p --output-format text '${escapedPrompt}'`;
         const fullCommand = ['bash', '-c', claudeCommand];
         
         this.log(`Executing: wsl ${fullCommand.join(' ')}`);
