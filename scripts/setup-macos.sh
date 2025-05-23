@@ -106,16 +106,74 @@ else
 fi
 
 if [[ "$INSTALL_NODE" == "true" ]]; then
-    # Download and install Node.js 20 LTS
+    # Download and install Node.js 20 LTS with error handling
     NODE_VERSION="20.11.1"
     NODE_PKG="node-v${NODE_VERSION}-darwin-${NODE_ARCH}.pkg"
     NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/${NODE_PKG}"
     
     log "Downloading Node.js from: $NODE_URL"
-    curl -L -o "$NODE_PKG" "$NODE_URL"
+    
+    # Try download with better error handling
+    if ! curl -L --fail --retry 3 --retry-delay 2 -o "$NODE_PKG" "$NODE_URL"; then
+        error "Failed to download Node.js package"
+        cat << 'MANUAL_INSTALL'
+╔══════════════════════════════════════════════════════════════╗
+║                   Manual Installation Required               ║
+╚══════════════════════════════════════════════════════════════╝
+
+The automatic Node.js download failed. Please install manually:
+
+1. Open your web browser (Safari, Chrome, etc.)
+2. Go to: https://nodejs.org
+3. Click the big green "Download" button
+4. Double-click the downloaded file to install
+5. Follow the installer prompts
+6. Run this script again when Node.js is installed
+
+MANUAL_INSTALL
+        exit 1
+    fi
+    
+    # Verify download integrity
+    if [[ ! -f "$NODE_PKG" ]] || [[ ! -s "$NODE_PKG" ]]; then
+        error "Downloaded Node.js package is invalid or empty"
+        cat << 'DOWNLOAD_HELP'
+╔══════════════════════════════════════════════════════════════╗
+║                     Download Issue Detected                  ║
+╚══════════════════════════════════════════════════════════════╝
+
+The Node.js download appears corrupted. Please try:
+
+OPTION 1 - Browser Download (Recommended):
+1. Go to: https://nodejs.org
+2. Download and install normally
+3. Run this script again
+
+OPTION 2 - Try Again:
+Re-run this installer to retry the download
+
+DOWNLOAD_HELP
+        rm -f "$NODE_PKG" # Clean up corrupted file
+        exit 1
+    fi
     
     log "Installing Node.js (this may require your password)..."
-    sudo installer -pkg "$NODE_PKG" -target /
+    if ! sudo installer -pkg "$NODE_PKG" -target /; then
+        error "Node.js installation failed"
+        cat << 'INSTALL_HELP'
+╔══════════════════════════════════════════════════════════════╗
+║                   Installation Failed                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+Node.js installation encountered an error. Please try:
+
+1. Go to: https://nodejs.org
+2. Download and install using the browser
+3. Run this script again after Node.js is installed
+
+INSTALL_HELP
+        exit 1
+    fi
     
     # Update PATH for current session
     export PATH="/usr/local/bin:$PATH"
