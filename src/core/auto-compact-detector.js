@@ -7,13 +7,16 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { EventEmitter } = require('events');
 const ContextMeter = require('./context-meter');
 
 /**
  * Enhanced Auto-Compact Detector with Background Context Intelligence
  */
-class AutoCompactDetector {
+class AutoCompactDetector extends EventEmitter {
   constructor(options = {}) {
+    super();
+    
     // MVP-specific base directories (build where it runs!)
     this.baseDir = options.baseDir || process.cwd();
     this.mvpDataDir = options.mvpDataDir || path.join(process.env.HOME || process.env.USERPROFILE, '.trinity-mvp');
