@@ -34,7 +34,22 @@ contextBridge.exposeInMainWorld('trinityAPI', {
     save: (key, data) => ipcRenderer.invoke('memory:save', key, data),
     load: (key) => ipcRenderer.invoke('memory:load', key),
     clear: (key) => ipcRenderer.invoke('memory:clear', key)
-  }
+  },
+
+  // Trinity Component APIs
+  healthCheck: () => ipcRenderer.invoke('trinity:healthCheck'),
+  getTaskStats: () => ipcRenderer.invoke('trinity:getTaskStats'),
+  processFile: (filePath, category) => ipcRenderer.invoke('trinity:processFile', filePath, category),
+  processFileContent: (fileName, content, category) => ipcRenderer.invoke('trinity:processFileContent', fileName, content, category),
+  optimizeContext: () => ipcRenderer.invoke('trinity:optimizeContext'),
+  createCheckpoint: () => ipcRenderer.invoke('trinity:createCheckpoint'),
+  
+  // Trinity Events
+  subscribeToEvents: () => ipcRenderer.invoke('trinity:subscribeToEvents'),
+  onMemoryEvent: (callback) => ipcRenderer.on('trinity:memory-event', callback),
+  onTaskEvent: (callback) => ipcRenderer.on('trinity:task-event', callback),
+  removeMemoryEventListener: (callback) => ipcRenderer.removeListener('trinity:memory-event', callback),
+  removeTaskEventListener: (callback) => ipcRenderer.removeListener('trinity:task-event', callback)
 });
 
 // Remove the loading indicator once the DOM is ready

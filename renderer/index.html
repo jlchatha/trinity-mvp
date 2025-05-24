@@ -189,6 +189,131 @@
             0%, 100% { opacity: 0.8; }
             50% { opacity: 1; }
         }
+
+        /* Trinity Status Bar - Tier 1 Ambient Intelligence */
+        .trinity-status-bar {
+            background: rgba(15, 15, 25, 0.95);
+            border-bottom: 1px solid rgba(100, 200, 255, 0.3);
+            padding: 0.75rem 1.5rem;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .trinity-status-bar.trinity-header {
+            padding: 1rem 2rem;
+            background: rgba(10, 10, 10, 0.8);
+            border-bottom: 2px solid rgba(100, 200, 255, 0.4);
+        }
+
+        .trinity-ambient-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .trinity-status-grid {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .trinity-status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .trinity-status-item:hover {
+            background: rgba(100, 200, 255, 0.1);
+        }
+
+        .trinity-icon {
+            font-size: 1rem;
+        }
+
+        .trinity-label {
+            font-size: 0.8rem;
+            color: #a0a0a0;
+            font-weight: 500;
+        }
+
+        .trinity-value {
+            font-size: 0.8rem;
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .trinity-file-drop-zone {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            border: 2px dashed rgba(100, 200, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(100, 200, 255, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .trinity-file-drop-zone:hover,
+        .trinity-file-drop-zone.drag-over {
+            border-color: rgba(100, 200, 255, 0.6);
+            background: rgba(100, 200, 255, 0.1);
+        }
+
+        .trinity-drop-text {
+            font-size: 0.85rem;
+            color: #64b5f6;
+            font-weight: 500;
+        }
+
+        .trinity-quick-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .trinity-action-btn {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid rgba(100, 200, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(100, 200, 255, 0.1);
+            color: #64b5f6;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .trinity-action-btn:hover {
+            background: rgba(100, 200, 255, 0.2);
+            border-color: rgba(100, 200, 255, 0.5);
+        }
+
+        .trinity-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .trinity-notification.show {
+            transform: translateX(0);
+        }
     </style>
 </head>
 <body>
@@ -223,9 +348,9 @@
         </div>
 
         <div class="main-content">
-            <div class="header">
-                <div class="welcome-message">Hello there!</div>
-                <div class="welcome-subtitle">Ready to chat?</div>
+            <!-- Trinity Status Bar - Tier 1 Ambient Intelligence (Prime Position) -->
+            <div id="trinity-status-bar" class="trinity-status-bar trinity-header">
+                <!-- Trinity Status Bar will be inserted here by trinity-status-bar.js -->
             </div>
 
             <div class="content-area">
@@ -303,6 +428,321 @@
                 console.log('Trinity API not fully initialized yet');
             });
         }
+
+        // Trinity Status Bar Integration
+        class TrinityStatusBarIntegration {
+            constructor() {
+                this.statusContainer = document.getElementById('trinity-status-bar');
+                this.components = {};
+                this.statusChannel = new BroadcastChannel('trinity-status-sync');
+                this.init();
+            }
+
+            init() {
+                this.createStatusBar();
+                this.setupEventListeners();
+                this.startStatusUpdates();
+                console.log('Trinity Status Bar initialized');
+            }
+
+            createStatusBar() {
+                this.statusContainer.innerHTML = `
+                    <div class="trinity-ambient-status">
+                        <div class="trinity-status-grid">
+                            <div class="trinity-status-item" id="memory-status">
+                                <span class="trinity-icon">🧠</span>
+                                <span class="trinity-label">Memory</span>
+                                <span class="trinity-value" id="memory-value">Ready</span>
+                            </div>
+                            <div class="trinity-status-item" id="tasks-status">
+                                <span class="trinity-icon">📋</span>
+                                <span class="trinity-label">Tasks</span>
+                                <span class="trinity-value" id="tasks-value">0</span>
+                            </div>
+                            <div class="trinity-status-item" id="recovery-status">
+                                <span class="trinity-icon">🔄</span>
+                                <span class="trinity-label">Recovery</span>
+                                <span class="trinity-value" id="recovery-value">Ready</span>
+                            </div>
+                            <div class="trinity-status-item" id="autocompact-status">
+                                <span class="trinity-icon">⚡</span>
+                                <span class="trinity-label">Auto-compact</span>
+                                <span class="trinity-value" id="autocompact-value">Active</span>
+                            </div>
+                        </div>
+                        
+                        <div class="trinity-file-drop-zone" id="trinity-drop-zone">
+                            <span class="trinity-icon">📁</span>
+                            <span class="trinity-drop-text">Drop contexts here</span>
+                        </div>
+                        
+                        <div class="trinity-quick-actions">
+                            <button class="trinity-action-btn" onclick="trinityStatusBar.optimize()">🚀 Optimize</button>
+                            <button class="trinity-action-btn" onclick="trinityStatusBar.checkpoint()">💾 Checkpoint</button>
+                            <button class="trinity-action-btn" onclick="trinityStatusBar.dashboard()">📊 Dashboard</button>
+                        </div>
+                    </div>
+                `;
+
+                this.setupFileDrop();
+            }
+
+            setupFileDrop() {
+                const dropZone = document.getElementById('trinity-drop-zone');
+                
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('drag-over');
+                });
+
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('drag-over');
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+                    
+                    const files = Array.from(e.dataTransfer.files);
+                    files.forEach(file => this.processFile(file));
+                });
+            }
+
+            async processFile(file) {
+                try {
+                    const content = await this.readFileContent(file);
+                    const category = this.categorizeFile(file.name, content);
+                    
+                    // Process with Trinity using content directly
+                    if (window.trinityAPI) {
+                        const result = await window.trinityAPI.processFileContent(file.name, content, category);
+                        if (result.success) {
+                            this.showNotification(`Trinity: ${file.name} → ${category} Memory`);
+                            
+                            // Update task count if tasks were extracted
+                            if (result.tasksExtracted > 0) {
+                                this.showNotification(`Extracted ${result.tasksExtracted} tasks from ${file.name}`);
+                            }
+                            
+                            this.updateTaskCount();
+                        } else {
+                            this.showNotification(`Error: ${result.error}`, 'error');
+                        }
+                    } else {
+                        this.showNotification(`File processed: ${file.name}`);
+                    }
+                } catch (error) {
+                    console.error('File processing error:', error);
+                    this.showNotification(`Error processing ${file.name}`, 'error');
+                }
+            }
+
+            readFileContent(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                });
+            }
+
+            categorizeFile(fileName, content) {
+                const ext = fileName.split('.').pop().toLowerCase();
+                
+                if (['js', 'ts', 'py', 'java', 'cpp', 'c', 'go', 'rs'].includes(ext)) {
+                    return 'Reference';
+                }
+                if (['md', 'txt', 'doc', 'pdf'].includes(ext)) {
+                    return 'Core';
+                }
+                if (['json', 'yaml', 'xml', 'csv'].includes(ext)) {
+                    return 'Working';
+                }
+                return 'Reference';
+            }
+
+            showNotification(message, type = 'success') {
+                const notification = document.createElement('div');
+                notification.className = `trinity-notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => notification.classList.add('show'), 100);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            async updateTaskCount() {
+                try {
+                    if (window.trinityAPI) {
+                        const stats = await window.trinityAPI.getTaskStats();
+                        document.getElementById('tasks-value').textContent = stats.total || '0';
+                    }
+                } catch (error) {
+                    console.error('Task count update error:', error);
+                }
+            }
+
+            async startStatusUpdates() {
+                // Update component status every 5 seconds
+                setInterval(async () => {
+                    try {
+                        if (window.trinityAPI) {
+                            const health = await window.trinityAPI.healthCheck();
+                            this.updateComponentStatus(health);
+                        }
+                    } catch (error) {
+                        console.error('Status update error:', error);
+                    }
+                }, 5000);
+            }
+
+            updateComponentStatus(health) {
+                if (health.components) {
+                    Object.entries(health.components).forEach(([component, status]) => {
+                        const valueElement = document.getElementById(`${component}-value`);
+                        if (valueElement) {
+                            valueElement.textContent = status === 'healthy' ? 'Ready' : 'Warning';
+                            valueElement.style.color = status === 'healthy' ? '#4ade80' : '#f59e0b';
+                        }
+                    });
+                }
+            }
+
+            setupEventListeners() {
+                // Listen for Trinity events
+                if (window.trinityAPI) {
+                    // Memory events
+                    window.trinityAPI.onMemoryEvent((event) => {
+                        if (event.type === 'context-optimized') {
+                            this.showNotification('Context optimized');
+                            this.broadcastStatusUpdate('memory', { status: 'Optimized' });
+                        }
+                    });
+
+                    // Task events
+                    window.trinityAPI.onTaskEvent((event) => {
+                        if (event.type === 'created') {
+                            this.updateTaskCount();
+                            this.showNotification(`Task created: ${event.data.title}`);
+                            this.broadcastStatusUpdate('tasks', { count: event.data.id });
+                        }
+                    });
+                }
+
+                // Cross-window communication
+                this.statusChannel.addEventListener('message', (event) => {
+                    const { type, windowType, fileName } = event.data;
+                    
+                    if (type === 'request-status') {
+                        // Send current status to requesting window
+                        this.sendCurrentStatusTo(windowType);
+                    } else if (type === 'file-dropped') {
+                        // Show notification in main window about file dropped in other window
+                        this.showNotification(`File "${fileName}" processed from ${windowType} window`);
+                    }
+                });
+            }
+
+            broadcastStatusUpdate(component, status) {
+                this.statusChannel.postMessage({
+                    type: 'status-update',
+                    component,
+                    status,
+                    timestamp: Date.now()
+                });
+            }
+
+            sendCurrentStatusTo(windowType) {
+                // Get current status values
+                const currentStatus = {
+                    memory: { status: document.getElementById('memory-value')?.textContent || 'Ready' },
+                    tasks: { count: document.getElementById('tasks-value')?.textContent || '0' },
+                    recovery: { status: document.getElementById('recovery-value')?.textContent || 'Ready' },
+                    autoCompact: { status: document.getElementById('autocompact-value')?.textContent || 'Active' }
+                };
+
+                // Send to requesting window
+                Object.entries(currentStatus).forEach(([component, status]) => {
+                    this.statusChannel.postMessage({
+                        type: 'status-update',
+                        component,
+                        status,
+                        timestamp: Date.now()
+                    });
+                });
+            }
+
+            // Quick action methods
+            async optimize() {
+                this.showNotification('🚀 Running context optimization...');
+                try {
+                    if (window.trinityAPI) {
+                        const result = await window.trinityAPI.optimizeContext();
+                        if (result.success) {
+                            this.showNotification(`✅ Optimization complete! ${result.tokensReduced || 0} tokens reduced`);
+                            this.broadcastStatusUpdate('autocompact', { status: 'Optimized' });
+                        } else {
+                            this.showNotification(`❌ Optimization failed: ${result.error}`, 'error');
+                        }
+                    } else {
+                        this.showNotification('❌ Trinity API not available', 'error');
+                    }
+                } catch (error) {
+                    console.error('Optimization error:', error);
+                    this.showNotification('❌ Optimization failed', 'error');
+                }
+            }
+
+            async checkpoint() {
+                this.showNotification('💾 Creating checkpoint...');
+                try {
+                    if (window.trinityAPI) {
+                        const result = await window.trinityAPI.createCheckpoint();
+                        if (result.success) {
+                            this.showNotification(`✅ Checkpoint created: ${result.checkpointId}`);
+                            this.broadcastStatusUpdate('recovery', { status: 'Checkpoint Ready' });
+                        } else {
+                            this.showNotification(`❌ Checkpoint failed: ${result.error}`, 'error');
+                        }
+                    } else {
+                        this.showNotification('❌ Trinity API not available', 'error');
+                    }
+                } catch (error) {
+                    console.error('Checkpoint error:', error);
+                    this.showNotification('❌ Checkpoint failed', 'error');
+                }
+            }
+
+            dashboard() {
+                // Show Trinity system stats for now, full dashboard in Tier 2
+                this.showNotification('📊 Showing Trinity system status...');
+                
+                if (window.trinityAPI) {
+                    window.trinityAPI.healthCheck().then(health => {
+                        const stats = [
+                            `Memory: ${health.components?.memory || 'Unknown'}`,
+                            `Tasks: ${health.components?.tasks || 'Unknown'}`,
+                            `Recovery: ${health.components?.recovery || 'Unknown'}`,
+                            `Auto-compact: ${health.components?.autocompact || 'Unknown'}`
+                        ];
+                        this.showNotification(`Trinity Status: ${stats.join(' | ')}`);
+                    }).catch(() => {
+                        this.showNotification('📊 Full dashboard coming in Tier 2');
+                    });
+                } else {
+                    this.showNotification('📊 Full dashboard coming in Tier 2');
+                }
+            }
+        }
+
+        // Initialize Trinity Status Bar when DOM is ready
+        let trinityStatusBar;
+        document.addEventListener('DOMContentLoaded', () => {
+            trinityStatusBar = new TrinityStatusBarIntegration();
+        });
     </script>
 </body>
 </html>

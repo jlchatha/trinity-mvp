@@ -139,8 +139,25 @@ class ClaudeWatcher {
     
     return new Promise((resolve) => {
       try {
-        // Get API key
-        const apiKey = process.env.ANTHROPIC_API_KEY;
+        // Get API key with development fallback
+        let apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
+        
+        // Development fallback: Trinity agent key (never shipped to production)
+        if (!apiKey && process.env.NODE_ENV === 'development') {
+          try {
+            const optimus_config_path = path.join(__dirname, '../agents/optimus_001/config/config.json');
+            if (fs.existsSync(optimus_config_path)) {
+              const config = JSON.parse(fs.readFileSync(optimus_config_path, 'utf8'));
+              if (config.api_key) {
+                apiKey = config.api_key;
+                this.log('Using Trinity development API key from optimus_001 config');
+              }
+            }
+          } catch (error) {
+            this.log('Failed to load Trinity dev key:', error.message);
+          }
+        }
+        
         if (!apiKey) {
           this.log('ERROR: No ANTHROPIC_API_KEY found in environment');
           return resolve({

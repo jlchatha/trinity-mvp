@@ -1,0 +1,52 @@
+{
+  "id": "mem_1748055918507_3gwysctzm",
+  "tier": "working",
+  "content": {
+    "type": "task",
+    "task": {
+      "id": "task_1748055918504_b0829635",
+      "type": "integration_test",
+      "title": "Validate Memory Integration",
+      "description": "Test that tasks can access and utilize memory hierarchy",
+      "requestedBy": "user",
+      "assignedTo": "worker",
+      "coordination": "standard",
+      "status": "pending",
+      "priority": "high",
+      "context": {
+        "memoryReference": "Day 4 Integration Test Project",
+        "testingPhase": "memory-tasks-integration"
+      },
+      "requirements": [],
+      "deliverables": [],
+      "createdAt": "2025-05-24T03:05:18.504Z",
+      "updatedAt": "2025-05-24T03:05:18.504Z",
+      "estimatedDuration": null,
+      "actualDuration": null,
+      "memoryTier": "working",
+      "projectId": "integration-test-001",
+      "userId": "test-user"
+    }
+  },
+  "metadata": {
+    "title": "Task: Validate Memory Integration",
+    "description": "Test that tasks can access and utilize memory hierarchy",
+    "tags": [
+      "task",
+      "integration_test",
+      "pending"
+    ],
+    "priority": "medium",
+    "project": null,
+    "user": null,
+    "projectId": "integration-test-001",
+    "userId": "test-user"
+  },
+  "timestamps": {
+    "created": "2025-05-24T03:05:18.507Z",
+    "modified": "2025-05-24T03:05:18.507Z",
+    "accessed": "2025-05-24T03:05:18.507Z"
+  },
+  "size": 646,
+  "version": "1.0.0"
+}

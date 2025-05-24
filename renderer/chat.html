@@ -42,6 +42,60 @@
             align-items: center;
         }
 
+        /* Trinity Compact Status - Always Visible in Chat */
+        .trinity-status-compact {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(15, 15, 25, 0.7);
+            border: 1px solid rgba(100, 200, 255, 0.3);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .trinity-compact-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .trinity-compact-item:hover {
+            background: rgba(100, 200, 255, 0.1);
+            cursor: pointer;
+        }
+
+        .trinity-compact-icon {
+            font-size: 0.9rem;
+        }
+
+        .trinity-compact-value {
+            font-size: 0.8rem;
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .trinity-mini-drop {
+            padding: 0.375rem 0.75rem;
+            border: 1px dashed rgba(100, 200, 255, 0.4);
+            border-radius: 4px;
+            background: rgba(100, 200, 255, 0.05);
+            color: #64b5f6;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .trinity-mini-drop:hover,
+        .trinity-mini-drop.drag-over {
+            border-color: rgba(100, 200, 255, 0.6);
+            background: rgba(100, 200, 255, 0.1);
+        }
+
         .chat-title {
             font-size: 1.25rem;
             font-weight: 500;
@@ -279,6 +333,30 @@
                 <button class="back-button" onclick="goBack()">← Back</button>
                 <div class="chat-title">Trinity Chat</div>
             </div>
+            
+            <!-- Trinity Compact Status - Always Visible Intelligence -->
+            <div class="trinity-status-compact" id="trinity-compact-status">
+                <div class="trinity-compact-item" title="Memory Status">
+                    <span class="trinity-compact-icon">🧠</span>
+                    <span class="trinity-compact-value" id="compact-memory">Ready</span>
+                </div>
+                <div class="trinity-compact-item" title="Active Tasks">
+                    <span class="trinity-compact-icon">📋</span>
+                    <span class="trinity-compact-value" id="compact-tasks">0</span>
+                </div>
+                <div class="trinity-compact-item" title="Recovery Status">
+                    <span class="trinity-compact-icon">🔄</span>
+                    <span class="trinity-compact-value" id="compact-recovery">Ready</span>
+                </div>
+                <div class="trinity-compact-item" title="Auto-Compact Status">
+                    <span class="trinity-compact-icon">⚡</span>
+                    <span class="trinity-compact-value" id="compact-autocompact">Active</span>
+                </div>
+                <div class="trinity-mini-drop" id="trinity-mini-drop" title="Drop files for Trinity processing">
+                    📁 Drop
+                </div>
+            </div>
+            
             <div class="chat-status">
                 <div class="status-dot"></div>
                 <span id="statusText">Connected</span>
@@ -322,6 +400,185 @@
     </div>
 
     <script>
+        // Trinity Compact Status Integration - Always Visible Intelligence
+        class TrinityCompactStatus {
+            constructor() {
+                this.statusChannel = new BroadcastChannel('trinity-status-sync');
+                this.initializeCompactStatus();
+                this.setupCrossWindowSync();
+                this.setupMiniFileDrop();
+            }
+
+            initializeCompactStatus() {
+                // Initialize with default status
+                this.updateCompactStatus({
+                    memory: { status: 'Ready', icon: '🧠' },
+                    tasks: { count: 0, icon: '📋' },
+                    recovery: { status: 'Ready', icon: '🔄' },
+                    autoCompact: { status: 'Active', icon: '⚡' }
+                });
+
+                // Start status polling
+                this.startStatusPolling();
+                console.log('Trinity Compact Status initialized in chat window');
+            }
+
+            updateCompactStatus(status) {
+                if (status.memory) {
+                    document.getElementById('compact-memory').textContent = status.memory.status;
+                }
+                if (status.tasks) {
+                    document.getElementById('compact-tasks').textContent = status.tasks.count || '0';
+                }
+                if (status.recovery) {
+                    document.getElementById('compact-recovery').textContent = status.recovery.status;
+                }
+                if (status.autoCompact) {
+                    document.getElementById('compact-autocompact').textContent = status.autoCompact.status;
+                }
+            }
+
+            setupCrossWindowSync() {
+                // Listen for status updates from main window
+                this.statusChannel.addEventListener('message', (event) => {
+                    if (event.data.type === 'status-update') {
+                        this.updateCompactStatus({ [event.data.component]: event.data.status });
+                    }
+                });
+
+                // Request initial status from main window
+                this.statusChannel.postMessage({
+                    type: 'request-status',
+                    windowType: 'chat',
+                    timestamp: Date.now()
+                });
+            }
+
+            setupMiniFileDrop() {
+                const miniDrop = document.getElementById('trinity-mini-drop');
+                
+                miniDrop.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    miniDrop.classList.add('drag-over');
+                });
+
+                miniDrop.addEventListener('dragleave', () => {
+                    miniDrop.classList.remove('drag-over');
+                });
+
+                miniDrop.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    miniDrop.classList.remove('drag-over');
+                    
+                    const files = Array.from(e.dataTransfer.files);
+                    files.forEach(file => this.processFileInChat(file));
+                });
+            }
+
+            async processFileInChat(file) {
+                try {
+                    // Show processing in compact status
+                    document.getElementById('compact-memory').textContent = 'Processing';
+                    
+                    // Notify main window of file drop
+                    this.statusChannel.postMessage({
+                        type: 'file-dropped',
+                        fileName: file.name,
+                        windowType: 'chat',
+                        timestamp: Date.now()
+                    });
+
+                    // Process with Trinity if available
+                    if (window.trinityAPI) {
+                        const content = await this.readFileContent(file);
+                        const category = this.categorizeFile(file.name, content);
+                        await window.trinityAPI.processFile(file.path, category);
+                        
+                        this.showChatNotification(`Trinity: ${file.name} → ${category} Memory`);
+                        this.updateTaskCount();
+                    } else {
+                        this.showChatNotification(`File received: ${file.name}`);
+                    }
+
+                    // Reset status
+                    document.getElementById('compact-memory').textContent = 'Ready';
+                } catch (error) {
+                    console.error('Chat file processing error:', error);
+                    this.showChatNotification(`Error processing ${file.name}`, 'error');
+                    document.getElementById('compact-memory').textContent = 'Ready';
+                }
+            }
+
+            readFileContent(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                });
+            }
+
+            categorizeFile(fileName, content) {
+                const ext = fileName.split('.').pop().toLowerCase();
+                if (['js', 'ts', 'py', 'java', 'cpp', 'c', 'go', 'rs'].includes(ext)) return 'Reference';
+                if (['md', 'txt', 'doc', 'pdf'].includes(ext)) return 'Core';
+                if (['json', 'yaml', 'xml', 'csv'].includes(ext)) return 'Working';
+                return 'Reference';
+            }
+
+            showChatNotification(message, type = 'success') {
+                // Add system message to chat
+                const systemMessage = document.createElement('div');
+                systemMessage.className = 'message system';
+                systemMessage.innerHTML = `
+                    <div class="message-content" style="color: ${type === 'error' ? '#ef4444' : '#4ade80'};">
+                        ${message}
+                    </div>
+                `;
+                messagesContainer.appendChild(systemMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            async updateTaskCount() {
+                try {
+                    if (window.trinityAPI) {
+                        const stats = await window.trinityAPI.getTaskStats();
+                        document.getElementById('compact-tasks').textContent = stats.total || '0';
+                    }
+                } catch (error) {
+                    console.error('Task count update error:', error);
+                }
+            }
+
+            async startStatusPolling() {
+                // Poll Trinity status every 10 seconds
+                setInterval(async () => {
+                    try {
+                        if (window.trinityAPI) {
+                            const health = await window.trinityAPI.healthCheck();
+                            if (health.components) {
+                                const statusUpdate = {};
+                                Object.entries(health.components).forEach(([component, status]) => {
+                                    statusUpdate[component] = {
+                                        status: status === 'healthy' ? 'Ready' : 'Warning'
+                                    };
+                                });
+                                this.updateCompactStatus(statusUpdate);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Status polling error:', error);
+                    }
+                }, 10000);
+            }
+        }
+
+        // Initialize Trinity Compact Status
+        let trinityCompactStatus;
+        document.addEventListener('DOMContentLoaded', () => {
+            trinityCompactStatus = new TrinityCompactStatus();
+        });
+
         // Chat functionality
         const messagesContainer = document.getElementById('messagesContainer');
         const messageForm = document.getElementById('messageForm');

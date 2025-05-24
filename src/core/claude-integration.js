@@ -74,6 +74,24 @@ class ClaudeCodeSDK extends EventEmitter {
       return process.env.CLAUDE_API_KEY;
     }
     
+    // Development fallback: Trinity agent key (never shipped to production)
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        const path = require('path');
+        const fs = require('fs');
+        const optimus_config_path = path.join(process.cwd(), '../agents/optimus_001/config/config.json');
+        if (fs.existsSync(optimus_config_path)) {
+          const config = JSON.parse(fs.readFileSync(optimus_config_path, 'utf8'));
+          if (config.api_key) {
+            this.log('info', 'Using Trinity development API key from optimus_001 config');
+            return config.api_key;
+          }
+        }
+      } catch (error) {
+        this.log('warn', 'Failed to load Trinity dev key:', error.message);
+      }
+    }
+    
     // No fallback API key - users must provide their own
     this.log('error', 'No ANTHROPIC_API_KEY found. Please set your API key in environment variables.');
     throw new Error('ANTHROPIC_API_KEY environment variable is required. Please set your Claude API key.');

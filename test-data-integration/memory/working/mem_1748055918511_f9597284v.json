@@ -1,0 +1,53 @@
+{
+  "id": "mem_1748055918511_f9597284v",
+  "tier": "working",
+  "content": {
+    "type": "task",
+    "task": {
+      "id": "task_1748055918504_b0829635",
+      "type": "integration_test",
+      "title": "Validate Memory Integration",
+      "description": "Test that tasks can access and utilize memory hierarchy",
+      "requestedBy": "user",
+      "assignedTo": "worker",
+      "coordination": "standard",
+      "status": "in_progress",
+      "priority": "high",
+      "context": {
+        "memoryReference": "Day 4 Integration Test Project",
+        "testingPhase": "memory-tasks-integration"
+      },
+      "requirements": [],
+      "deliverables": [],
+      "createdAt": "2025-05-24T03:05:18.504Z",
+      "updatedAt": "2025-05-24T03:05:18.509Z",
+      "estimatedDuration": null,
+      "actualDuration": null,
+      "memoryTier": "working",
+      "projectId": "integration-test-001",
+      "userId": "test-user",
+      "progress": "Successfully integrated with memory hierarchy"
+    }
+  },
+  "metadata": {
+    "title": "Task: Validate Memory Integration",
+    "description": "Test that tasks can access and utilize memory hierarchy",
+    "tags": [
+      "task",
+      "integration_test",
+      "in_progress"
+    ],
+    "priority": "medium",
+    "project": null,
+    "user": null,
+    "projectId": "integration-test-001",
+    "userId": "test-user"
+  },
+  "timestamps": {
+    "created": "2025-05-24T03:05:18.511Z",
+    "modified": "2025-05-24T03:05:18.511Z",
+    "accessed": "2025-05-24T03:05:18.511Z"
+  },
+  "size": 709,
+  "version": "1.0.0"
+}

@@ -1,0 +1,49 @@
+{
+  "id": "mem_1748055918522_ebe6s2cd5",
+  "tier": "working",
+  "content": {
+    "type": "task",
+    "task": {
+      "id": "task_1748055918520_80b14fc1",
+      "type": "general",
+      "title": "Event Integration Test",
+      "description": "Testing component event propagation",
+      "requestedBy": "user",
+      "assignedTo": "overseer",
+      "coordination": "standard",
+      "status": "pending",
+      "priority": "medium",
+      "context": {},
+      "requirements": [],
+      "deliverables": [],
+      "createdAt": "2025-05-24T03:05:18.520Z",
+      "updatedAt": "2025-05-24T03:05:18.520Z",
+      "estimatedDuration": null,
+      "actualDuration": null,
+      "memoryTier": "working",
+      "projectId": null,
+      "userId": null
+    }
+  },
+  "metadata": {
+    "title": "Task: Event Integration Test",
+    "description": "Testing component event propagation",
+    "tags": [
+      "task",
+      "general",
+      "pending"
+    ],
+    "priority": "medium",
+    "project": null,
+    "user": null,
+    "projectId": null,
+    "userId": null
+  },
+  "timestamps": {
+    "created": "2025-05-24T03:05:18.522Z",
+    "modified": "2025-05-24T03:05:18.522Z",
+    "accessed": "2025-05-24T03:05:18.522Z"
+  },
+  "size": 499,
+  "version": "1.0.0"
+}

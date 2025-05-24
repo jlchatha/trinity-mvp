@@ -193,6 +193,8 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Trinity Status Bar will be inserted here by trinity-status-bar.js -->
+        
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="trinity-title">TRINITY</div>
@@ -254,11 +256,13 @@
         });
 
         function initializeApp() {
-            // TODO: Initialize Trinity components
-            // - Connect to MCP server
-            // - Load memory hierarchy
-            // - Start agent communication
+            console.log('Initializing Trinity MVP Application...');
+            
+            // Initialize Trinity components via status bar and integration
             updateSystemStatus();
+            
+            // Trinity Status Bar and Integration will handle component initialization
+            console.log('Trinity UI components loading...');
         }
 
         function updateSystemStatus() {
@@ -304,5 +308,9 @@
             });
         }
     </script>
+    
+    <!-- Trinity UI Components -->
+    <script src="trinity-status-bar.js"></script>
+    <script src="trinity-renderer-integration.js"></script>
 </body>
 </html>
