@@ -1,0 +1,15 @@
+{
+  "environment": {
+    "platform": "linux",
+    "release": "4.18.0-553.53.1.el8_10.x86_64",
+    "isMacOS": false
+  },
+  "apiKeyTest": {},
+  "componentTest": {},
+  "fileProcessingTest": {},
+  "uiIntegrationTest": {},
+  "performanceTest": {},
+  "overallStatus": "FAIL",
+  "successRate": 0,
+  "duration": 6
+}
