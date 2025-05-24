@@ -1,0 +1,15 @@
+{
+  "allowedTools": [
+    "Read",
+    "Write", 
+    "Edit",
+    "Bash",
+    "LS",
+    "Glob",
+    "Grep",
+    "Task",
+    "Batch"
+  ],
+  "projectName": "Trinity MVP",
+  "description": "Trinity MVP Professional Assistant with Context Intelligence"
+}

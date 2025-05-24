@@ -109,7 +109,7 @@ class ClaudeWatcher {
     const userContext = options.userContext || {};
     
     // Execute Claude Code via WSL
-    const result = await this.executeClaudeCode(prompt, workingDirectory, userContext);
+    const result = await this.executeClaudeCode(prompt, workingDirectory, options);
     
     // Create response (matching file manager expected format)
     const responseData = {
@@ -134,7 +134,7 @@ class ClaudeWatcher {
     this.log(`Request ${filename} completed successfully`);
   }
   
-  async executeClaudeCode(prompt, workingDirectory, userContext = {}) {
+  async executeClaudeCode(prompt, workingDirectory, options = {}) {
     const startTime = Date.now();
     
     return new Promise((resolve) => {
@@ -151,20 +151,21 @@ class ClaudeWatcher {
           });
         }
         
-        // Build cross-platform Claude Code command
-        const escapedPrompt = prompt.replace(/'/g, "'\"'\"'"); // Properly escape single quotes
-        const claudeArgs = ['-p', '--output-format', 'text', escapedPrompt];
+        // Build Claude Code command using working mvp-dev format
+        // Start with basic command (--continue will be tried in retry logic)
+        const claudeArgs = ['--print', '--output-format', 'json', prompt];
         
         this.log(`Executing: claude ${claudeArgs.join(' ')}`);
         this.log(`API Key present: ${apiKey ? 'YES' : 'NO'} (length: ${apiKey?.length || 0})`);
         this.log(`Working directory: ${workingDirectory || process.cwd()}`);
         
-        const proc = spawn('claude', claudeArgs, {
-          stdio: ['pipe', 'pipe', 'pipe'],
+        const proc = spawn('/home/alreadyinuse/.claude/local/claude', claudeArgs, {
+          stdio: ['ignore', 'pipe', 'pipe'],
           cwd: workingDirectory || process.cwd(),
           env: {
             ...process.env,
-            ANTHROPIC_API_KEY: apiKey
+            ANTHROPIC_API_KEY: apiKey,
+            CLAUDE_MODEL: options.model || 'claude-3-haiku-20240307'
           }
         });
         
@@ -180,6 +181,7 @@ class ClaudeWatcher {
         });
         
         proc.on('close', (code) => {
+          clearTimeout(timeoutId);
           const executionTime = Date.now() - startTime;
           
           this.log(`Claude Code process finished with exit code: ${code}`);
@@ -191,12 +193,26 @@ class ClaudeWatcher {
           const isSuccess = code === 0 && hasOutput;
           
           if (isSuccess) {
-            resolve({
-              success: true,
-              output: stdout.trim(),
-              error: null,
-              executionTime
-            });
+            // Parse JSON response like mvp-dev
+            try {
+              const jsonResponse = JSON.parse(stdout.trim());
+              resolve({
+                success: true,
+                output: jsonResponse.result || jsonResponse.content || stdout.trim(),
+                error: null,
+                executionTime,
+                cost: jsonResponse.cost_usd,
+                sessionId: jsonResponse.session_id
+              });
+            } catch (parseError) {
+              // Fallback to raw output if JSON parsing fails
+              resolve({
+                success: true,
+                output: stdout.trim(),
+                error: null,
+                executionTime
+              });
+            }
           } else {
             resolve({
               success: false,
@@ -218,13 +234,17 @@ class ClaudeWatcher {
         });
         
         // Timeout after 25 seconds (less than Trinity's 30-second timeout)
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
+          console.log(`[${new Date().toISOString()}] TIMEOUT: Claude Code execution exceeded 25s, killing process`);
+          console.log(`[${new Date().toISOString()}] TIMEOUT: Command args: ${claudeArgs.join(' ')}`);
+          console.log(`[${new Date().toISOString()}] TIMEOUT: Current stdout: "${stdout}"`);
+          console.log(`[${new Date().toISOString()}] TIMEOUT: Current stderr: "${stderr}"`);
           proc.kill('SIGTERM');
           const executionTime = Date.now() - startTime;
           resolve({
             success: false,
             output: stdout.trim(),
-            error: 'Claude Code execution timeout (25s)',
+            error: 'Claude Code execution timeout (25s) - Process was killed',
             executionTime
           });
         }, 25000);
