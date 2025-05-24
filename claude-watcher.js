@@ -145,12 +145,21 @@ class ClaudeWatcher {
         // Development fallback: Trinity agent key (never shipped to production)
         if (!apiKey && process.env.NODE_ENV === 'development') {
           try {
-            const optimus_config_path = path.join(__dirname, '../agents/optimus_001/config/config.json');
-            if (fs.existsSync(optimus_config_path)) {
-              const config = JSON.parse(fs.readFileSync(optimus_config_path, 'utf8'));
-              if (config.api_key) {
-                apiKey = config.api_key;
-                this.log('Using Trinity development API key from optimus_001 config');
+            // Try multiple possible Trinity development paths
+            const trinityPaths = [
+              path.join(__dirname, '../agents/optimus_001/config/config.json'), // Linux dev path
+              path.join(os.homedir(), 'git/trinity-system/agents/optimus_001/config/config.json'), // macOS dev path
+              '/home/alreadyinuse/git/trinity-system/agents/optimus_001/config/config.json' // Absolute dev path
+            ];
+            
+            for (const configPath of trinityPaths) {
+              if (fs.existsSync(configPath)) {
+                const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                if (config.api_key) {
+                  apiKey = config.api_key;
+                  this.log(`Using Trinity development API key from ${configPath}`);
+                  break;
+                }
               }
             }
           } catch (error) {
@@ -172,11 +181,37 @@ class ClaudeWatcher {
         // Start with basic command (--continue will be tried in retry logic)
         const claudeArgs = ['--print', '--output-format', 'json', prompt];
         
-        this.log(`Executing: claude ${claudeArgs.join(' ')}`);
+        // Cross-platform Claude Code path detection
+        let claudePath = 'claude'; // Default to PATH lookup
+        
+        // Try platform-specific paths first for reliability
+        if (os.platform() === 'linux') {
+          const linuxPath = '/home/alreadyinuse/.claude/local/claude';
+          if (fs.existsSync(linuxPath)) {
+            claudePath = linuxPath;
+          }
+        } else if (os.platform() === 'darwin') {
+          // macOS: Try common Claude Code installation paths
+          const macosPaths = [
+            path.join(os.homedir(), '.claude/local/claude'),
+            '/usr/local/bin/claude',
+            '/opt/homebrew/bin/claude',
+            'claude' // fallback to PATH
+          ];
+          
+          for (const testPath of macosPaths) {
+            if (testPath === 'claude' || fs.existsSync(testPath)) {
+              claudePath = testPath;
+              break;
+            }
+          }
+        }
+        
+        this.log(`Executing: ${claudePath} ${claudeArgs.join(' ')}`);
         this.log(`API Key present: ${apiKey ? 'YES' : 'NO'} (length: ${apiKey?.length || 0})`);
         this.log(`Working directory: ${workingDirectory || process.cwd()}`);
         
-        const proc = spawn('/home/alreadyinuse/.claude/local/claude', claudeArgs, {
+        const proc = spawn(claudePath, claudeArgs, {
           stdio: ['ignore', 'pipe', 'pipe'],
           cwd: workingDirectory || process.cwd(),
           env: {
