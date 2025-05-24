@@ -177,6 +177,9 @@ class ClaudeWatcher {
           });
         }
         
+        // Ensure Claude tools are enabled (fast, no timeouts)
+        await this.ensureClaudeToolsEnabled(apiKey);
+        
         // Build Claude Code command using working mvp-dev format
         // Start with basic command (--continue will be tried in retry logic)
         const claudeArgs = ['--print', '--output-format', 'json', prompt];
@@ -317,6 +320,80 @@ class ClaudeWatcher {
   
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  
+  /**
+   * Ensure Claude tools are enabled (fast, no timeouts)
+   * Uses the enabledTools command for bulk setup
+   */
+  async ensureClaudeToolsEnabled(apiKey) {
+    try {
+      // Check if tools are already configured (fast check)
+      const claudeConfigPath = path.join(process.cwd(), '.claude', 'settings.json');
+      if (fs.existsSync(claudeConfigPath)) {
+        const settings = JSON.parse(fs.readFileSync(claudeConfigPath, 'utf8'));
+        if (settings.allowedTools && settings.allowedTools.length > 0) {
+          this.log('✅ Claude tools already configured');
+          return;
+        }
+      }
+      
+      // Trinity required tools
+      const requiredTools = ['Bash', 'Read', 'Write', 'Edit', 'LS', 'Glob', 'Grep'];
+      
+      // Cross-platform Claude path (same logic as executeClaudeCode)
+      let claudePath = 'claude';
+      if (os.platform() === 'linux') {
+        const linuxPath = '/home/alreadyinuse/.claude/local/claude';
+        if (fs.existsSync(linuxPath)) claudePath = linuxPath;
+      } else if (os.platform() === 'darwin') {
+        const macosPaths = [
+          path.join(os.homedir(), '.claude/local/claude'),
+          '/usr/local/bin/claude',
+          '/opt/homebrew/bin/claude'
+        ];
+        for (const testPath of macosPaths) {
+          if (fs.existsSync(testPath)) {
+            claudePath = testPath;
+            break;
+          }
+        }
+      }
+      
+      // Fast bulk tool setup (no individual timeouts)
+      this.log('⚡ Enabling Trinity tools in Claude Code...');
+      
+      return new Promise((resolve) => {
+        const proc = spawn(claudePath, ['config', 'add', 'allowedTools', ...requiredTools], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          env: { ...process.env, ANTHROPIC_API_KEY: apiKey }
+        });
+        
+        let output = '';
+        proc.stdout.on('data', (data) => output += data.toString());
+        proc.stderr.on('data', (data) => output += data.toString());
+        
+        proc.on('close', (code) => {
+          if (code === 0) {
+            this.log('✅ Trinity tools enabled successfully');
+          } else {
+            this.log(`⚠️ Tool setup warning (code ${code}): ${output}`);
+          }
+          resolve(); // Always resolve to not block execution
+        });
+        
+        // Fast timeout (2 seconds max)
+        setTimeout(() => {
+          proc.kill();
+          this.log('⚡ Tool setup timeout (proceeding anyway)');
+          resolve();
+        }, 2000);
+      });
+      
+    } catch (error) {
+      this.log(`⚠️ Tool setup error: ${error.message}`);
+      // Don't block execution on tool setup failure
+    }
   }
   
   stop() {
