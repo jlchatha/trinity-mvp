@@ -177,8 +177,10 @@ class ClaudeWatcher {
           });
         }
         
-        // Ensure Claude tools are enabled (fast, no timeouts)
-        await this.ensureClaudeToolsEnabled(apiKey);
+        // Ensure Claude tools are enabled (non-blocking)
+        this.ensureClaudeToolsEnabled(apiKey).catch(error => {
+          this.log(`Tool setup error: ${error.message}`);
+        });
         
         // Build Claude Code command using working mvp-dev format
         // Start with basic command (--continue will be tried in retry logic)
