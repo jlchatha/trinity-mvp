@@ -284,7 +284,11 @@ cat << 'EOF'
 ║                                                              ║
 ║  Option 1: Double-click "Trinity MVP.command" on Desktop    ║
 ║  Option 2: Open Terminal and run:                          ║
-║            cd ~/Trinity-MVP && ./start-trinity.sh          ║
+║            cd ~/trinity-MVP                                 ║
+║            ./start-trinity.sh                               ║
+║                                                              ║
+║  ⚠️  IMPORTANT: Always run commands from the Trinity        ║
+║      directory (~/trinity-MVP), not your home folder!      ║
 ║                                                              ║
 ║  The first time you run Trinity MVP, you'll need to        ║
 ║  configure your Claude API key.                             ║
@@ -304,7 +308,12 @@ read -p "Would you like to start Trinity MVP now? (y/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     log "Starting Trinity MVP..."
-    ./start-trinity.sh
+    cd "$TRINITY_DIR" && ./start-trinity.sh
 else
-    log "You can start Trinity MVP anytime using the desktop shortcut or launch script."
+    echo
+    log "To start Trinity MVP later, run these commands:"
+    echo -e "${GREEN}  cd $TRINITY_DIR${NC}"
+    echo -e "${GREEN}  ./start-trinity.sh${NC}"
+    echo
+    log "Or double-click the 'Trinity MVP.command' shortcut on your Desktop"
 fi
