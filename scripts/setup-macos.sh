@@ -75,7 +75,7 @@ MACOS_VERSION=$(sw_vers -productVersion)
 log "macOS version: $MACOS_VERSION"
 
 # Create Trinity directory
-TRINITY_DIR="$HOME/Trinity-MVP"
+TRINITY_DIR="$HOME/trinity-mvp"
 log "Creating Trinity directory at: $TRINITY_DIR"
 mkdir -p "$TRINITY_DIR"
 cd "$TRINITY_DIR"
@@ -284,11 +284,11 @@ cat << 'EOF'
 ║                                                              ║
 ║  Option 1: Double-click "Trinity MVP.command" on Desktop    ║
 ║  Option 2: Open Terminal and run:                          ║
-║            cd ~/trinity-MVP                                 ║
+║            cd ~/trinity-mvp                                 ║
 ║            ./start-trinity.sh                               ║
 ║                                                              ║
 ║  ⚠️  IMPORTANT: Always run commands from the Trinity        ║
-║      directory (~/trinity-MVP), not your home folder!      ║
+║      directory (~/trinity-mvp), not your home folder!      ║
 ║                                                              ║
 ║  The first time you run Trinity MVP, you'll need to        ║
 ║  configure your Claude API key.                             ║
