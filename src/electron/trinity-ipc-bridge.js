@@ -90,6 +90,12 @@ class TrinityIPCBridge {
    * Setup IPC handlers for Trinity operations
    */
   setupIPCHandlers() {
+    // Guard against non-Electron environments
+    if (!ipcMain) {
+      console.warn('[Trinity IPC] ipcMain not available - skipping IPC handler setup');
+      return;
+    }
+    
     // Memory operations
     ipcMain.handle('trinity-memory-stats', async () => {
       if (!this.components.memory) throw new Error('Memory component not available');
