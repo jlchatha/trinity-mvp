@@ -662,6 +662,73 @@ class TrinityStatusBar {
   }
 
   /**
+   * Get actual memory statistics from filesystem (NOT conversation context)
+   */
+  async getActualMemoryStats() {
+    try {
+      const fs = require('fs').promises;
+      const path = require('path');
+      const os = require('os');
+      
+      const memoryDir = path.join(os.homedir(), '.trinity-mvp', 'memory');
+      const tiers = ['core', 'working', 'reference', 'historical'];
+      const stats = {
+        total: { files: 0, size: 0 },
+        tiers: {}
+      };
+      
+      for (const tier of tiers) {
+        const tierDir = path.join(memoryDir, tier);
+        const tierStats = { files: 0, size: 0 };
+        
+        try {
+          const files = await fs.readdir(tierDir);
+          const jsonFiles = files.filter(file => file.endsWith('.json'));
+          
+          for (const file of jsonFiles) {
+            const filePath = path.join(tierDir, file);
+            try {
+              const fileStats = await fs.stat(filePath);
+              tierStats.files++;
+              tierStats.size += fileStats.size;
+            } catch (fileError) {
+              console.warn(`[Memory Stats] Could not stat ${filePath}:`, fileError.message);
+            }
+          }
+        } catch (tierError) {
+          // Tier directory doesn't exist, skip
+        }
+        
+        stats.tiers[tier] = tierStats;
+        stats.total.files += tierStats.files;
+        stats.total.size += tierStats.size;
+      }
+      
+      console.log(`[Trinity Status] Memory Hierarchy: ${stats.total.files} persistent items (${this.formatBytes(stats.total.size)})`);
+      return stats;
+    } catch (error) {
+      console.error('[Trinity Status] Error reading memory hierarchy:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get basic memory count (fallback method)
+   */
+  async getBasicMemoryCount() {
+    try {
+      const stats = await this.getActualMemoryStats();
+      return {
+        count: stats.total.files,
+        size: stats.total.size
+      };
+    } catch (error) {
+      console.warn('[Trinity Status] Fallback memory count failed:', error);
+      return { count: 0, size: 0 };
+    }
+  }
+
+  /**
    * Setup event listeners
    */
   setupEventListeners() {
@@ -720,9 +787,9 @@ class TrinityStatusBar {
    */
   async updateAmbientDisplay() {
     try {
-      // Update memory status with detailed tier information via Trinity API
+      // Update memory status with detailed tier information from filesystem
       try {
-        const memoryStats = window.trinityAPI ? await window.trinityAPI.memory.getStats() : this.getDemoMemoryStats();
+        const memoryStats = await this.getActualMemoryStats();
         const memoryEl = document.getElementById('memory-value');
         if (memoryEl) {
           const totalFiles = memoryStats.total?.files || 0;
@@ -743,14 +810,19 @@ class TrinityStatusBar {
         }
       } catch (error) {
         console.error('Memory status update failed:', error);
-        // Fallback to demo data
+        // Fallback: Try to get basic count from filesystem
         const memoryEl = document.getElementById('memory-value');
         if (memoryEl) {
-          memoryEl.textContent = '6 items (95.6 KB)';
-          memoryEl.title = 'Memory Hierarchy Breakdown:\ncore: 1 files (15.4 KB)\nworking: 2 files (15.1 KB)\nreference: 2 files (34.5 KB)\nhistorical: 1 files (30.6 KB)';
-          memoryEl.className = 'trinity-value success';
-          memoryEl.style.cursor = 'pointer';
-          memoryEl.onclick = () => this.showDetailedMemoryStats(this.getDemoMemoryStats());
+          try {
+            const basicStats = await this.getBasicMemoryCount();
+            memoryEl.textContent = `${basicStats.count} items (${this.formatBytes(basicStats.size)})`;
+            memoryEl.title = 'Memory Hierarchy: Persistent user documents and system artifacts';
+            memoryEl.className = basicStats.count > 0 ? 'trinity-value success' : 'trinity-value';
+          } catch (fallbackError) {
+            memoryEl.textContent = '0 items (0 B)';
+            memoryEl.title = 'Memory Hierarchy: Unable to load memory statistics';
+            memoryEl.className = 'trinity-value warning';
+          }
         }
       }
       
