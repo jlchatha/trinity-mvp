@@ -703,23 +703,17 @@ class TrinityIPCBridge {
   async generateContextAwareResponse(message, conversationHistory) {
     const messageText = message.toLowerCase();
     
-    // Documentation update commands
-    if (messageText.includes('update') && messageText.includes('claude.md')) {
-      return this.handleDocumentationUpdate(message, conversationHistory);
-    }
-    
-    // Name queries
+    // For simple queries, provide immediate responses
     if (messageText.includes('your name') || messageText.includes('what\'s your name')) {
       return this.handleNameQuery(conversationHistory);
     }
     
-    // Greetings
     if (messageText.match(/^(hi|hello|hey|greetings)/)) {
       return this.handleGreeting(conversationHistory);
     }
     
-    // Default context-aware response
-    return this.buildContextualResponse(message, conversationHistory);
+    // For all other requests, forward to Claude Code with context
+    return await this.forwardToClaudeCode(message, conversationHistory);
   }
 
   /**
@@ -773,10 +767,75 @@ class TrinityIPCBridge {
   }
 
   /**
-   * Build contextual response based on conversation history
+   * Forward request to Claude Code with conversation context
    */
-  buildContextualResponse(message, history) {
+  async forwardToClaudeCode(message, conversationHistory) {
+    try {
+      // Build context from conversation history
+      const contextMessages = conversationHistory.slice(-6).map(entry => ({
+        role: entry.role,
+        content: entry.content
+      }));
+      
+      // Add current message
+      contextMessages.push({
+        role: 'user',
+        content: message
+      });
+      
+      // Use the main Trinity app's Claude SDK if available
+      const mainWindow = this.mainWindow;
+      if (mainWindow && mainWindow.webContents) {
+        // Send request to main process to handle via Claude Code
+        const response = await mainWindow.webContents.executeJavaScript(`
+          (async () => {
+            try {
+              if (window.trinityAPI && window.trinityAPI.claudeCode) {
+                return await window.trinityAPI.claudeCode.sendMessage('${message.replace(/'/g, "\\'")}');
+              }
+              return null;
+            } catch (error) {
+              console.error('Claude Code execution failed:', error);
+              return null;
+            }
+          })()
+        `);
+        
+        if (response && response.response) {
+          return response.response;
+        }
+      }
+      
+      // Fallback if Claude Code integration not available
+      return this.buildContextualFallback(message, conversationHistory);
+      
+    } catch (error) {
+      console.error('[Trinity IPC] Error forwarding to Claude Code:', error);
+      return this.buildContextualFallback(message, conversationHistory);
+    }
+  }
+
+  /**
+   * Build contextual fallback response when Claude Code unavailable
+   */
+  buildContextualFallback(message, history) {
     const recentContext = history.slice(-3);
+    
+    // Check for action requests
+    if (message.toLowerCase().includes('asking you to do') || 
+        message.toLowerCase().includes('please do') ||
+        message.toLowerCase().includes('can you create') ||
+        message.toLowerCase().includes('compose') ||
+        message.toLowerCase().includes('generate')) {
+      
+      let response = "I understand you're asking me to take action: " + message + ". ";
+      response += "I'm currently working to integrate with Claude Code for full functionality. ";
+      response += "In the meantime, I can help you understand how to approach this task or provide guidance on the steps involved. ";
+      response += "What specific aspect would you like me to help you think through?";
+      return response;
+    }
+    
+    // Default contextual response
     let response = "I understand you're asking about: " + message + ". ";
     
     if (recentContext.length > 1) {
