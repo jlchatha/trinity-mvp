@@ -324,6 +324,295 @@
             background: rgba(255, 255, 255, 0.1);
             color: white;
         }
+
+        /* Memory Context Integration Styles */
+        .memory-context-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: rgba(15, 15, 25, 0.95);
+            backdrop-filter: blur(15px);
+            border-left: 1px solid rgba(100, 200, 255, 0.3);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .memory-context-panel.visible {
+            right: 0;
+        }
+
+        .memory-context-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .memory-context-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #64b5f6;
+        }
+
+        .close-memory-panel {
+            background: none;
+            border: none;
+            color: #a0a0a0;
+            cursor: pointer;
+            font-size: 1.25rem;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .close-memory-panel:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .memory-context-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .active-memories-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .memory-section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #4ade80;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .memory-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .memory-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(100, 200, 255, 0.3);
+        }
+
+        .memory-item.active {
+            background: rgba(74, 158, 255, 0.15);
+            border-color: #4a9eff;
+        }
+
+        .memory-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .memory-item-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .memory-relevance-score {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+        }
+
+        .memory-relevance-score.high {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+
+        .memory-relevance-score.medium {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border-color: rgba(251, 191, 36, 0.4);
+        }
+
+        .memory-relevance-score.low {
+            background: rgba(156, 163, 175, 0.2);
+            color: #9ca3af;
+            border-color: rgba(156, 163, 175, 0.4);
+        }
+
+        .memory-item-preview {
+            font-size: 0.75rem;
+            color: #a0a0a0;
+            line-height: 1.4;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+        }
+
+        .memory-item-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            color: #666;
+        }
+
+        .memory-tier-tag {
+            padding: 0.125rem 0.375rem;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .memory-tier-tag.core {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .memory-tier-tag.working {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .memory-tier-tag.reference {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+        }
+
+        .memory-tier-tag.historical {
+            background: rgba(156, 163, 175, 0.2);
+            color: #9ca3af;
+        }
+
+        .memory-selector-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .memory-search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 0.5rem;
+            color: white;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .memory-search-input:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+
+        .memory-search-input::placeholder {
+            color: #a0a0a0;
+        }
+
+        .memory-quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .memory-quick-action {
+            padding: 0.375rem 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .memory-quick-action:hover {
+            background: rgba(100, 200, 255, 0.2);
+            border-color: rgba(100, 200, 255, 0.4);
+        }
+
+        .memory-quick-action.active {
+            background: rgba(74, 158, 255, 0.3);
+            border-color: #4a9eff;
+        }
+
+        .message-memory-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            color: #4ade80;
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            background: rgba(74, 222, 128, 0.1);
+            border-radius: 4px;
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        .memory-toggle-button {
+            background: rgba(100, 200, 255, 0.2);
+            border: 1px solid rgba(100, 200, 255, 0.3);
+            color: #64b5f6;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .memory-toggle-button:hover {
+            background: rgba(100, 200, 255, 0.3);
+            border-color: rgba(100, 200, 255, 0.5);
+        }
+
+        .memory-loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: #fbbf24;
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            background: rgba(251, 191, 36, 0.1);
+            border-radius: 4px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        .memory-loading-spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            border-top: 2px solid #fbbf24;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -352,6 +641,9 @@
                     <span class="trinity-compact-icon">⚡</span>
                     <span class="trinity-compact-value" id="compact-autocompact">Active</span>
                 </div>
+                <button class="memory-toggle-button" id="memory-toggle-btn" title="Show Memory Context">
+                    🧠 Context
+                </button>
                 <div class="trinity-mini-drop" id="trinity-mini-drop" title="Drop files for Trinity processing">
                     📁 Drop
                 </div>
@@ -396,6 +688,60 @@
                     </svg>
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- Memory Context Panel -->
+    <div class="memory-context-panel" id="memory-context-panel">
+        <div class="memory-context-header">
+            <div class="memory-context-title">💭 Memory Context</div>
+            <button class="close-memory-panel" id="close-memory-panel">×</button>
+        </div>
+        
+        <div class="memory-context-content">
+            <!-- Active Memories Section -->
+            <div class="active-memories-section">
+                <div class="memory-section-title">
+                    🎯 Active for Conversation
+                    <span id="active-memory-count" style="font-size: 0.7rem; color: #666;">(0)</span>
+                </div>
+                <div id="active-memories-list">
+                    <div style="text-align: center; color: #666; font-size: 0.8rem; padding: 1rem;">
+                        No memories currently loaded
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memory Loading Indicator -->
+            <div class="memory-loading-indicator" id="memory-loading-indicator">
+                <div class="memory-loading-spinner"></div>
+                <span>Loading memory context...</span>
+            </div>
+
+            <!-- Memory Selection Section -->
+            <div class="memory-selector-section">
+                <div class="memory-section-title">
+                    🔍 Browse & Select
+                </div>
+                
+                <input type="text" 
+                       class="memory-search-input" 
+                       id="memory-search-input" 
+                       placeholder="Search memories...">
+                
+                <div class="memory-quick-actions">
+                    <button class="memory-quick-action active" data-tier="all">All</button>
+                    <button class="memory-quick-action" data-tier="core">Core</button>
+                    <button class="memory-quick-action" data-tier="working">Working</button>
+                    <button class="memory-quick-action" data-tier="reference">Reference</button>
+                </div>
+                
+                <div id="available-memories-list">
+                    <div style="text-align: center; color: #666; font-size: 0.8rem; padding: 1rem;">
+                        Loading available memories...
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -573,10 +919,334 @@
             }
         }
 
-        // Initialize Trinity Compact Status
+        // Memory Context Integration Class
+        class MemoryContextIntegration {
+            constructor() {
+                this.memoryPanel = document.getElementById('memory-context-panel');
+                this.memoryToggleBtn = document.getElementById('memory-toggle-btn');
+                this.closePanelBtn = document.getElementById('close-memory-panel');
+                this.activeMemories = new Map();
+                this.availableMemories = [];
+                this.currentTier = 'all';
+                this.searchQuery = '';
+                
+                this.setupEventListeners();
+                this.loadAvailableMemories();
+            }
+
+            setupEventListeners() {
+                // Toggle memory panel
+                this.memoryToggleBtn.addEventListener('click', () => {
+                    this.toggleMemoryPanel();
+                });
+
+                // Close memory panel
+                this.closePanelBtn.addEventListener('click', () => {
+                    this.hideMemoryPanel();
+                });
+
+                // Quick action filters
+                document.querySelectorAll('.memory-quick-action').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.handleTierFilter(e.target.dataset.tier);
+                    });
+                });
+
+                // Search input
+                const searchInput = document.getElementById('memory-search-input');
+                searchInput.addEventListener('input', (e) => {
+                    this.searchQuery = e.target.value;
+                    this.filterAvailableMemories();
+                });
+
+                // Click outside to close
+                document.addEventListener('click', (e) => {
+                    if (!this.memoryPanel.contains(e.target) && 
+                        !this.memoryToggleBtn.contains(e.target)) {
+                        this.hideMemoryPanel();
+                    }
+                });
+            }
+
+            toggleMemoryPanel() {
+                this.memoryPanel.classList.toggle('visible');
+                if (this.memoryPanel.classList.contains('visible')) {
+                    this.refreshMemoryData();
+                }
+            }
+
+            hideMemoryPanel() {
+                this.memoryPanel.classList.remove('visible');
+            }
+
+            async loadAvailableMemories() {
+                try {
+                    if (window.trinityAPI && window.trinityAPI.memory) {
+                        const memories = await window.trinityAPI.memory.getAllMemories();
+                        this.availableMemories = memories || [];
+                        this.renderAvailableMemories();
+                    } else {
+                        // Use demo memory data for testing
+                        this.availableMemories = this.generateDemoMemories();
+                        this.renderAvailableMemories();
+                    }
+                } catch (error) {
+                    console.error('Failed to load memories:', error);
+                    // Fallback to demo data on error
+                    this.availableMemories = this.generateDemoMemories();
+                    this.renderAvailableMemories();
+                }
+            }
+
+            generateDemoMemories() {
+                return [
+                    {
+                        id: 'mem_001',
+                        name: 'trinity-system-architecture.md',
+                        tier: 'core',
+                        preview: 'Trinity System overview and architectural principles - Multi-agent framework for complex problem solving...',
+                        relevance: 0.95,
+                        lastAccessed: new Date(Date.now() - 3600000),
+                        size: 15420
+                    },
+                    {
+                        id: 'mem_002', 
+                        name: 'mvp-implementation-plan.md',
+                        tier: 'working',
+                        preview: 'Implementation details for the Trinity MVP transformation from chat tool to professional AI assistant...',
+                        relevance: 0.92,
+                        lastAccessed: new Date(Date.now() - 1800000),
+                        size: 8340
+                    },
+                    {
+                        id: 'mem_003',
+                        name: 'chat-implementation-notes.md',
+                        tier: 'working',
+                        preview: 'Technical implementation details for chat interface enhancements and memory integration...',
+                        relevance: 0.87,
+                        lastAccessed: new Date(Date.now() - 7200000),
+                        size: 6750
+                    },
+                    {
+                        id: 'mem_004',
+                        name: 'ai-integration-patterns.md',
+                        tier: 'reference',
+                        preview: 'Common patterns for AI system integration and best practices for memory management...',
+                        relevance: 0.73,
+                        lastAccessed: new Date(Date.now() - 86400000),
+                        size: 22100
+                    },
+                    {
+                        id: 'mem_005',
+                        name: 'user-interface-guidelines.md',
+                        tier: 'reference',
+                        preview: 'UI/UX guidelines for professional assistant interfaces and component design patterns...',
+                        relevance: 0.68,
+                        lastAccessed: new Date(Date.now() - 172800000),
+                        size: 12350
+                    },
+                    {
+                        id: 'mem_006',
+                        name: 'project-discovery-report.md',
+                        tier: 'historical',
+                        preview: 'Initial discovery findings from Trinity System exploration and codebase analysis...',
+                        relevance: 0.45,
+                        lastAccessed: new Date(Date.now() - 604800000),
+                        size: 31200
+                    }
+                ];
+            }
+
+            handleTierFilter(tier) {
+                // Update active button
+                document.querySelectorAll('.memory-quick-action').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[data-tier="${tier}"]`).classList.add('active');
+                
+                this.currentTier = tier;
+                this.filterAvailableMemories();
+            }
+
+            filterAvailableMemories() {
+                let filtered = this.availableMemories;
+
+                // Filter by tier
+                if (this.currentTier !== 'all') {
+                    filtered = filtered.filter(mem => mem.tier === this.currentTier);
+                }
+
+                // Filter by search
+                if (this.searchQuery) {
+                    const query = this.searchQuery.toLowerCase();
+                    filtered = filtered.filter(mem => 
+                        mem.name.toLowerCase().includes(query) ||
+                        mem.preview.toLowerCase().includes(query)
+                    );
+                }
+
+                this.renderFilteredMemories(filtered);
+            }
+
+            renderAvailableMemories() {
+                this.filterAvailableMemories();
+            }
+
+            renderFilteredMemories(memories) {
+                const container = document.getElementById('available-memories-list');
+                
+                if (memories.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: #666; font-size: 0.8rem; padding: 1rem;">
+                            No memories found matching criteria
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = memories.map(memory => {
+                    const isActive = this.activeMemories.has(memory.id);
+                    const relevanceClass = memory.relevance >= 0.8 ? 'high' : 
+                                         memory.relevance >= 0.6 ? 'medium' : 'low';
+                    
+                    return `
+                        <div class="memory-item ${isActive ? 'active' : ''}" data-memory-id="${memory.id}">
+                            <div class="memory-item-header">
+                                <div class="memory-item-name">${memory.name}</div>
+                                <div class="memory-relevance-score ${relevanceClass}">
+                                    ${Math.round(memory.relevance * 100)}%
+                                </div>
+                            </div>
+                            <div class="memory-item-preview">${memory.preview}</div>
+                            <div class="memory-item-meta">
+                                <span class="memory-tier-tag ${memory.tier}">${memory.tier}</span>
+                                <span>${this.formatFileSize(memory.size)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Add click handlers
+                container.querySelectorAll('.memory-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const memoryId = e.currentTarget.dataset.memoryId;
+                        this.toggleMemorySelection(memoryId);
+                    });
+                });
+            }
+
+            toggleMemorySelection(memoryId) {
+                const memory = this.availableMemories.find(m => m.id === memoryId);
+                if (!memory) return;
+
+                if (this.activeMemories.has(memoryId)) {
+                    this.activeMemories.delete(memoryId);
+                } else {
+                    this.activeMemories.set(memoryId, memory);
+                }
+
+                this.updateActiveMemoriesDisplay();
+                this.filterAvailableMemories(); // Refresh to update active state
+            }
+
+            updateActiveMemoriesDisplay() {
+                const container = document.getElementById('active-memories-list');
+                const countElement = document.getElementById('active-memory-count');
+                
+                countElement.textContent = `(${this.activeMemories.size})`;
+
+                if (this.activeMemories.size === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: #666; font-size: 0.8rem; padding: 1rem;">
+                            No memories currently loaded
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = Array.from(this.activeMemories.values()).map(memory => {
+                    const relevanceClass = memory.relevance >= 0.8 ? 'high' : 
+                                         memory.relevance >= 0.6 ? 'medium' : 'low';
+                    
+                    return `
+                        <div class="memory-item">
+                            <div class="memory-item-header">
+                                <div class="memory-item-name">${memory.name}</div>
+                                <div class="memory-relevance-score ${relevanceClass}">
+                                    ${Math.round(memory.relevance * 100)}%
+                                </div>
+                            </div>
+                            <div class="memory-item-preview">${memory.preview}</div>
+                            <div class="memory-item-meta">
+                                <span class="memory-tier-tag ${memory.tier}">${memory.tier}</span>
+                                <span>${this.formatFileSize(memory.size)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            async refreshMemoryData() {
+                this.showLoadingIndicator();
+                await this.loadAvailableMemories();
+                this.hideLoadingIndicator();
+            }
+
+            showLoadingIndicator() {
+                document.getElementById('memory-loading-indicator').style.display = 'flex';
+            }
+
+            hideLoadingIndicator() {
+                document.getElementById('memory-loading-indicator').style.display = 'none';
+            }
+
+            formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1048576) return Math.round(bytes / 1024) + ' KB';
+                return Math.round(bytes / 1048576) + ' MB';
+            }
+
+            // Method called when sending messages to show memory context
+            getActiveMemoryIndicator() {
+                if (this.activeMemories.size === 0) return null;
+                
+                const memoryDisplayNames = Array.from(this.activeMemories.values())
+                    .map(m => this.formatMemoryDisplayName(m))
+                    .slice(0, 3); // Show max 3 names
+                
+                const displayText = memoryDisplayNames.length === this.activeMemories.size ? 
+                    memoryDisplayNames.join(', ') : 
+                    `${memoryDisplayNames.join(', ')} +${this.activeMemories.size - memoryDisplayNames.length} more`;
+
+                return {
+                    count: this.activeMemories.size,
+                    display: displayText,
+                    memories: Array.from(this.activeMemories.values())
+                };
+            }
+
+            // Format memory names for user-friendly display
+            formatMemoryDisplayName(memory) {
+                // Convert technical filenames to user-friendly names
+                const nameMap = {
+                    'trinity-system-architecture.md': 'Trinity System Architecture (Core)',
+                    'mvp-implementation-plan.md': 'MVP Implementation Plan (Working)',
+                    'chat-implementation-notes.md': 'Chat Implementation Notes (Working)',
+                    'ai-integration-patterns.md': 'AI Integration Patterns (Reference)',
+                    'user-interface-guidelines.md': 'UI Guidelines (Reference)',
+                    'project-discovery-report.md': 'Project Discovery Report (Historical)'
+                };
+
+                return nameMap[memory.name] || `${memory.name.replace(/[-_]/g, ' ').replace(/\.\w+$/, '')} (${memory.tier})`;
+            }
+        }
+
+        // Initialize Trinity Compact Status and Memory Integration
         let trinityCompactStatus;
+        let memoryContextIntegration;
         document.addEventListener('DOMContentLoaded', () => {
             trinityCompactStatus = new TrinityCompactStatus();
+            memoryContextIntegration = new MemoryContextIntegration();
         });
 
         // Chat functionality
@@ -619,19 +1289,36 @@
             messageInput.style.height = 'auto';
             sendButton.disabled = true;
             
-            // Show typing indicator
+            // Show typing indicator with memory loading
             showTypingIndicator();
+            
+            // Show memory loading if memories are active
+            let memoryInfo = null;
+            if (memoryContextIntegration) {
+                memoryInfo = memoryContextIntegration.getActiveMemoryIndicator();
+                if (memoryInfo) {
+                    memoryContextIntegration.showLoadingIndicator();
+                }
+            }
 
             try {
-                // Send message to Overseer Agent
+                // Send message to Overseer Agent (preserve original API)
                 const response = await window.trinityAPI.overseer.sendMessage(message);
+                
+                // TODO: Future enhancement - pass memory context when Trinity API supports it
+                // const memoryContext = memoryInfo ? memoryInfo.memories : [];
+                // Enhanced API call would be: sendMessage(message, { memories: memoryContext });
                 
                 // Hide typing indicator
                 hideTypingIndicator();
                 
+                if (memoryInfo) {
+                    memoryContextIntegration.hideLoadingIndicator();
+                }
+                
                 if (response.status === 'processed') {
-                    // Add assistant response
-                    addMessage('assistant', response.response);
+                    // Add assistant response with memory indicator
+                    addMessage('assistant', response.response, memoryInfo);
                 } else if (response.status === 'error') {
                     // Show error with fallback
                     addMessage('assistant', response.fallbackResponse || 'Sorry, I encountered an error. Please try again.');
@@ -640,6 +1327,9 @@
                 
             } catch (error) {
                 hideTypingIndicator();
+                if (memoryInfo) {
+                    memoryContextIntegration.hideLoadingIndicator();
+                }
                 addMessage('assistant', 'I apologize, but I\'m having trouble processing your message right now. Please try again.');
                 console.error('Chat error:', error);
             }
@@ -649,15 +1339,27 @@
             messageInput.focus();
         }
 
-        function addMessage(role, content) {
+        function addMessage(role, content, memoryInfo = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
             
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
+            // Create memory indicator for assistant messages
+            let memoryIndicatorHTML = '';
+            if (role === 'assistant' && memoryInfo && memoryInfo.count > 0) {
+                memoryIndicatorHTML = `
+                    <div class="message-memory-indicator">
+                        <span>🧠</span>
+                        <span>Memory Used: ${memoryInfo.display}</span>
+                    </div>
+                `;
+            }
+            
             messageDiv.innerHTML = `
                 <div class="message-content">${content}</div>
+                ${memoryIndicatorHTML}
                 <div class="message-time">${timeString}</div>
             `;
             

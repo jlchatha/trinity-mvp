@@ -33,7 +33,23 @@ contextBridge.exposeInMainWorld('trinityAPI', {
   memory: {
     save: (key, data) => ipcRenderer.invoke('memory:save', key, data),
     load: (key) => ipcRenderer.invoke('memory:load', key),
-    clear: (key) => ipcRenderer.invoke('memory:clear', key)
+    clear: (key) => ipcRenderer.invoke('memory:clear', key),
+    getStats: () => ipcRenderer.invoke('trinity:memory:getStats'),
+    getAllMemories: () => ipcRenderer.invoke('trinity:memory:getAllMemories'),
+    getMemoryDetails: (memoryId) => ipcRenderer.invoke('trinity:memory:getMemoryDetails', memoryId)
+  },
+
+  // Context optimization and auto-compact intelligence
+  context: {
+    getMetrics: () => ipcRenderer.invoke('trinity:context:getMetrics'),
+    optimize: () => ipcRenderer.invoke('trinity:context:optimize'),
+    resetSession: () => ipcRenderer.invoke('trinity:context:resetSession'),
+    updateMetrics: (metrics) => ipcRenderer.invoke('trinity:context:updateMetrics', metrics)
+  },
+
+  // Auto-compact detector status
+  autoCompact: {
+    getStatus: () => ipcRenderer.invoke('trinity:autocompact:getStatus')
   },
 
   // Trinity Component APIs

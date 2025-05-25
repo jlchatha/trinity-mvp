@@ -374,17 +374,96 @@ class TrinityMVPApp {
     console.log('Checking for Trinity MVP updates...');
     
     try {
-      // Execute git pull
+      // First check git status to diagnose issues
+      const statusResult = await new Promise((resolve, reject) => {
+        exec('git status --porcelain', { cwd: __dirname }, (error, stdout, stderr) => {
+          resolve({ error, stdout, stderr });
+        });
+      });
+
+      // Check if we're in a git repository
+      const repoCheckResult = await new Promise((resolve, reject) => {
+        exec('git rev-parse --git-dir', { cwd: __dirname }, (error, stdout, stderr) => {
+          resolve({ error, stdout, stderr });
+        });
+      });
+
+      if (repoCheckResult.error) {
+        // Not a git repository - show manual update instructions
+        const manualResult = await dialog.showMessageBox(this.mainWindow, {
+          type: 'warning',
+          title: 'Manual Update Required',
+          message: 'Automatic updates not available',
+          detail: 'This Trinity installation is not connected to git.\n\nFor the latest Context Intelligence features, please update manually.\n\nWould you like to see manual update instructions?',
+          buttons: ['Show Instructions', 'Cancel'],
+          defaultId: 0
+        });
+
+        if (manualResult.response === 0) {
+          // Open manual update instructions
+          shell.openExternal('https://github.com/your-repo/trinity-mvp/blob/main/MANUAL-UPDATE-MACOS.md');
+        }
+        return;
+      }
+
+      // Check for uncommitted changes
+      if (statusResult.stdout && statusResult.stdout.trim().length > 0) {
+        const stashResult = await dialog.showMessageBox(this.mainWindow, {
+          type: 'warning',
+          title: 'Uncommitted Changes',
+          message: 'You have uncommitted changes',
+          detail: 'Trinity has uncommitted changes that may prevent updates.\n\nWould you like to stash them and continue with the update?',
+          buttons: ['Stash & Update', 'Cancel'],
+          defaultId: 0
+        });
+
+        if (stashResult.response === 0) {
+          // Stash changes before updating
+          await new Promise((resolve, reject) => {
+            exec('git stash', { cwd: __dirname }, (error, stdout, stderr) => {
+              resolve({ error, stdout, stderr });
+            });
+          });
+        } else {
+          return;
+        }
+      }
+
+      // Execute git pull with better error handling
       const gitCommand = 'git pull origin main';
       const result = await new Promise((resolve, reject) => {
         exec(gitCommand, { cwd: __dirname }, (error, stdout, stderr) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve({ stdout, stderr });
-          }
+          resolve({ error, stdout, stderr });
         });
       });
+
+      // Handle git pull errors
+      if (result.error) {
+        let errorMessage = 'Git pull failed';
+        let errorDetail = result.stderr || result.error.message;
+
+        if (errorDetail.includes('remote origin does not exist')) {
+          errorDetail = 'Git remote not configured.\n\nPlease set up git remote or use manual update.';
+        } else if (errorDetail.includes('merge conflict')) {
+          errorDetail = 'Merge conflicts detected.\n\nPlease resolve conflicts manually or use manual update.';
+        } else if (errorDetail.includes('not a git repository')) {
+          errorDetail = 'Not a git repository.\n\nPlease use manual update instructions.';
+        }
+
+        const errorResult = await dialog.showMessageBox(this.mainWindow, {
+          type: 'error',
+          title: 'Update Failed',
+          message: errorMessage,
+          detail: errorDetail + '\n\nWould you like to see manual update instructions?',
+          buttons: ['Manual Update', 'Cancel'],
+          defaultId: 0
+        });
+
+        if (errorResult.response === 0) {
+          shell.openExternal('https://github.com/your-repo/trinity-mvp/blob/main/MANUAL-UPDATE-MACOS.md');
+        }
+        return;
+      }
 
       // Parse git pull result
       if (result.stdout.includes('Already up to date') || result.stdout.includes('Already up-to-date')) {
@@ -392,7 +471,7 @@ class TrinityMVPApp {
           type: 'info',
           title: 'Trinity MVP Updates',
           message: 'Trinity is up to date!',
-          detail: 'You have the latest version of Trinity MVP.',
+          detail: 'You have the latest version of Trinity MVP.\n\nIf you\'re missing Context Intelligence features, try a manual update.',
           buttons: ['OK']
         });
       } else {
@@ -400,7 +479,7 @@ class TrinityMVPApp {
           type: 'info',
           title: 'Trinity MVP Updates',
           message: 'Trinity updated successfully!',
-          detail: 'Trinity MVP has been updated to the latest version.\n\nWould you like to restart the application now?',
+          detail: 'Trinity MVP has been updated to the latest version.\n\nNew features include:\n• Real-time Context Intelligence\n• Accurate token pricing\n• Live usage metrics\n\nWould you like to restart now?',
           buttons: ['Restart Now', 'Restart Later'],
           defaultId: 0
         });

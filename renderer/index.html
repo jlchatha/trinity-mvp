@@ -353,20 +353,9 @@
                 <!-- Trinity Status Bar will be inserted here by trinity-status-bar.js -->
             </div>
 
-            <div class="content-area">
-                <div class="placeholder-content">
-                    <div class="placeholder-icon">💬</div>
-                    <div class="placeholder-title">What's on your mind?</div>
-                    <div class="placeholder-description">
-                        I'm here to help with anything you'd like to discuss or work on. 
-                        Whether it's planning a project, learning something new, solving a problem, 
-                        or just having a conversation - let's get started!
-                    </div>
-                    <div class="action-buttons">
-                        <button class="btn btn-primary" onclick="startConversation()">Start Chatting</button>
-                        <button class="btn btn-secondary" onclick="showSettings()">Settings</button>
-                    </div>
-                </div>
+            <!-- Trinity Single Window Container -->
+            <div class="trinity-main-container">
+                <!-- Single window layout will be inserted here by trinity-single-window.js -->
             </div>
         </div>
     </div>
@@ -402,7 +391,11 @@
 
         function startConversation() {
             console.log('Starting Trinity chat...');
-            window.location.href = 'chat.html';
+            // Chat is now integrated into single window - no navigation needed
+            const chatInput = document.getElementById('trinity-chat-input');
+            if (chatInput) {
+                chatInput.focus();
+            }
         }
 
         function showSettings() {
@@ -429,7 +422,8 @@
             });
         }
 
-        // Trinity Status Bar Integration
+        // Trinity Status Bar Integration - REMOVED (replaced with enhanced version)
+        /*
         class TrinityStatusBarIntegration {
             constructor() {
                 this.statusContainer = document.getElementById('trinity-status-bar');
@@ -737,11 +731,42 @@
                 }
             }
         }
+        */
 
-        // Initialize Trinity Status Bar when DOM is ready
+        // Enhanced Trinity Status Bar Integration
+        // NOTE: Original TrinityStatusBarIntegration replaced with enhanced version
+    </script>
+
+    <!-- Enhanced Trinity Status Bar Integration -->
+    <script src="../src/ui/trinity-status-bar.js"></script>
+    
+    <!-- Context Optimization Panel -->
+    <script src="../src/ui/context-optimization-panel.js"></script>
+    
+    <!-- Trinity Single Window Architecture -->
+    <script src="../src/ui/trinity-single-window.js"></script>
+    
+    <script>
+        // Initialize enhanced Trinity Status Bar (replaces original TrinityStatusBarIntegration)
         let trinityStatusBar;
+        let trinitySingleWindow;
+        
         document.addEventListener('DOMContentLoaded', () => {
-            trinityStatusBar = new TrinityStatusBarIntegration();
+            console.log('[Main] Initializing Trinity MVP Single Window Architecture...');
+            try {
+                // Initialize status bar first
+                trinityStatusBar = new TrinityStatusBar();
+                window.trinityStatusBar = trinityStatusBar;
+                console.log('[Main] Enhanced Trinity Status Bar loaded successfully');
+                
+                // Initialize single window layout
+                trinitySingleWindow = new TrinitySingleWindow();
+                window.trinitySingleWindow = trinitySingleWindow;
+                console.log('[Main] Trinity Single Window Architecture loaded successfully');
+                
+            } catch (error) {
+                console.error('[Main] Failed to initialize Trinity components:', error);
+            }
         });
     </script>
 </body>
