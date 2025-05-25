@@ -222,7 +222,69 @@ class TrinityMemoryIntegration {
             tags: ['conversation', 'chat', sessionId]
         };
         
-        return await this.store('working', conversationData);
+        // Store conversations in separate directory, NOT in memory hierarchy
+        return await this.storeConversation(conversationData);
+    }
+
+    /**
+     * Store conversation in separate conversations directory
+     * @param {Object} conversationData - Conversation data to store
+     * @returns {Object} - Storage result
+     */
+    async storeConversation(conversationData) {
+        try {
+            const fs = require('fs').promises;
+            const path = require('path');
+            
+            // Ensure conversations directory exists
+            const conversationsDir = path.join(this.memoryPath, 'conversations');
+            await fs.mkdir(conversationsDir, { recursive: true });
+            
+            // Generate ID and compress content
+            const timestamp = Date.now();
+            const id = `mem_${timestamp}_${Math.random().toString(36).substr(2, 8)}`;
+            
+            // Apply compression
+            const compressedData = await this.compressor.compress(conversationData.content, conversationData.metadata);
+            
+            const memoryItem = {
+                id,
+                type: conversationData.type,
+                category: 'conversation', // Special category for conversations
+                originalContent: conversationData.content,
+                compressedContent: compressedData.compressedContent,
+                semanticSignature: compressedData.semanticSignature,
+                metadata: {
+                    ...conversationData.metadata,
+                    source: conversationData.source,
+                    timestamp: new Date().toISOString(),
+                    originalSize: conversationData.content.length,
+                    compressedSize: compressedData.compressedContent.length,
+                    compressionRatio: compressedData.compressionRatio,
+                    tokensSaved: compressedData.tokensSaved,
+                    tags: conversationData.tags || []
+                }
+            };
+            
+            // Save to conversations directory
+            const filename = `${id}.json`;
+            const filepath = path.join(conversationsDir, filename);
+            await fs.writeFile(filepath, JSON.stringify(memoryItem, null, 2));
+            
+            this.logger.info(`Conversation stored: ${filename} (${compressedData.tokensSaved} tokens saved)`);
+            
+            return {
+                success: true,
+                id,
+                path: filepath,
+                tokensSaved: compressedData.tokensSaved,
+                compressionRatio: compressedData.compressionRatio
+            };
+            
+        } catch (error) {
+            this.logger.error('Failed to store conversation:', error);
+            return { success: false, error: error.message };
+        }
     }
 
     /**

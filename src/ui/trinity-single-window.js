@@ -2841,7 +2841,7 @@ class TrinitySingleWindow {
         return;
       }
       
-      // Count files in all memory tiers
+      // Count files in memory hierarchy tiers only (conversations stored separately)
       const tiers = ['core', 'working', 'reference', 'historical'];
       
       for (const tier of tiers) {
@@ -2867,7 +2867,7 @@ class TrinitySingleWindow {
       }
       
       this.updateMemoryDisplay(totalFiles, totalSize);
-      console.log(`[Memory Stats] Loaded: ${totalFiles} files, ${this.formatFileSize(totalSize)}`);
+      console.log(`[Memory Stats] Memory Hierarchy: ${totalFiles} persistent artifacts, ${this.formatFileSize(totalSize)} (conversations excluded)`);
       
     } catch (error) {
       console.error('[Memory Stats] Error loading memory statistics:', error);
@@ -3064,6 +3064,7 @@ class TrinitySingleWindow {
               
               const memoryDir = path.join(os.homedir(), '.trinity-mvp', 'memory');
               const artifacts = [];
+              // Only load actual memory hierarchy, NOT conversations (stored separately)
               const tiers = ['core', 'working', 'reference', 'historical'];
               
               for (const tier of tiers) {
@@ -3101,7 +3102,7 @@ class TrinitySingleWindow {
                 }
               }
               
-              console.log(`[Memory Artifacts] Loaded ${artifacts.length} artifacts`);
+              console.log(`[Memory Artifacts] Loaded ${artifacts.length} persistent memory artifacts (conversations excluded)`);
               return artifacts;
             } catch (error) {
               console.error('Error loading memory artifacts:', error);

@@ -671,6 +671,7 @@ class TrinityStatusBar {
       const os = require('os');
       
       const memoryDir = path.join(os.homedir(), '.trinity-mvp', 'memory');
+      // Only count actual memory hierarchy tiers, NOT conversations
       const tiers = ['core', 'working', 'reference', 'historical'];
       const stats = {
         total: { files: 0, size: 0 },
@@ -704,7 +705,7 @@ class TrinityStatusBar {
         stats.total.size += tierStats.size;
       }
       
-      console.log(`[Trinity Status] Memory Hierarchy: ${stats.total.files} persistent items (${this.formatBytes(stats.total.size)})`);
+      console.log(`[Trinity Status] Memory Hierarchy: ${stats.total.files} persistent artifacts (${this.formatBytes(stats.total.size)}) [Conversations stored separately]`);
       return stats;
     } catch (error) {
       console.error('[Trinity Status] Error reading memory hierarchy:', error);
