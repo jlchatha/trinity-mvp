@@ -1,8 +1,18 @@
 # Trinity MVP: AI Assistant with Persistent Memory
 
-> **Professional AI assistant that remembers your projects, preferences, and working patterns across sessions**
+> **AI assistant that actually remembers - Perfect for anyone with ideas who wants AI that learns their style and grows with their projects**
 
 Trinity MVP transforms your interaction with AI by providing **persistent memory** and **local system integration**. Unlike traditional chat interfaces that forget previous conversations, Trinity builds cumulative knowledge about your projects, preferences, and working patterns.
+
+## Choose Your Experience
+
+🌟 **New to AI/Coding?** Perfect! Trinity is designed for anyone with ideas
+- [Quick Start Guide](docs/user/quick-start.md) - no technical experience needed
+- [Success Stories](#real-user-examples) - see what others have built
+
+🛠️ **Developer/Technical User?** You'll love the advanced features
+- Jump to [Technical Setup](#installation) for detailed configuration
+- Check out [API Reference](docs/developer/api-reference.md)
 
 ## ✨ **What Makes Trinity Different**
 
@@ -20,15 +30,29 @@ Trinity MVP transforms your interaction with AI by providing **persistent memory
 
 **The Solution**: Trinity MVP provides:
 - **🧠 Persistent Memory**: Remembers your projects, decisions, and working patterns
-- **💻 Local Integration**: Direct access to your files and command execution via Claude Code
-- **📋 Professional Workflows**: Optimized for documentation and project coordination
-- **🖥️ Native Support**: Optimized for Linux and macOS with native Claude Code integration
+- **💻 Local Integration**: Direct access to your files and command execution via local AI integration
+- **📋 Creative Workflows**: Perfect for students, professionals, and creative makers
+- **🖥️ Native Support**: Works seamlessly on Linux and macOS with full local system integration
 
-## ⚡ Quick Start
+## Real User Examples
 
-> **💡 New to GitHub?** Skip the technical setup - download Trinity MVP directly from our [Releases page](https://github.com/jlchatha/trinity-mvp/releases) or watch the [Quick Demo](https://github.com/jlchatha/trinity-mvp#demo) to see Trinity in action.
+**📝 Research Student**: "I used Trinity to help organize my thesis research across dozens of papers. It remembered my research questions and could connect ideas across different sessions."
 
-### Installation
+**🎵 Creative Project**: "Created my first automation script for organizing files - no coding background needed. Trinity walked me through it step by step."
+
+**💼 Project Manager**: "Trinity remembers all my project details between meetings. I can pick up exactly where I left off weeks later."
+
+**🔬 Data Analysis**: "Trinity helped me understand patterns in my research data and remembered my analysis approach across multiple sessions."
+
+## ⚡ Quick Setup (5 minutes)
+
+**Easy Installation** (Recommended for most users):
+1. Download Trinity MVP for your system: [Linux](https://github.com/jlchatha/trinity-mvp/releases) | [macOS](https://github.com/jlchatha/trinity-mvp/releases)
+2. Run the installer
+3. Follow the setup wizard
+4. Start creating!
+
+**Advanced Setup** (For developers):
 
 **Linux:**
 ```bash

@@ -5,17 +5,17 @@ Get Trinity MVP running in 5 minutes and start your first conversation with pers
 ## Prerequisites
 
 ### System Requirements
-- **OS**: Windows 11 (with WSL), RHEL 8+, or macOS 10.15+
+- **OS**: RHEL 8+, Ubuntu 20.04+, Fedora 35+, macOS 10.15+
 - **Node.js**: Version 18.0 or higher
 - **Memory**: 4GB RAM minimum
 - **Storage**: 1GB available space
 
-### Claude Code Setup
+### Account Setup
 Trinity MVP requires Claude Code for local system integration:
 
 1. **Install Claude Code**: Follow the [Claude Code installation guide](https://claude.ai/code)
-2. **API Key**: Obtain your Anthropic API key from the [Anthropic Console](https://console.anthropic.com/)
-3. **Windows Users**: Ensure WSL (Windows Subsystem for Linux) is enabled
+2. **Account Setup**: Obtain your Anthropic API key from the [Anthropic Console](https://console.anthropic.com/)
+3. **Native Installation**: Full local system integration on Linux and macOS
 
 ## Installation
 
