@@ -1097,6 +1097,112 @@ Is there anything specific you'd like to know about Trinity's features while I w
     }
   });
 
+  ipcMain.handle('trinity:getMemoryStats', async () => {
+    try {
+      console.log('[Trinity IPC] Getting memory statistics...');
+      
+      const fs = require('fs').promises;
+      const path = require('path');
+      const os = require('os');
+      
+      const memoryDir = path.join(os.homedir(), '.trinity-mvp', 'memory');
+      const tiers = ['core', 'working', 'reference', 'historical'];
+      const stats = {
+        total: { files: 0, size: 0 },
+        tiers: {}
+      };
+      
+      for (const tier of tiers) {
+        const tierDir = path.join(memoryDir, tier);
+        const tierStats = { files: 0, size: 0 };
+        
+        try {
+          const files = await fs.readdir(tierDir);
+          const jsonFiles = files.filter(file => file.endsWith('.json'));
+          
+          for (const file of jsonFiles) {
+            const filePath = path.join(tierDir, file);
+            try {
+              const fileStats = await fs.stat(filePath);
+              tierStats.files++;
+              tierStats.size += fileStats.size;
+            } catch (fileError) {
+              console.warn(`[Memory IPC] Could not stat ${filePath}:`, fileError.message);
+            }
+          }
+        } catch (tierError) {
+          // Tier directory doesn't exist, skip
+        }
+        
+        stats.tiers[tier] = tierStats;
+        stats.total.files += tierStats.files;
+        stats.total.size += tierStats.size;
+      }
+      
+      console.log(`[Trinity IPC] Memory Stats: ${stats.total.files} artifacts, ${stats.total.size} bytes`);
+      return stats;
+    } catch (error) {
+      console.error('Memory stats error:', error);
+      return { total: { files: 0, size: 0 }, tiers: {} };
+    }
+  });
+
+  ipcMain.handle('trinity:loadMemoryArtifacts', async () => {
+    try {
+      console.log('[Trinity IPC] Loading memory artifacts...');
+      
+      const fs = require('fs').promises;
+      const path = require('path');
+      const os = require('os');
+      
+      const memoryDir = path.join(os.homedir(), '.trinity-mvp', 'memory');
+      const artifacts = [];
+      const tiers = ['core', 'working', 'reference', 'historical'];
+      
+      for (const tier of tiers) {
+        const tierDir = path.join(memoryDir, tier);
+        try {
+          const files = await fs.readdir(tierDir);
+          const jsonFiles = files.filter(file => file.endsWith('.json'));
+          
+          for (const file of jsonFiles) {
+            const filePath = path.join(tierDir, file);
+            try {
+              const content = await fs.readFile(filePath, 'utf8');
+              const data = JSON.parse(content);
+              
+              artifacts.push({
+                id: data.id || file,
+                title: data.metadata?.title || data.title || data.type || 'Memory Item',
+                content: data.content?.data ? JSON.stringify(data.content.data, null, 2) : 
+                        data.originalContent || data.compressedContent || JSON.stringify(data, null, 2),
+                category: tier,
+                type: data.type || data.content?.type || 'unknown',
+                created: data.timestamps?.created || data.timestamp || data.created || new Date().toISOString(),
+                size: content.length,
+                metadata: {
+                  path: filePath,
+                  tier: tier,
+                  originalData: data
+                }
+              });
+            } catch (fileError) {
+              console.warn(`[Memory Artifacts IPC] Could not parse file ${filePath}:`, fileError.message);
+            }
+          }
+        } catch (tierError) {
+          console.log(`[Memory Artifacts IPC] Tier directory ${tier} not found, skipping`);
+        }
+      }
+      
+      console.log(`[Trinity IPC] Loaded ${artifacts.length} memory artifacts`);
+      return artifacts;
+    } catch (error) {
+      console.error('Memory artifacts loading error:', error);
+      return [];
+    }
+  });
+
   ipcMain.handle('trinity:getTaskStats', async () => {
     try {
       if (trinityApp.taskRegistry) {

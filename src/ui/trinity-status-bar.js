@@ -662,7 +662,26 @@ class TrinityStatusBar {
   }
 
   /**
-   * Get actual memory statistics from filesystem (NOT conversation context)
+   * Get memory statistics via IPC (NOT conversation context)
+   */
+  async getMemoryStatsViaIPC() {
+    try {
+      if (window.trinityAPI && window.trinityAPI.getMemoryStats) {
+        const stats = await window.trinityAPI.getMemoryStats();
+        console.log(`[Trinity Status] IPC Memory Stats: ${stats.total.files} artifacts`);
+        return stats;
+      } else {
+        console.warn('[Trinity Status] Trinity API not available, falling back to filesystem');
+        return await this.getActualMemoryStats();
+      }
+    } catch (error) {
+      console.error('[Trinity Status] IPC memory stats failed:', error);
+      return await this.getActualMemoryStats();
+    }
+  }
+
+  /**
+   * Get actual memory statistics from filesystem (fallback)
    */
   async getActualMemoryStats() {
     try {
@@ -788,9 +807,9 @@ class TrinityStatusBar {
    */
   async updateAmbientDisplay() {
     try {
-      // Update memory status with detailed tier information from filesystem
+      // Update memory status with detailed tier information via IPC
       try {
-        const memoryStats = await this.getActualMemoryStats();
+        const memoryStats = await this.getMemoryStatsViaIPC();
         const memoryEl = document.getElementById('memory-value');
         if (memoryEl) {
           const totalFiles = memoryStats.total?.files || 0;

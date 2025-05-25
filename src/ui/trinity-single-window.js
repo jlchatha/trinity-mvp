@@ -2028,6 +2028,63 @@ class TrinitySingleWindow {
   }
 
   /**
+   * Load artifacts from filesystem (fallback method)
+   */
+  async loadArtifactsFromFilesystem() {
+    try {
+      const fs = require('fs').promises;
+      const path = require('path');
+      const os = require('os');
+      
+      const memoryDir = path.join(os.homedir(), '.trinity-mvp', 'memory');
+      const artifacts = [];
+      const tiers = ['core', 'working', 'reference', 'historical'];
+      
+      for (const tier of tiers) {
+        const tierDir = path.join(memoryDir, tier);
+        try {
+          const files = await fs.readdir(tierDir);
+          const jsonFiles = files.filter(file => file.endsWith('.json'));
+          
+          for (const file of jsonFiles) {
+            const filePath = path.join(tierDir, file);
+            try {
+              const content = await fs.readFile(filePath, 'utf8');
+              const data = JSON.parse(content);
+              
+              artifacts.push({
+                id: data.id || file,
+                title: data.metadata?.title || data.title || data.type || 'Memory Item',
+                content: data.content?.data ? JSON.stringify(data.content.data, null, 2) : 
+                        data.originalContent || data.compressedContent || JSON.stringify(data, null, 2),
+                category: tier,
+                type: data.type || data.content?.type || 'unknown',
+                created: data.timestamps?.created || data.timestamp || data.created || new Date().toISOString(),
+                size: content.length,
+                metadata: {
+                  path: filePath,
+                  tier: tier,
+                  originalData: data
+                }
+              });
+            } catch (fileError) {
+              console.warn(`[Memory Artifacts] Could not parse file ${filePath}:`, fileError.message);
+            }
+          }
+        } catch (tierError) {
+          console.log(`[Memory Artifacts] Tier directory ${tier} not found, skipping`);
+        }
+      }
+      
+      console.log(`[Memory Artifacts] Fallback loaded ${artifacts.length} artifacts`);
+      return artifacts;
+    } catch (error) {
+      console.error('Error loading memory artifacts from filesystem:', error);
+      return [];
+    }
+  }
+
+  /**
    * Setup event listeners
    */
   setupEventListeners() {
@@ -2824,6 +2881,15 @@ class TrinitySingleWindow {
    */
   async loadMemoryStatistics() {
     try {
+      // Use IPC to get memory stats from main process
+      if (window.trinityAPI && window.trinityAPI.getMemoryStats) {
+        const stats = await window.trinityAPI.getMemoryStats();
+        this.updateMemoryDisplay(stats.total.files, stats.total.size);
+        console.log(`[Memory Stats] IPC loaded: ${stats.total.files} artifacts, ${this.formatFileSize(stats.total.size)}`);
+        return;
+      }
+      
+      // Fallback to filesystem access
       const fs = require('fs').promises;
       const path = require('path');
       const os = require('os');
@@ -3058,55 +3124,18 @@ class TrinitySingleWindow {
         memoryIntegration = {
           loadArtifacts: async () => {
             try {
-              const fs = require('fs').promises;
-              const path = require('path');
-              const os = require('os');
-              
-              const memoryDir = path.join(os.homedir(), '.trinity-mvp', 'memory');
-              const artifacts = [];
-              // Only load actual memory hierarchy, NOT conversations (stored separately)
-              const tiers = ['core', 'working', 'reference', 'historical'];
-              
-              for (const tier of tiers) {
-                const tierDir = path.join(memoryDir, tier);
-                try {
-                  const files = await fs.readdir(tierDir);
-                  const jsonFiles = files.filter(file => file.endsWith('.json'));
-                  
-                  for (const file of jsonFiles) {
-                    const filePath = path.join(tierDir, file);
-                    try {
-                      const content = await fs.readFile(filePath, 'utf8');
-                      const data = JSON.parse(content);
-                      
-                      artifacts.push({
-                        id: data.id || file,
-                        title: data.title || data.type || 'Memory Item',
-                        content: data.originalContent || data.compressedContent || JSON.stringify(data, null, 2),
-                        category: tier,
-                        type: data.type || 'unknown',
-                        created: data.timestamp || data.created || new Date().toISOString(),
-                        size: content.length,
-                        metadata: {
-                          path: filePath,
-                          tier: tier,
-                          originalData: data
-                        }
-                      });
-                    } catch (fileError) {
-                      console.warn(`[Memory Artifacts] Could not parse file ${filePath}:`, fileError.message);
-                    }
-                  }
-                } catch (tierError) {
-                  console.log(`[Memory Artifacts] Tier directory ${tier} not found, skipping`);
-                }
+              // Use IPC to load memory artifacts from main process
+              if (window.trinityAPI && window.trinityAPI.loadMemoryArtifacts) {
+                const artifacts = await window.trinityAPI.loadMemoryArtifacts();
+                console.log(`[Memory Artifacts] IPC loaded ${artifacts.length} artifacts`);
+                return artifacts;
+              } else {
+                console.warn('[Memory Artifacts] Trinity API not available, falling back to filesystem');
+                return await this.loadArtifactsFromFilesystem();
               }
-              
-              console.log(`[Memory Artifacts] Loaded ${artifacts.length} persistent memory artifacts (conversations excluded)`);
-              return artifacts;
             } catch (error) {
-              console.error('Error loading memory artifacts:', error);
-              return [];
+              console.error('Error loading memory artifacts via IPC:', error);
+              return await this.loadArtifactsFromFilesystem();
             }
           },
           getMemoryItems: () => [],

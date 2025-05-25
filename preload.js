@@ -39,6 +39,10 @@ contextBridge.exposeInMainWorld('trinityAPI', {
     getMemoryDetails: (memoryId) => ipcRenderer.invoke('trinity:memory:getMemoryDetails', memoryId)
   },
 
+  // Trinity memory hierarchy
+  getMemoryStats: () => ipcRenderer.invoke('trinity:getMemoryStats'),
+  loadMemoryArtifacts: () => ipcRenderer.invoke('trinity:loadMemoryArtifacts'),
+
   // Context optimization and auto-compact intelligence
   context: {
     getMetrics: () => ipcRenderer.invoke('trinity:context:getMetrics'),
