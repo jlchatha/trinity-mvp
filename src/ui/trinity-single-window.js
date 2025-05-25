@@ -3482,7 +3482,14 @@ class TrinitySingleWindow {
   }
 }
 
-// Initialize Trinity Single Window
-window.trinitySingleWindow = new TrinitySingleWindow();
+// Initialize Trinity Single Window when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    window.trinitySingleWindow = new TrinitySingleWindow();
+  });
+} else {
+  // DOM is already ready
+  window.trinitySingleWindow = new TrinitySingleWindow();
+}
 
 module.exports = TrinitySingleWindow;
