@@ -422,53 +422,7 @@ class TrinityIPCBridge {
       return this.components.autoCompact.getStatus();
     });
 
-    // Overseer conversation handling - SAFE IMPLEMENTATION
-    ipcMain.handle('overseer:sendMessage', async (event, message) => {
-      console.log('[Trinity IPC] Overseer received message:', message);
-      
-      try {
-        // Initialize conversation history if needed
-        if (!this.conversationHistory) {
-          this.conversationHistory = [];
-        }
-        
-        // Add user message to history
-        this.conversationHistory.push({
-          role: 'user',
-          content: message,
-          timestamp: Date.now()
-        });
-        
-        // Keep only last 10 messages for context
-        if (this.conversationHistory.length > 10) {
-          this.conversationHistory = this.conversationHistory.slice(-10);
-        }
-        
-        // Generate context-aware response
-        let response = await this.generateContextAwareResponse(message, this.conversationHistory);
-        
-        // Add assistant response to history
-        this.conversationHistory.push({
-          role: 'assistant', 
-          content: response,
-          timestamp: Date.now()
-        });
-        
-        return {
-          status: 'processed',
-          response: response,
-          contextUsed: this.conversationHistory.length
-        };
-        
-      } catch (error) {
-        console.error('[Trinity IPC] Overseer message processing failed:', error);
-        return {
-          status: 'error',
-          error: error.message,
-          fallbackResponse: 'I apologize, but I encountered an error processing your message. Please try again.'
-        };
-      }
-    });
+    // NOTE: overseer:sendMessage handler is in main.js with Claude SDK integration
 
     // System operations
     ipcMain.handle('trinity-status', async () => {
