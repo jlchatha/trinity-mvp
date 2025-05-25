@@ -36,7 +36,9 @@ contextBridge.exposeInMainWorld('trinityAPI', {
     clear: (key) => ipcRenderer.invoke('memory:clear', key),
     getStats: () => ipcRenderer.invoke('trinity:memory:getStats'),
     getAllMemories: () => ipcRenderer.invoke('trinity:memory:getAllMemories'),
-    getMemoryDetails: (memoryId) => ipcRenderer.invoke('trinity:memory:getMemoryDetails', memoryId)
+    getMemoryDetails: (memoryId) => ipcRenderer.invoke('trinity:memory:getMemoryDetails', memoryId),
+    // Session Metadata Enhancement - Load Relevant Context
+    loadRelevantContext: (prompt, options) => ipcRenderer.invoke('trinity:loadRelevantContext', prompt, options)
   },
 
   // Trinity memory hierarchy

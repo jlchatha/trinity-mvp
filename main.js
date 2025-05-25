@@ -966,13 +966,39 @@ function setupTrinityAPIHandlers(trinityApp) {
   });
   
   // Overseer handlers (using Claude Code SDK with direct API fallback)
-  ipcMain.handle('overseer:sendMessage', async (event, message) => {
+  ipcMain.handle('overseer:sendMessage', async (event, messageData) => {
+    // Handle both old format (string) and new format (object with memory context)
+    const message = typeof messageData === 'string' ? messageData : messageData.message;
+    const memoryContext = typeof messageData === 'object' ? messageData.memoryContext : null;
+    
     console.log('Overseer message received:', message);
+    if (memoryContext) {
+      console.log(`Memory context provided: ${memoryContext.artifacts?.length || 0} items`);
+    }
     
     try {
+      // Enhance message with memory context if available and relevant
+      let enhancedMessage = message;
+      
+      // Check if this is a basic identity/system question that doesn't need memory context
+      const isBasicQuestion = /^(what'?s your (name|role)|what is your (name|role)|who are you|what do you do|help|hello|hi)\??$/i.test(message.trim());
+      
+      if (!isBasicQuestion && memoryContext && memoryContext.contextText && memoryContext.contextText.trim()) {
+        // Only include memory context for non-basic questions
+        enhancedMessage = `User question: ${message}
+
+RELEVANT MEMORY CONTEXT (use only if relevant to the question):
+${memoryContext.contextText}
+
+Please respond directly to the user's question. Only reference the memory context if it's relevant to their specific question.`;
+        console.log('[Overseer] Enhanced message with memory context for non-basic question');
+      } else if (isBasicQuestion) {
+        console.log('[Overseer] Basic question detected - proceeding without memory context');
+      }
+      
       // Try Claude Code SDK first
       const result = await trinityApp.claudeSDK.executeCommand(
-        message,
+        enhancedMessage,
         {
           sessionId: 'overseer-main',
           role: 'OVERSEER',
@@ -989,9 +1015,9 @@ function setupTrinityAPIHandlers(trinityApp) {
     } catch (error) {
       console.warn('Claude Code failed, trying direct API fallback:', error.message);
       
-      // Fallback to direct Claude API
+      // Fallback to direct Claude API (with enhanced message if memory context available)
       try {
-        const directResponse = await trinityApp.executeDirectClaudeAPI(message);
+        const directResponse = await trinityApp.executeDirectClaudeAPI(enhancedMessage);
         return {
           status: 'processed',
           response: directResponse,
@@ -1195,11 +1221,84 @@ Is there anything specific you'd like to know about Trinity's features while I w
         }
       }
       
-      console.log(`[Trinity IPC] Loaded ${artifacts.length} memory artifacts`);
+      // Also load conversations for memory-chat integration visibility
+      try {
+        const conversationsDir = path.join(os.homedir(), '.trinity-mvp', 'conversations');
+        const files = await fs.readdir(conversationsDir);
+        const jsonFiles = files.filter(file => file.endsWith('.json'));
+        
+        for (const file of jsonFiles) {
+          const filePath = path.join(conversationsDir, file);
+          try {
+            const content = await fs.readFile(filePath, 'utf8');
+            const data = JSON.parse(content);
+            
+            artifacts.push({
+              id: data.id || file,
+              title: `Conversation - ${data.metadata?.sessionId || 'Unknown'}`,
+              content: data.originalContent || data.compressedContent || JSON.stringify(data, null, 2),
+              category: 'conversation', // Special category for conversations
+              type: data.type || 'conversation',
+              created: data.metadata?.timestamp || new Date().toISOString(),
+              size: content.length,
+              metadata: {
+                path: filePath,
+                tier: 'conversation',
+                sessionId: data.metadata?.sessionId,
+                originalData: data
+              }
+            });
+          } catch (fileError) {
+            console.warn(`[Memory Artifacts IPC] Could not parse conversation file ${filePath}:`, fileError.message);
+          }
+        }
+      } catch (conversationsError) {
+        console.log('[Memory Artifacts IPC] Conversations directory not found, skipping');
+      }
+      
+      console.log(`[Trinity IPC] Loaded ${artifacts.length} memory artifacts (including conversations)`);
       return artifacts;
     } catch (error) {
       console.error('Memory artifacts loading error:', error);
       return [];
+    }
+  });
+
+  // Memory Integration: Load Relevant Context (Session Metadata Enhancement)
+  ipcMain.handle('trinity:loadRelevantContext', async (event, prompt, options = {}) => {
+    try {
+      console.log('[Trinity IPC] Loading relevant memory context for prompt...');
+      
+      // Initialize memory integration if not available
+      if (!trinityApp.memoryIntegration) {
+        const TrinityMemoryIntegration = require('./src/core/trinity-memory-integration');
+        trinityApp.memoryIntegration = new TrinityMemoryIntegration({
+          sessionId: options.sessionId || 'ui-session',
+          logger: console
+        });
+        await trinityApp.memoryIntegration.initialize();
+      }
+      
+      // Load relevant context with session metadata enhancement
+      const context = await trinityApp.memoryIntegration.loadRelevantContext(prompt, {
+        maxItems: options.maxItems || 10,
+        categories: options.categories || ['core', 'working', 'reference']
+      });
+      
+      console.log(`[Trinity IPC] Loaded context: ${context.artifacts?.length || 0} items, clarification needed: ${context.requiresClarification || false}`);
+      
+      return context;
+    } catch (error) {
+      console.error('[Trinity IPC] Failed to load relevant context:', error);
+      return {
+        summary: 'Failed to load context',
+        optimization: { contextPercent: 0, tokensSaved: 0, totalMemoryItems: 0, itemsLoaded: 0 },
+        artifacts: [],
+        contextText: '',
+        multipleMatches: [],
+        requiresClarification: false,
+        clarificationSuggestion: null
+      };
     }
   });
 

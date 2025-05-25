@@ -38,9 +38,8 @@
     "start:no-gpu": "electron . --disable-gpu",
     "dev": "npm run start:dev",
     "build": "npm run build:all",
-    "build:all": "npm run build:linux && npm run build:windows && npm run build:mac",
+    "build:all": "npm run build:linux && npm run build:mac",
     "build:linux": "electron-builder --linux",
-    "build:windows": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "dist": "npm run build:all",
     "test": "npm run test:unit && npm run test:integration",
@@ -55,7 +54,6 @@
     "prepackage": "npm run test && npm run lint",
     "package": "npm run build:all",
     "setup": "node scripts/setup.js",
-    "setup:windows": "node scripts/setup-windows.js",
     "health-check": "node scripts/health-check.js"
   },
   "dependencies": {
@@ -95,18 +93,6 @@
       ],
       "category": "Development"
     },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        },
-        {
-          "target": "zip",
-          "arch": ["x64"]
-        }
-      ]
-    },
     "mac": {
       "target": [
         {
@@ -115,10 +101,6 @@
         }
       ],
       "category": "public.app-category.developer-tools"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
     }
   },
   "jest": {

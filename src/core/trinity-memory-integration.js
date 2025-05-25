@@ -4,6 +4,14 @@
  * 
  * Provides 4-tier memory hierarchy, conversation tracking, and context optimization
  * for Trinity MVP enhanced file communication system.
+ * 
+ * FEATURES:
+ * - Session-aware context tracking with metadata enhancement
+ * - Uncertainty handling with clarification suggestions for ambiguous queries
+ * - Smart keyword extraction with stop word filtering
+ * - Conversation content preservation (compression-exempt)
+ * - Memory hierarchy with compression for non-conversation content
+ * - Relevance scoring with session bonus weighting
  */
 
 const fs = require('fs').promises;
@@ -25,7 +33,16 @@ class TrinityMemoryIntegration {
         };
         
         this.metadataFile = path.join(this.memoryDir, 'metadata.json');
-        this.conversationDir = path.join(this.memoryDir, 'conversations');
+        this.conversationDir = path.join(this.baseDir, 'conversations'); // Store at root level, separate from memory hierarchy
+        
+        // Session Context Tracking (FUTURE-PROOFING)
+        this.currentSession = {
+            sessionId: options.sessionId || 'default',
+            startTime: Date.now(),
+            conversationCount: 0,
+            recentConversations: [], // Track last 10 conversations for context
+            contextKeywords: new Set() // Track important keywords from current session
+        };
         
         // Initialize intelligent compressor
         this.compressor = new IntelligentCompressor({
@@ -208,6 +225,13 @@ class TrinityMemoryIntegration {
      * @returns {Object} - Storage result
      */
     async saveConversation(userMessage, assistantResponse, sessionId = 'default', memoryContext = null) {
+        // Update current session tracking
+        this.currentSession.conversationCount++;
+        
+        // Extract keywords for session context
+        const keywords = this.extractSessionKeywords(userMessage + ' ' + assistantResponse);
+        keywords.forEach(keyword => this.currentSession.contextKeywords.add(keyword));
+        
         const conversationData = {
             type: 'conversation',
             content: `User: ${userMessage}\n\nAssistant: ${assistantResponse}`,
@@ -217,13 +241,36 @@ class TrinityMemoryIntegration {
                 userMessage,
                 assistantResponse,
                 memoryContext,
-                conversationLength: userMessage.length + assistantResponse.length
+                conversationLength: userMessage.length + assistantResponse.length,
+                // Enhanced session metadata (FUTURE-PROOFING)
+                sessionPosition: this.currentSession.conversationCount,
+                sessionTimestamp: Date.now(),
+                isCurrentSession: sessionId === this.currentSession.sessionId,
+                sessionKeywords: Array.from(keywords)
             },
             tags: ['conversation', 'chat', sessionId]
         };
         
         // Store conversations in separate directory, NOT in memory hierarchy
-        return await this.storeConversation(conversationData);
+        const result = await this.storeConversation(conversationData);
+        
+        // Track in current session (keep last 10)
+        if (result.success) {
+            this.currentSession.recentConversations.push({
+                id: result.id,
+                userMessage,
+                assistantResponse,
+                timestamp: Date.now(),
+                keywords
+            });
+            
+            // Keep only last 10 conversations in memory
+            if (this.currentSession.recentConversations.length > 10) {
+                this.currentSession.recentConversations.shift();
+            }
+        }
+        
+        return result;
     }
 
     /**
@@ -236,8 +283,8 @@ class TrinityMemoryIntegration {
             const fs = require('fs').promises;
             const path = require('path');
             
-            // Ensure conversations directory exists
-            const conversationsDir = path.join(this.memoryPath, 'conversations');
+            // Ensure conversations directory exists (at root level)
+            const conversationsDir = path.join(this.baseDir, 'conversations');
             await fs.mkdir(conversationsDir, { recursive: true });
             
             // Generate ID and compress content
@@ -245,7 +292,10 @@ class TrinityMemoryIntegration {
             const id = `mem_${timestamp}_${Math.random().toString(36).substr(2, 8)}`;
             
             // Apply compression
-            const compressedData = await this.compressor.compress(conversationData.content, conversationData.metadata);
+            const compressedData = this.compressor.compressContent(
+                conversationData.content, 
+                'conversation'
+            );
             
             const memoryItem = {
                 id,
@@ -320,6 +370,20 @@ class TrinityMemoryIntegration {
                 }
             }
             
+            // Load conversations only if explicitly requested in categories
+            if (categories.includes('conversation')) {
+                const conversationItems = await this.loadConversationItems();
+                for (const item of conversationItems) {
+                    const relevanceScore = this.calculateRelevanceScore(prompt, promptSignature, promptTags, item);
+                    if (relevanceScore > 0.3) {
+                        relevantItems.push({
+                            ...item,
+                            relevanceScore
+                        });
+                    }
+                }
+            }
+            
             // Sort by relevance and limit results
             const sortedItems = relevantItems
                 .sort((a, b) => b.relevanceScore - a.relevanceScore)
@@ -328,6 +392,10 @@ class TrinityMemoryIntegration {
             // Build context summary
             const contextSummary = this.buildContextSummary(sortedItems);
             const optimizationStats = this.calculateOptimizationStats(sortedItems);
+            
+            // Check for ambiguous queries (multiple high-relevance matches)
+            const highRelevanceItems = sortedItems.filter(item => item.relevanceScore > 0.8);
+            const multipleMatches = this.detectMultipleMatches(prompt, sortedItems);
             
             return {
                 summary: contextSummary,
@@ -342,7 +410,12 @@ class TrinityMemoryIntegration {
                 })),
                 contextText: sortedItems
                     .map(item => item.compressedContent || item.originalContent)
-                    .join('\n\n---\n\n')
+                    .join('\n\n---\n\n'),
+                // Uncertainty handling for multiple matches
+                multipleMatches: multipleMatches,
+                requiresClarification: multipleMatches.length > 1,
+                clarificationSuggestion: multipleMatches.length > 1 ? 
+                    this.generateClarificationSuggestion(prompt, multipleMatches) : null
             };
             
         } catch (error) {
@@ -382,6 +455,30 @@ class TrinityMemoryIntegration {
     }
 
     /**
+     * Load conversation items for memory-chat integration
+     * @returns {Array} - Array of conversation memory items
+     */
+    async loadConversationItems() {
+        const conversationDir = path.join(this.baseDir, 'conversations');
+        const items = [];
+        
+        try {
+            const files = await fs.readdir(conversationDir);
+            for (const file of files) {
+                if (file.endsWith('.json')) {
+                    const filePath = path.join(conversationDir, file);
+                    const data = await fs.readFile(filePath, 'utf8');
+                    items.push(JSON.parse(data));
+                }
+            }
+        } catch (error) {
+            this.logger.error('Failed to load conversation items:', error);
+        }
+        
+        return items;
+    }
+
+    /**
      * Calculate relevance score between prompt and memory item
      * @param {string} prompt - User prompt
      * @param {string} promptSignature - Prompt semantic signature
@@ -392,24 +489,215 @@ class TrinityMemoryIntegration {
     calculateRelevanceScore(prompt, promptSignature, promptTags, item) {
         let score = 0;
         
-        // Semantic signature similarity (40% weight)
+        // Semantic signature similarity (30% weight - reduced)
         const signatureSimilarity = this.calculateSignatureSimilarity(promptSignature, item.semanticSignature);
-        score += signatureSimilarity * 0.4;
+        score += signatureSimilarity * 0.3;
         
-        // Tag overlap (30% weight)
+        // Tag overlap (25% weight - reduced)
         const itemTags = item.metadata.tags || [];
         const tagOverlap = this.calculateTagOverlap(promptTags, itemTags);
-        score += tagOverlap * 0.3;
+        score += tagOverlap * 0.25;
         
-        // Recency boost (20% weight)
+        // Recency boost (20% weight - enhanced for very recent items)
         const recencyScore = this.calculateRecencyScore(item.metadata.timestamp);
         score += recencyScore * 0.2;
         
-        // Category preference (10% weight)
-        const categoryScore = item.category === 'core' ? 1.0 : item.category === 'working' ? 0.8 : 0.6;
+        // Extra boost for very recent conversations (within last hour)
+        if (item.category === 'conversation') {
+            const timeDiff = Date.now() - new Date(item.metadata.timestamp).getTime();
+            if (timeDiff < 3600000) { // Less than 1 hour
+                score += 0.3; // Significant boost for very recent conversations
+            }
+        }
+        
+        // Session relevance boost (15% weight - NEW)
+        const sessionScore = this.calculateSessionRelevance(item);
+        score += sessionScore * 0.15;
+        
+        // Category preference (10% weight - same)
+        const categoryScore = item.category === 'core' ? 1.0 : 
+                             item.category === 'working' ? 0.8 : 
+                             item.category === 'conversation' ? 0.9 : 0.6;
         score += categoryScore * 0.1;
         
         return Math.min(1.0, score);
+    }
+    
+    /**
+     * Calculate session relevance for current conversation context
+     * @param {Object} item - Memory item
+     * @returns {number} - Session relevance score (0.0 to 1.0)
+     */
+    calculateSessionRelevance(item) {
+        if (item.category !== 'conversation') return 0.5; // Neutral for non-conversations
+        
+        const metadata = item.metadata || {};
+        let sessionScore = 0;
+        
+        // Current session bonus
+        if (metadata.isCurrentSession || metadata.sessionId === this.currentSession.sessionId) {
+            sessionScore += 0.6; // Strong preference for current session
+        }
+        
+        // Recent conversation bonus
+        const recentIds = this.currentSession.recentConversations.map(conv => conv.id);
+        if (recentIds.includes(item.id)) {
+            sessionScore += 0.4; // Bonus for conversations in current session memory
+        }
+        
+        // Session keyword overlap bonus
+        const sessionKeywords = Array.from(this.currentSession.contextKeywords);
+        const itemKeywords = metadata.sessionKeywords || [];
+        const keywordOverlap = this.calculateTagOverlap(sessionKeywords, itemKeywords);
+        sessionScore += keywordOverlap * 0.3;
+        
+        return Math.min(1.0, sessionScore);
+    }
+    
+    /**
+     * Extract session-relevant keywords from conversation content
+     * @param {string} content - Conversation content
+     * @returns {Array} - Array of important keywords
+     */
+    extractSessionKeywords(content) {
+        if (!content) return [];
+        
+        // Extract meaningful words (nouns, verbs, adjectives likely)
+        const words = content.toLowerCase()
+            .replace(/[^\w\s]/g, ' ')
+            .split(/\s+/)
+            .filter(word => word.length > 3 && !this.isStopWord(word));
+            
+        const frequency = {};
+        words.forEach(word => {
+            frequency[word] = (frequency[word] || 0) + 1;
+        });
+        
+        // Return top 5 most frequent meaningful words
+        return Object.entries(frequency)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([word]) => word);
+    }
+    
+    /**
+     * Check if word is a stop word (common words to ignore)
+     * @param {string} word - Word to check
+     * @returns {boolean} - True if stop word
+     */
+    isStopWord(word) {
+        const stopWords = new Set([
+            'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'who', 'boy', 'did', 'man', 'men', 'run', 'say', 'she', 'too', 'use',
+            // Additional common stop words
+            'about', 'over', 'through', 'into', 'from', 'with', 'what', 'when', 'where', 'they', 'this', 'that', 'there', 'here'
+        ]);
+        return stopWords.has(word);
+    }
+    
+    /**
+     * Detect multiple potential matches for ambiguous queries (CONSERVATIVE MODE)
+     * @param {string} prompt - User prompt
+     * @param {Array} sortedItems - Relevance-sorted items
+     * @returns {Array} - Array of potential matches requiring clarification
+     */
+    detectMultipleMatches(prompt, sortedItems) {
+        const lowercasePrompt = prompt.toLowerCase();
+        
+        // CONSERVATIVE: Only trigger for very specific ambiguous patterns
+        const ambiguousPatterns = [
+            { pattern: /^(show me your poem|your poem|which poem)$/i, type: 'poem' },
+            { pattern: /^(which response|what response|your response)$/i, type: 'response' }
+        ];
+        
+        for (const { pattern, type } of ambiguousPatterns) {
+            if (pattern.test(prompt.trim())) {
+                // Find all items that could match this pattern
+                const matches = sortedItems.filter(item => {
+                    const content = (item.compressedContent || item.originalContent || '').toLowerCase();
+                    switch (type) {
+                        case 'poem':
+                            // STRICT: Only actual poems with poetic structure
+                            return (content.includes('poem') || /\n.*\n.*\n.*\n/.test(content)) && 
+                                   item.relevanceScore > 0.8; // HIGH relevance threshold
+                        case 'response':
+                            return item.category === 'conversation' && item.relevanceScore > 0.8;
+                        default:
+                            return false;
+                    }
+                }).slice(0, 3); // Limit to top 3 matches only
+                
+                // CONSERVATIVE: Only trigger if 3+ very high relevance matches
+                if (matches.length >= 3 && matches.filter(m => m.relevanceScore > 0.85).length >= 3) {
+                    return matches.map(match => ({
+                        id: match.id,
+                        type: type,
+                        content: match.compressedContent || match.originalContent,
+                        relevance: match.relevanceScore,
+                        summary: this.generateMatchSummary(match, type)
+                    }));
+                }
+            }
+        }
+        
+        // DEFAULT: No clarification needed - proceed with normal conversation
+        return [];
+    }
+    
+    /**
+     * Generate a clarification suggestion when multiple matches exist
+     * @param {string} prompt - Original prompt
+     * @param {Array} matches - Multiple matches found
+     * @returns {string} - Clarification suggestion
+     */
+    generateClarificationSuggestion(prompt, matches) {
+        const matchType = matches[0]?.type || 'item';
+        
+        let suggestion = `I found multiple ${matchType}s that could match your question. Could you clarify which one you're referring to?\n\n`;
+        
+        matches.forEach((match, idx) => {
+            suggestion += `${idx + 1}. ${match.summary}\n`;
+        });
+        
+        suggestion += `\nPlease let me know which ${matchType} you're asking about, or provide more specific details.`;
+        
+        return suggestion;
+    }
+    
+    /**
+     * Generate a summary for a match to help with clarification
+     * @param {Object} match - Match item
+     * @param {string} type - Type of match
+     * @returns {string} - Match summary
+     */
+    generateMatchSummary(match, type) {
+        const content = match.compressedContent || match.originalContent || '';
+        const timestamp = match.metadata?.timestamp ? 
+            new Date(match.metadata.timestamp).toLocaleString() : 'Unknown time';
+        
+        switch (type) {
+            case 'poem':
+                // Extract first few lines of poem
+                const poemLines = content.split('\n').filter(line => 
+                    line.trim() && !line.toLowerCase().includes('user:') && !line.toLowerCase().includes('assistant:')
+                ).slice(0, 2);
+                return `Poem starting with: "${poemLines.join(', ')}..." (${timestamp})`;
+                
+            case 'response':
+            case 'explanation':
+                // Extract the topic or first part of response
+                const responseMatch = content.match(/Assistant?:\s*([^.!?]+)/i);
+                const responseStart = responseMatch ? responseMatch[1] : content.substring(0, 60);
+                return `Response about: "${responseStart}..." (${timestamp})`;
+                
+            case 'conversation':
+                // Extract the main topic
+                const topicMatch = content.match(/User:\s*([^?!.]+)/i);
+                const topic = topicMatch ? topicMatch[1] : 'conversation';
+                return `Conversation about: "${topic}" (${timestamp})`;
+                
+            default:
+                return `Item: "${content.substring(0, 60)}..." (${timestamp})`;
+        }
     }
 
     /**

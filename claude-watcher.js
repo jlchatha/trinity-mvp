@@ -27,9 +27,10 @@ class ClaudeWatcher {
     this.isRunning = false;
     this.pollInterval = 1000; // Check every second
     
-    // Initialize Trinity Memory Integration
+    // Initialize Trinity Memory Integration  
     this.memoryIntegration = new TrinityMemoryIntegration({
       baseDir: this.trinityDir,
+      sessionId: 'overseer-main', // Match the session ID used in conversations
       logger: {
         info: (msg) => this.log(`[MEMORY] ${msg}`),
         error: (msg) => this.log(`[MEMORY ERROR] ${msg}`)
@@ -134,17 +135,27 @@ class ClaudeWatcher {
     let enhancedPrompt = prompt;
     
     try {
-      // Load relevant memory context for the prompt
+      // Load relevant memory context for the prompt (structured knowledge only)
       this.log('Loading relevant memory context...');
       memoryContext = await this.memoryIntegration.loadRelevantContext(prompt, {
         maxItems: 8,
-        categories: ['core', 'working', 'reference']
+        categories: ['core', 'working', 'reference'] // Removed 'conversation' to prevent recursive context
       });
       
       // Build enhanced prompt with memory context
       if (memoryContext.contextText && memoryContext.contextText.trim().length > 0) {
-        enhancedPrompt = `Context from memory:\n${memoryContext.contextText}\n\n---\n\nUser request: ${prompt}`;
-        this.log(`Enhanced prompt with memory context: ${memoryContext.summary}`);
+        const contextSize = memoryContext.contextText.length;
+        const MAX_CONTEXT_SIZE = 50000; // 50KB max context to prevent crashes
+        
+        if (contextSize > MAX_CONTEXT_SIZE) {
+          this.log(`⚠️ Memory context too large (${contextSize} chars), truncating to prevent crash`);
+          const truncatedContext = memoryContext.contextText.substring(0, MAX_CONTEXT_SIZE) + '\n\n[Context truncated due to size...]';
+          enhancedPrompt = `Context from memory:\n${truncatedContext}\n\n---\n\nUser request: ${prompt}`;
+        } else {
+          enhancedPrompt = `Context from memory:\n${memoryContext.contextText}\n\n---\n\nUser request: ${prompt}`;
+        }
+        
+        this.log(`Enhanced prompt with memory context: ${memoryContext.summary} (${contextSize} chars)`);
         this.log(`Memory optimization: ${memoryContext.optimization.contextPercent}% of memory used, ${memoryContext.optimization.tokensSaved} tokens saved`);
       } else {
         this.log('No relevant memory context found for this request');
@@ -153,6 +164,17 @@ class ClaudeWatcher {
     } catch (error) {
       this.log(`Failed to load memory context: ${error.message}`);
       // Continue without memory context
+    }
+    
+    // Final size validation before Claude Code execution
+    const totalPromptSize = enhancedPrompt.length;
+    const MAX_TOTAL_PROMPT_SIZE = 100000; // 100KB max total prompt
+    
+    if (totalPromptSize > MAX_TOTAL_PROMPT_SIZE) {
+      this.log(`🚨 Total prompt too large (${totalPromptSize} chars), using original prompt to prevent crash`);
+      enhancedPrompt = prompt; // Fallback to original prompt without context
+    } else {
+      this.log(`✅ Prompt size validated: ${totalPromptSize} chars`);
     }
     
     // Execute Claude Code with enhanced prompt

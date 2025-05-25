@@ -40,6 +40,7 @@ class TrinitySingleWindow {
     this.initializeSingleWindow();
     this.setupEventListeners();
     this.loadMemoryStatistics();
+    this.loadMemoryBrowser(); // Load actual memory files into browser
     console.log('[Trinity Single Window] Single window architecture initialized successfully');
   }
 
@@ -169,6 +170,10 @@ class TrinitySingleWindow {
                     <span class="trinity-btn-icon">🚀</span>
                     Optimize
                   </button>
+                  <button class="trinity-panel-btn" id="refresh-memory-browser">
+                    <span class="trinity-btn-icon">🔄</span>
+                    Refresh
+                  </button>
                 </div>
                 
                 <!-- Memory Browser (expandable) -->
@@ -181,6 +186,7 @@ class TrinitySingleWindow {
                     <button class="trinity-filter-btn" data-tier="core">Core</button>
                     <button class="trinity-filter-btn" data-tier="working">Working</button>
                     <button class="trinity-filter-btn" data-tier="reference">Reference</button>
+                    <button class="trinity-filter-btn" data-tier="conversation">Chats</button>
                   </div>
                   <div class="trinity-memory-list" id="trinity-memory-list">
                     <!-- Demo memories -->
@@ -803,6 +809,100 @@ class TrinitySingleWindow {
         display: flex;
         align-items: center;
         gap: 0.25rem;
+      }
+      
+      /* Enhanced Memory Indicator with Session Metadata */
+      .trinity-message-memory-indicator.enhanced {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+      
+      .trinity-message-memory-indicator .session-indicator {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+        padding: 0.125rem 0.375rem;
+        border-radius: 4px;
+        font-size: 0.6rem;
+        margin-left: 0.5rem;
+      }
+      
+      .trinity-message-memory-indicator .memory-details {
+        font-size: 0.65rem;
+        color: rgba(79, 195, 247, 0.8);
+        line-height: 1.3;
+      }
+      
+      /* Clarification Message Styles */
+      .trinity-message.clarification {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+        border: 1px solid #ffc107 !important;
+        color: #856404 !important;
+      }
+      
+      .trinity-clarification-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+      }
+      
+      .trinity-clarification-icon {
+        font-size: 1.2rem;
+      }
+      
+      .trinity-clarification-text {
+        margin-bottom: 1rem;
+        line-height: 1.5;
+      }
+      
+      .trinity-clarification-matches {
+        margin: 1rem 0;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+      }
+      
+      .trinity-clarification-option {
+        padding: 0.5rem;
+        margin: 0.25rem 0;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 6px;
+        border-left: 3px solid #ffc107;
+      }
+      
+      .trinity-clarification-option:hover {
+        background: rgba(255, 255, 255, 0.9);
+        cursor: pointer;
+      }
+      
+      .trinity-clarification-relevance {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+      }
+      
+      .trinity-clarification-actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+      }
+      
+      .trinity-clarification-dismiss {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: background-color 0.2s;
+      }
+      
+      .trinity-clarification-dismiss:hover {
+        background: #0056b3;
       }
       
       /* Typing Indicator */
@@ -2282,7 +2382,13 @@ class TrinitySingleWindow {
   setupPanelActionHandlers() {
     // Memory panel actions
     document.getElementById('browse-memory-detailed')?.addEventListener('click', () => {
-      this.openMemoryArtifactsViewer();
+      // First, toggle the simple memory browser to show actual files
+      this.toggleMemoryBrowser();
+    });
+    
+    document.getElementById('refresh-memory-browser')?.addEventListener('click', () => {
+      this.loadMemoryBrowser();
+      this.showNotification('Memory browser refreshed', 'info');
     });
     
     // Memory browser filters
@@ -2455,22 +2561,67 @@ class TrinitySingleWindow {
     // Show typing indicator
     this.showTypingIndicator();
     
-    // Get active memory context
-    const memoryInfo = this.getActiveMemoryContext();
+    // Load intelligent memory context with session awareness
+    let memoryContext = null;
+    let requiresClarification = false;
+    let clarificationSuggestion = null;
+    
+    try {
+      // Use enhanced memory integration to load relevant context
+      if (window.trinityAPI && window.trinityAPI.memory) {
+        console.log('[Trinity Chat] Loading intelligent memory context...');
+        memoryContext = await window.trinityAPI.memory.loadRelevantContext(message);
+        
+        // Check for uncertainty handling
+        if (memoryContext && memoryContext.requiresClarification) {
+          requiresClarification = true;
+          clarificationSuggestion = memoryContext.clarificationSuggestion;
+          console.log('[Trinity Chat] Multiple matches detected, clarification needed');
+        }
+      }
+    } catch (error) {
+      console.warn('[Trinity Chat] Failed to load intelligent memory context:', error);
+      // Fallback to manual memory selection
+      const memoryInfo = this.getActiveMemoryContext();
+      memoryContext = memoryInfo ? { summary: 'Using selected memories', artifacts: [] } : null;
+    }
     
     try {
       let response;
       
       console.log(`[Trinity Chat] Processing message: "${message}" (${message.length} chars)`);
       
+      // Check if clarification is needed before processing (CONSERVATIVE MODE)
+      if (requiresClarification && clarificationSuggestion && memoryContext.multipleMatches && memoryContext.multipleMatches.length >= 3) {
+        console.log('[Trinity Chat] Multiple matches detected but proceeding with best match for better UX');
+        
+        // CONSERVATIVE: Log but don't block conversation - proceed with best context
+        console.log(`[Trinity Chat] Would show clarification for ${memoryContext.multipleMatches.length} matches, but proceeding for better UX`);
+        
+        // Continue with normal processing using the loaded context
+        // (This allows the conversation to flow normally while still having the enhanced context)
+      }
+      
       // Check if Trinity API is available
       if (window.trinityAPI && window.trinityAPI.overseer) {
         console.log('[Trinity Chat] Sending message to Overseer Agent...');
         
-        // Send message to Overseer Agent
-        response = await window.trinityAPI.overseer.sendMessage(message);
+        // Include memory context in the request
+        const requestData = {
+          message: message,
+          memoryContext: memoryContext
+        };
+        
+        // Send message to Overseer Agent with memory context
+        response = await window.trinityAPI.overseer.sendMessage(requestData);
         
         console.log('[Trinity Chat] Overseer response:', response);
+        console.log('[Trinity Chat] Response content debug:', {
+          hasResponse: !!response.response,
+          responseType: typeof response.response,
+          responseLength: response.response ? response.response.length : 0,
+          responseTrimmed: response.response ? response.response.trim() : 'null/undefined'
+        });
         
         if (response.status === 'processed') {
           // Check for blank or empty responses
@@ -2488,11 +2639,11 @@ class TrinitySingleWindow {
             
             // Provide intelligent fallback based on user message
             const fallbackResponse = this.generateIntelligentFallback(message);
-            this.addChatMessage('assistant', fallbackResponse, memoryInfo);
+            this.addChatMessage('assistant', fallbackResponse, memoryContext);
           } else {
             // Track successful response
             this.systemHealth.successfulResponses++;
-            this.addChatMessage('assistant', response.response, memoryInfo);
+            this.addChatMessage('assistant', response.response, memoryContext);
           }
         } else if (response.status === 'error') {
           console.error('[Trinity Chat] Overseer returned error status:', response.error);
@@ -2501,20 +2652,20 @@ class TrinitySingleWindow {
           this.systemHealth.errorResponses++;
           
           const errorFallback = response.fallbackResponse || this.generateIntelligentFallback(message);
-          this.addChatMessage('assistant', errorFallback);
+          this.addChatMessage('assistant', errorFallback, memoryContext);
         } else {
           console.warn('[Trinity Chat] Unexpected response status:', response.status);
           
           // Track error response
           this.systemHealth.errorResponses++;
           
-          this.addChatMessage('assistant', this.generateIntelligentFallback(message));
+          this.addChatMessage('assistant', this.generateIntelligentFallback(message), memoryContext);
         }
       } else {
         console.log('[Trinity Chat] Trinity API not available, using fallback response');
         // Fallback response for when Trinity API is not available
         await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing time
-        this.addChatMessage('assistant', 'Hello! I\'m Trinity, your professional AI assistant. I can help you with tasks, manage your memory hierarchy, and optimize your workflow. Try asking me about your files or creating a task!', memoryInfo);
+        this.addChatMessage('assistant', 'Hello! I\'m Trinity, your professional AI assistant. I can help you with tasks, manage your memory hierarchy, and optimize your workflow. Try asking me about your files or creating a task!', memoryContext);
       }
       
     } catch (error) {
@@ -2526,7 +2677,7 @@ class TrinitySingleWindow {
       });
       
       const errorFallback = this.generateIntelligentFallback(message);
-      this.addChatMessage('assistant', errorFallback);
+      this.addChatMessage('assistant', errorFallback, memoryContext);
     } finally {
       // Track response time
       const responseTime = Date.now() - messageStartTime;
@@ -2560,7 +2711,7 @@ class TrinitySingleWindow {
   /**
    * Add message to chat display with proper bubble formatting
    */
-  addChatMessage(sender, content, memoryInfo = null) {
+  addChatMessage(sender, content, memoryContext = null) {
     const chatContent = document.getElementById('trinity-chat-messages');
     if (!chatContent) return;
     
@@ -2578,13 +2729,22 @@ class TrinitySingleWindow {
     const now = new Date();
     const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    // Create memory indicator for assistant messages
+    // Create memory indicator for assistant messages (Enhanced with Session Metadata)
     let memoryIndicatorHTML = '';
-    if (sender === 'assistant' && memoryInfo && memoryInfo.count > 0) {
+    if (sender === 'assistant' && memoryContext && memoryContext.artifacts && memoryContext.artifacts.length > 0) {
+      const artifactCount = memoryContext.artifacts.length;
+      const memoryTypes = [...new Set(memoryContext.artifacts.map(a => a.category))];
+      const sessionAware = memoryContext.artifacts.some(a => a.category === 'conversation');
+      
       memoryIndicatorHTML = `
-        <div class="trinity-message-memory-indicator">
+        <div class="trinity-message-memory-indicator enhanced">
           <span>🧠</span>
-          <span>Memory Used: ${memoryInfo.display}</span>
+          <span>Memory Used: ${artifactCount} items</span>
+          ${sessionAware ? '<span class="session-indicator">📝 Session Context</span>' : ''}
+          <div class="memory-details">
+            ${memoryContext.summary} (${memoryTypes.join(', ')})
+            ${memoryContext.optimization ? `• ${memoryContext.optimization.tokensSaved} tokens saved` : ''}
+          </div>
         </div>
       `;
     }
@@ -2611,6 +2771,89 @@ class TrinitySingleWindow {
         inputArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
     }, 100);
+  }
+
+  /**
+   * Add clarification message when multiple matches are detected
+   */
+  addClarificationMessage(clarificationSuggestion, multipleMatches) {
+    const chatContent = document.getElementById('trinity-chat-messages');
+    if (!chatContent) return;
+    
+    // Remove welcome message if present
+    const welcomeMsg = chatContent.querySelector('.trinity-welcome-message');
+    if (welcomeMsg) {
+      welcomeMsg.style.transition = 'opacity 0.3s ease';
+      welcomeMsg.style.opacity = '0';
+      setTimeout(() => welcomeMsg.remove(), 300);
+    }
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'trinity-message assistant clarification';
+    
+    const now = new Date();
+    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Create clarification content with formatted matches
+    let matchesHTML = '';
+    if (multipleMatches && multipleMatches.length > 0) {
+      matchesHTML = multipleMatches.map((match, index) => `
+        <div class="trinity-clarification-option" data-match-id="${match.id}">
+          <strong>${index + 1}.</strong> ${match.summary}
+          <div class="trinity-clarification-relevance">Relevance: ${Math.round(match.relevance * 100)}%</div>
+        </div>
+      `).join('');
+    }
+    
+    messageDiv.innerHTML = `
+      <div class="trinity-message-content">
+        <div class="trinity-clarification-header">
+          <span class="trinity-clarification-icon">🤔</span>
+          <strong>Need Clarification</strong>
+        </div>
+        <div class="trinity-clarification-text">
+          ${this.formatMessageContent(clarificationSuggestion, 'assistant')}
+        </div>
+        ${matchesHTML ? `<div class="trinity-clarification-matches">${matchesHTML}</div>` : ''}
+        <div class="trinity-clarification-actions">
+          <button class="trinity-clarification-dismiss" onclick="trinitySingleWindow.dismissClarification()">
+            I'll be more specific
+          </button>
+        </div>
+        <div class="trinity-message-time">${timeString}</div>
+      </div>
+    `;
+    
+    // Add special styling for clarification messages
+    messageDiv.style.background = 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)';
+    messageDiv.style.border = '1px solid #ffc107';
+    messageDiv.style.borderRadius = '12px';
+    messageDiv.style.margin = '10px 0';
+    messageDiv.style.padding = '15px';
+    
+    chatContent.appendChild(messageDiv);
+    
+    // Auto-scroll to bottom
+    setTimeout(() => {
+      chatContent.scrollTop = chatContent.scrollHeight;
+    }, 100);
+  }
+
+  /**
+   * Dismiss clarification message and re-enable input
+   */
+  dismissClarification() {
+    const clarificationMsg = document.querySelector('.trinity-message.clarification');
+    if (clarificationMsg) {
+      clarificationMsg.style.transition = 'opacity 0.3s ease';
+      clarificationMsg.style.opacity = '0.7';
+    }
+    
+    const input = document.getElementById('trinity-chat-input');
+    if (input) {
+      input.focus();
+      input.placeholder = 'Please be more specific about what you\'re looking for...';
+    }
   }
 
   /**
@@ -2877,6 +3120,332 @@ class TrinitySingleWindow {
   }
 
   /**
+   * Load and populate memory browser with actual memory files
+   */
+  async loadMemoryBrowser() {
+    try {
+      console.log('[Memory Browser] Loading actual memory files...');
+      
+      // Use IPC to load memory artifacts
+      if (window.trinityAPI && window.trinityAPI.loadMemoryArtifacts) {
+        const artifacts = await window.trinityAPI.loadMemoryArtifacts();
+        this.populateMemoryBrowser(artifacts);
+        console.log(`[Memory Browser] Loaded ${artifacts.length} actual memory artifacts`);
+        return;
+      }
+      
+      console.warn('[Memory Browser] Trinity API not available, keeping demo data');
+    } catch (error) {
+      console.error('[Memory Browser] Failed to load memory artifacts:', error);
+    }
+  }
+
+  /**
+   * Populate memory browser with actual artifacts
+   */
+  populateMemoryBrowser(artifacts) {
+    const memoryList = document.getElementById('trinity-memory-list');
+    if (!memoryList) return;
+
+    // Clear existing content
+    memoryList.innerHTML = '';
+
+    if (!artifacts || artifacts.length === 0) {
+      memoryList.innerHTML = '<div class="trinity-memory-item">No memory artifacts found</div>';
+      return;
+    }
+
+    // Create memory items for each artifact
+    artifacts.forEach(artifact => {
+      const item = document.createElement('div');
+      item.className = 'trinity-memory-item';
+      item.dataset.tier = artifact.category;
+      
+      const typeIcon = this.getMemoryTypeIcon(artifact.type);
+      const timeAgo = this.formatTimeAgo(artifact.created);
+      const size = this.formatFileSize(artifact.size || 0);
+      const preview = this.generateMemoryPreview(artifact.content);
+      
+      item.innerHTML = `
+        <div class="trinity-memory-header">
+          <span class="trinity-memory-icon">${typeIcon}</span>
+          <span class="trinity-memory-title">${artifact.title || 'Untitled'}</span>
+          <span class="trinity-memory-tier">${artifact.category}</span>
+        </div>
+        <div class="trinity-memory-preview">${preview}</div>
+        <div class="trinity-memory-meta">
+          <span class="trinity-memory-size">${size}</span>
+          <span class="trinity-memory-time">${timeAgo}</span>
+        </div>
+      `;
+      
+      // Add click handler to view full artifact
+      item.addEventListener('click', () => {
+        this.viewMemoryArtifact(artifact);
+      });
+      
+      memoryList.appendChild(item);
+    });
+  }
+
+  /**
+   * Get icon for memory type
+   */
+  getMemoryTypeIcon(type) {
+    const icons = {
+      'user-preference': '🎯',
+      'user_content': '📄',
+      'conversation': '💬',
+      'system_generated': '⚙️',
+      'unknown': '📁'
+    };
+    return icons[type] || icons['unknown'];
+  }
+
+  /**
+   * Generate preview text for memory content
+   */
+  generateMemoryPreview(content) {
+    if (!content) return 'No content available';
+    
+    const text = typeof content === 'string' ? content : JSON.stringify(content);
+    const maxLength = 100;
+    
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  }
+
+  /**
+   * Format time ago string
+   */
+  formatTimeAgo(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  }
+
+  /**
+   * View memory artifact in detail
+   */
+  viewMemoryArtifact(artifact) {
+    console.log('[Memory Browser] Viewing artifact:', artifact.title);
+    this.createMemoryContentViewer(artifact);
+  }
+
+  /**
+   * Create and show memory content viewer
+   */
+  createMemoryContentViewer(artifact) {
+    // Create overlay for memory content viewer
+    const overlay = document.createElement('div');
+    overlay.className = 'trinity-memory-content-overlay';
+    overlay.innerHTML = `
+      <div class="trinity-memory-content-modal">
+        <div class="trinity-memory-content-header">
+          <div class="trinity-memory-content-title">
+            <span class="trinity-memory-icon">${this.getMemoryTypeIcon(artifact.type)}</span>
+            <span class="trinity-memory-title-text">${artifact.title || 'Memory Artifact'}</span>
+            <span class="trinity-memory-category-badge">${artifact.category}</span>
+          </div>
+          <button class="trinity-memory-close-btn" onclick="this.closest('.trinity-memory-content-overlay').remove()">
+            <span>✕</span>
+          </button>
+        </div>
+        <div class="trinity-memory-content-meta">
+          <div class="meta-item">
+            <strong>Type:</strong> ${artifact.type || 'Unknown'}
+          </div>
+          <div class="meta-item">
+            <strong>Created:</strong> ${this.formatTimeAgo(artifact.created)}
+          </div>
+          <div class="meta-item">
+            <strong>Size:</strong> ${this.formatFileSize(artifact.size || 0)}
+          </div>
+          <div class="meta-item">
+            <strong>Category:</strong> ${artifact.category}
+          </div>
+        </div>
+        <div class="trinity-memory-content-body">
+          <div class="trinity-memory-content-text">
+            ${this.formatMemoryContent(artifact.content)}
+          </div>
+        </div>
+        <div class="trinity-memory-content-actions">
+          <button class="trinity-btn" onclick="navigator.clipboard.writeText('${artifact.content?.replace(/'/g, "\\'")}'); alert('Content copied to clipboard!')">
+            📋 Copy Content
+          </button>
+          <button class="trinity-btn" onclick="this.closest('.trinity-memory-content-overlay').remove()">
+            Close
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Add styles for the memory content viewer
+    if (!document.getElementById('trinity-memory-content-styles')) {
+      const styles = document.createElement('style');
+      styles.id = 'trinity-memory-content-styles';
+      styles.textContent = `
+        .trinity-memory-content-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000;
+        }
+        
+        .trinity-memory-content-modal {
+          background: #1e1e1e;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 8px;
+          width: 90%;
+          max-width: 800px;
+          max-height: 80%;
+          display: flex;
+          flex-direction: column;
+          color: #e0e0e0;
+        }
+        
+        .trinity-memory-content-header {
+          padding: 16px 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .trinity-memory-content-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .trinity-memory-title-text {
+          font-size: 18px;
+          font-weight: 600;
+        }
+        
+        .trinity-memory-category-badge {
+          background: rgba(79, 195, 247, 0.2);
+          border: 1px solid rgba(79, 195, 247, 0.4);
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 11px;
+          text-transform: uppercase;
+        }
+        
+        .trinity-memory-close-btn {
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #e0e0e0;
+          padding: 6px 10px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+        }
+        
+        .trinity-memory-close-btn:hover {
+          background: rgba(255, 100, 100, 0.3);
+        }
+        
+        .trinity-memory-content-meta {
+          padding: 16px 20px;
+          background: rgba(255, 255, 255, 0.05);
+          display: flex;
+          flex-wrap: wrap;
+          gap: 16px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .meta-item {
+          font-size: 12px;
+          color: #b0b0b0;
+        }
+        
+        .trinity-memory-content-body {
+          flex: 1;
+          padding: 20px;
+          overflow-y: auto;
+          min-height: 200px;
+        }
+        
+        .trinity-memory-content-text {
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+          font-size: 13px;
+          line-height: 1.5;
+          white-space: pre-wrap;
+          background: rgba(0, 0, 0, 0.3);
+          padding: 16px;
+          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #f0f0f0;
+        }
+        
+        .trinity-memory-content-actions {
+          padding: 16px 20px;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          display: flex;
+          gap: 8px;
+          justify-content: flex-end;
+        }
+        
+        .trinity-btn {
+          background: rgba(79, 195, 247, 0.2);
+          border: 1px solid rgba(79, 195, 247, 0.4);
+          color: #e0e0e0;
+          padding: 8px 16px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+        }
+        
+        .trinity-btn:hover {
+          background: rgba(79, 195, 247, 0.3);
+        }
+      `;
+      document.head.appendChild(styles);
+    }
+
+    // Show the overlay
+    document.body.appendChild(overlay);
+    
+    // Close on overlay click (outside modal)
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+      }
+    });
+  }
+
+  /**
+   * Format memory content for display
+   */
+  formatMemoryContent(content) {
+    if (!content) return 'No content available';
+    
+    if (typeof content === 'string') {
+      return content;
+    }
+    
+    // Pretty print JSON content
+    return JSON.stringify(content, null, 2);
+  }
+
+  /**
    * Load and display actual memory statistics
    */
   async loadMemoryStatistics() {
@@ -3136,6 +3705,21 @@ class TrinitySingleWindow {
             } catch (error) {
               console.error('Error loading memory artifacts via IPC:', error);
               return await this.loadArtifactsFromFilesystem();
+            }
+          },
+          loadCategoryItems: async (category) => {
+            try {
+              // Load items from specific category using IPC
+              if (window.trinityAPI && window.trinityAPI.loadMemoryArtifacts) {
+                const artifacts = await window.trinityAPI.loadMemoryArtifacts();
+                return artifacts.filter(artifact => artifact.category === category);
+              } else {
+                console.warn('[Memory Artifacts] Trinity API not available');
+                return [];
+              }
+            } catch (error) {
+              console.error(`Error loading category ${category}:`, error);
+              return [];
             }
           },
           getMemoryItems: () => [],

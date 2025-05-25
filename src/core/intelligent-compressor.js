@@ -216,6 +216,23 @@ class IntelligentCompressor {
             };
         }
 
+        // CRITICAL FIX: Never compress conversations - they lose essential structure
+        if (category === 'conversation') {
+            const semanticSignature = this.generateSemanticSignature(content);
+            if (this.config.logging.logCompressionStats) {
+                this.logger.info(`Conversation content preserved without compression: ${content.length} chars (0% reduction)`);
+            }
+            return {
+                originalLength: content.length,
+                compressedContent: content, // NO COMPRESSION - preserve conversation structure
+                compressionRatio: 1.0,
+                tokensSaved: 0,
+                semanticSignature,
+                category,
+                timestamp: new Date().toISOString()
+            };
+        }
+
         const semanticSignature = this.generateSemanticSignature(content);
         
         // Check cache

@@ -51,6 +51,7 @@ class MemoryArtifactsViewer {
                         <option value="working">Working</option>
                         <option value="reference">Reference</option>
                         <option value="historical">Historical</option>
+                        <option value="conversation">Conversations</option>
                     </select>
                     <button class="refresh-btn" title="Refresh artifacts">
                         <span class="icon">🔄</span>
@@ -754,6 +755,7 @@ const artifactsViewerCSS = `
 .category.working { background: #007bff; }
 .category.reference { background: #28a745; }
 .category.historical { background: #6c757d; }
+.category.conversation { background: #fd7e14; }
 
 .artifact-preview {
     font-size: 14px;

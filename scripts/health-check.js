@@ -76,7 +76,7 @@ class HealthCheck {
     console.log('Checking Claude Code installation...');
     
     return new Promise((resolve) => {
-      const command = process.platform === 'win32' ? 'wsl claude --version' : 'claude --version';
+      const command = 'claude --version'; // Native Claude Code on Linux/macOS
       
       const proc = spawn('sh', ['-c', command], { stdio: 'pipe' });
       

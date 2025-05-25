@@ -119,7 +119,7 @@ As you interact, Trinity will:
 **Claude Code integration fails:**
 - Verify API key is set: `echo $ANTHROPIC_API_KEY`
 - Check Claude Code installation: `claude --version`
-- Windows users: Ensure WSL is running
+- Ensure native Claude Code installation on Linux/macOS
 
 **Memory/context issues:**
 - Restart Trinity to clear temporary context

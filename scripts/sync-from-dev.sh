@@ -204,57 +204,55 @@ EOF
 sync_setup_scripts() {
     log "Creating setup and installation scripts..."
     
-    # Create Windows setup script
-    cat > "$PUBLIC_DIR/scripts/setup-windows.bat" << 'EOF'
-@echo off
-REM Trinity MVP Windows Setup Script
+    # Create macOS setup script
+    cat > "$PUBLIC_DIR/scripts/setup-macos.sh" << 'EOF'
+#!/bin/bash
 
-echo Trinity MVP - Windows Setup
-echo ==============================
+# Trinity MVP macOS Setup Script
+set -e
 
-echo.
-echo Checking system requirements...
+echo "Trinity MVP - macOS Setup"
+echo "========================="
+echo
 
-REM Check Node.js
-node --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ERROR: Node.js not found. Please install Node.js 18+ from https://nodejs.org/
-    pause
-    exit /b 1
-)
+echo "Checking system requirements..."
 
-echo Node.js found: 
-node --version
+# Check Node.js
+if ! command -v node &> /dev/null; then
+    echo "ERROR: Node.js not found. Please install Node.js 18+"
+    echo "Install via Homebrew: brew install node"
+    echo "Or download from: https://nodejs.org/"
+    exit 1
+fi
 
-REM Check WSL
-wsl --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ERROR: WSL not found. Please enable Windows Subsystem for Linux
-    echo Follow instructions at: https://docs.microsoft.com/en-us/windows/wsl/install
-    pause
-    exit /b 1
-)
+echo "Node.js found: $(node --version)"
 
-echo WSL found and available
+# Check Claude Code
+if ! command -v claude &> /dev/null; then
+    echo "WARNING: Claude Code not found"
+    echo "Please install Claude Code: https://claude.ai/code"
+    echo "Then run this setup script again"
+    read -p "Continue anyway? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
 
-REM Check Claude Code in WSL
-wsl which claude >nul 2>&1
-if %errorlevel% neq 0 (
-    echo WARNING: Claude Code not found in WSL
-    echo Please install Claude Code: https://claude.ai/code
-    echo Then run this setup script again
-    pause
-)
-
-echo.
-echo Installing Trinity MVP dependencies...
+echo
+echo "Installing Trinity MVP dependencies..."
 npm install
 
-echo.
-echo Trinity MVP setup complete!
-echo Run 'npm start' to launch Trinity MVP
-pause
+echo
+echo "Setting up Trinity MVP directories..."
+mkdir -p "$HOME/.trinity-mvp"/{queue/{input,processing,output,failed},sessions,logs}
+
+echo
+echo "Trinity MVP setup complete!"
+echo "Run 'npm start' to launch Trinity MVP"
 EOF
+
+    chmod +x "$PUBLIC_DIR/scripts/setup-macos.sh"
 
     # Create Linux setup script
     cat > "$PUBLIC_DIR/scripts/setup-linux.sh" << 'EOF'
@@ -391,7 +389,7 @@ class HealthCheck {
     console.log('Checking Claude Code installation...');
     
     return new Promise((resolve) => {
-      const command = process.platform === 'win32' ? 'wsl claude --version' : 'claude --version';
+      const command = 'claude --version'; // Native Claude Code on Linux/macOS
       
       const proc = spawn('sh', ['-c', command], { stdio: 'pipe' });
       
