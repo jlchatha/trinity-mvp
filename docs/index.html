@@ -11,11 +11,21 @@
             box-sizing: border-box;
         }
         
+        :root {
+            --trinity-primary: #1a1a2e;
+            --trinity-secondary: #16213e;
+            --trinity-accent: #2a2a3e;
+            --trinity-blue: #4a9eff;
+            --trinity-text: #e0e0e0;
+            --trinity-text-secondary: #a0a0a0;
+            --trinity-success: #4ade80;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--trinity-text);
+            background: linear-gradient(135deg, var(--trinity-primary) 0%, var(--trinity-secondary) 100%);
             min-height: 100vh;
         }
         
@@ -26,8 +36,9 @@
         }
         
         header {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(26, 26, 46, 0.95);
             backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(74, 158, 255, 0.2);
             padding: 1rem 0;
             position: fixed;
             width: 100%;
@@ -44,7 +55,11 @@
         .logo {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #667eea;
+            color: var(--trinity-blue);
+            background: linear-gradient(45deg, var(--trinity-blue), #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .nav-links {
@@ -55,13 +70,13 @@
         
         .nav-links a {
             text-decoration: none;
-            color: #333;
+            color: var(--trinity-text);
             font-weight: 500;
             transition: color 0.3s;
         }
         
         .nav-links a:hover {
-            color: #667eea;
+            color: var(--trinity-blue);
         }
         
         main {
@@ -109,27 +124,30 @@
         }
         
         .btn-primary {
-            background: #ff6b6b;
+            background: linear-gradient(135deg, var(--trinity-blue) 0%, #2563eb 100%);
             color: white;
+            border: none;
         }
         
         .btn-primary:hover {
-            background: #ff5252;
+            background: linear-gradient(135deg, #2563eb 0%, var(--trinity-blue) 100%);
             transform: translateY(-2px);
         }
         
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
+            background: rgba(42, 42, 62, 0.8);
+            color: var(--trinity-text);
+            border: 1px solid rgba(74, 158, 255, 0.3);
         }
         
         .btn-secondary:hover {
-            background: white;
+            background: rgba(42, 42, 62, 1);
+            border-color: var(--trinity-blue);
             transform: translateY(-2px);
         }
         
         .features {
-            background: white;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             padding: 4rem 0;
         }
         
@@ -141,10 +159,12 @@
         }
         
         .feature-card {
-            background: #f8f9fa;
+            background: rgba(42, 42, 62, 0.8);
+            border: 1px solid rgba(74, 158, 255, 0.2);
             padding: 2rem;
             border-radius: 12px;
             text-align: center;
+            backdrop-filter: blur(10px);
         }
         
         .feature-icon {
@@ -154,11 +174,48 @@
         
         .feature-card h3 {
             margin-bottom: 1rem;
-            color: #333;
+            color: var(--trinity-text);
         }
         
+        .feature-card p {
+            color: var(--trinity-text-secondary);
+        }
+        
+        .success-stories {
+            background: rgba(22, 33, 62, 0.8);
+            padding: 4rem 0;
+        }
+        
+        .story-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .story-card {
+            background: rgba(42, 42, 62, 0.6);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            padding: 2rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .story-card p {
+            font-style: italic;
+            margin-bottom: 1rem;
+            color: var(--trinity-text);
+            font-size: 1.1rem;
+        }
+        
+        .story-card span {
+            color: var(--trinity-blue);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
         .quick-start {
-            background: #f8f9fa;
+            background: var(--trinity-primary);
             padding: 4rem 0;
         }
         
@@ -171,7 +228,7 @@
         }
         
         .platform-btn {
-            background: #667eea;
+            background: linear-gradient(135deg, var(--trinity-blue) 0%, #2563eb 100%);
             color: white;
             padding: 1rem 2rem;
             border-radius: 8px;
@@ -184,7 +241,7 @@
         }
         
         .platform-btn:hover {
-            background: #5a67d8;
+            background: linear-gradient(135deg, #2563eb 0%, var(--trinity-blue) 100%);
             transform: translateY(-2px);
         }
         
@@ -192,22 +249,23 @@
             text-align: center;
             font-size: 2.5rem;
             margin-bottom: 1rem;
-            color: #333;
+            color: var(--trinity-text);
         }
         
         .section-subtitle {
             text-align: center;
             font-size: 1.2rem;
-            color: #666;
+            color: var(--trinity-text-secondary);
             max-width: 600px;
             margin: 0 auto;
         }
         
         footer {
-            background: #333;
-            color: white;
+            background: var(--trinity-primary);
+            color: var(--trinity-text);
             text-align: center;
             padding: 2rem 0;
+            border-top: 1px solid rgba(74, 158, 255, 0.2);
         }
         
         @media (max-width: 768px) {
@@ -242,8 +300,8 @@
     <main>
         <section class="hero">
             <div class="container">
-                <h1>AI Assistant with Persistent Memory</h1>
-                <p>Professional AI assistant that remembers your projects, preferences, and working patterns across sessions. Unlike web-based AI, Trinity integrates directly with your local files and system.</p>
+                <h1>AI Assistant That Actually Remembers</h1>
+                <p>Turn your ideas into reality with an AI that learns your style and remembers your projects. Perfect for anyone - from students to professionals to creative makers.</p>
                 
                 <div class="cta-buttons">
                     <a href="#download" class="btn btn-primary">Download Trinity MVP</a>
@@ -293,9 +351,35 @@
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-icon">💼</div>
-                        <h3>Professional Workflows</h3>
-                        <p>Built for developers, technical leaders, and professionals who need AI that understands their work.</p>
+                        <div class="feature-icon">🎨</div>
+                        <h3>Creative Workflows</h3>
+                        <p>Perfect for students, professionals, and creative makers. AI that adapts to your style and grows with your projects.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="success-stories">
+            <div class="container">
+                <h2 class="section-title">Real Stories from Real Users</h2>
+                <p class="section-subtitle">See what people are creating with Trinity MVP</p>
+                
+                <div class="story-grid">
+                    <div class="story-card">
+                        <p>"I used Trinity to help organize my thesis research across dozens of papers. It remembered my research questions and could connect ideas across different sessions."</p>
+                        <span>— Graduate Student, Research Project</span>
+                    </div>
+                    <div class="story-card">
+                        <p>"Created my first automation script for organizing files - no coding background needed. Trinity walked me through it step by step."</p>
+                        <span>— Creative Professional, File Organization</span>
+                    </div>
+                    <div class="story-card">
+                        <p>"Trinity remembers all my project details between meetings. I can pick up exactly where I left off weeks later."</p>
+                        <span>— Project Manager, Team Coordination</span>
+                    </div>
+                    <div class="story-card">
+                        <p>"Trinity helped me understand patterns in my research data and remembered my analysis approach across multiple sessions."</p>
+                        <span>— Data Analyst, Research Study</span>
                     </div>
                 </div>
             </div>
@@ -318,7 +402,7 @@
                     </a>
                 </div>
                 
-                <div style="text-align: center; margin-top: 2rem; color: #666;">
+                <div style="text-align: center; margin-top: 2rem; color: var(--trinity-text-secondary);">
                     <p><strong>Requirements:</strong> Claude Code + Anthropic API Key</p>
                     <p>Free tier available • Linux/macOS supported • 5-minute setup</p>
                 </div>
@@ -328,7 +412,7 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 Trinity MVP. Licensed under Apache 2.0. Built with ❤️ for developers.</p>
+            <p>&copy; 2025 Trinity MVP. Licensed under Apache 2.0. Built with ❤️ for creative minds everywhere.</p>
         </div>
     </footer>
 </body>
