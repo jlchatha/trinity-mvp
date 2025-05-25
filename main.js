@@ -232,7 +232,21 @@ class TrinityMVPApp {
 
     // Handle window closed
     this.mainWindow.on('closed', () => {
+      console.log('❌ WINDOW CLOSED: Main window closed event triggered');
       this.mainWindow = null;
+    });
+
+    // Debug renderer process
+    this.mainWindow.webContents.on('crashed', (event, killed) => {
+      console.log('❌ RENDERER CRASHED:', { killed });
+    });
+
+    this.mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+      console.log('❌ LOAD FAILED:', { errorCode, errorDescription });
+    });
+
+    this.mainWindow.webContents.on('did-finish-load', () => {
+      console.log('✅ Window content loaded successfully');
     });
 
     // Simulate loading process (replace with actual initialization)
@@ -951,56 +965,7 @@ function setupTrinityAPIHandlers(trinityApp) {
     if (window) window.close();
   });
   
-  // Overseer handlers (using Claude Code SDK with direct API fallback)
-  ipcMain.handle('overseer:sendMessage', async (event, message) => {
-    console.log('Overseer message received:', message);
-    
-    try {
-      // Try Claude Code SDK first
-      const result = await trinityApp.claudeSDK.executeCommand(
-        message,
-        {
-          sessionId: 'overseer-main',
-          role: 'OVERSEER',
-          systemPrompt: AGENT_PROMPTS.OVERSEER.systemPrompt
-        }
-      );
-      
-      return { 
-        status: 'processed', 
-        response: result.result,
-        sessionId: result.sessionId,
-        method: 'claude-code'
-      };
-    } catch (error) {
-      console.warn('Claude Code failed, trying direct API fallback:', error.message);
-      
-      // Fallback to direct Claude API
-      try {
-        const directResponse = await trinityApp.executeDirectClaudeAPI(message);
-        return {
-          status: 'processed',
-          response: directResponse,
-          sessionId: 'direct-api-fallback',
-          method: 'direct-api'
-        };
-      } catch (apiError) {
-        console.error('Both Claude Code and direct API failed:', apiError);
-        return {
-          status: 'error',
-          error: `Claude Code: ${error.message}, Direct API: ${apiError.message}`,
-          fallbackResponse: `Hello! I'm Trinity Assistant. I'm currently experiencing some technical difficulties with my Claude Code integration, but I'm working to resolve them. 
-
-Your message was: "${message}"
-
-While I work on fixing the technical issues, I can tell you that I'm designed to be your intelligent assistant for complex problem solving, coding, documentation, and project management. Once the integration is restored, I'll be able to help you with a wide range of tasks using my full capabilities.
-
-Is there anything specific you'd like to know about Trinity's features while I work on getting fully operational?`,
-          method: 'fallback'
-        };
-      }
-    }
-  });
+  // NOTE: overseer:sendMessage handler moved to TrinityIPCBridge for context awareness
   
   ipcMain.handle('overseer:getStatus', async () => {
     return { 
