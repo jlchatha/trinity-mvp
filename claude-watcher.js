@@ -10,6 +10,9 @@ const path = require('path');
 const { spawn } = require('child_process');
 const os = require('os');
 
+// Trinity Memory Integration
+const TrinityMemoryIntegration = require('./src/core/trinity-memory-integration');
+
 class ClaudeWatcher {
   constructor() {
     this.trinityDir = path.join(os.homedir(), '.trinity-mvp');
@@ -24,8 +27,18 @@ class ClaudeWatcher {
     this.isRunning = false;
     this.pollInterval = 1000; // Check every second
     
-    this.log('Claude Watcher starting up...');
+    // Initialize Trinity Memory Integration
+    this.memoryIntegration = new TrinityMemoryIntegration({
+      baseDir: this.trinityDir,
+      logger: {
+        info: (msg) => this.log(`[MEMORY] ${msg}`),
+        error: (msg) => this.log(`[MEMORY ERROR] ${msg}`)
+      }
+    });
+    
+    this.log('Claude Watcher starting up with Trinity Memory Integration...');
     this.ensureDirectories();
+    this.initializeMemory();
   }
   
   log(message) {
@@ -49,6 +62,15 @@ class ClaudeWatcher {
       }
     });
     this.log('Queue directories verified');
+  }
+  
+  async initializeMemory() {
+    try {
+      await this.memoryIntegration.initialize();
+      this.log('Trinity Memory Integration initialized successfully');
+    } catch (error) {
+      this.log(`Failed to initialize memory integration: ${error.message}`);
+    }
   }
   
   async start() {
@@ -108,8 +130,49 @@ class ClaudeWatcher {
     const workingDirectory = options.workingDirectory;
     const userContext = options.userContext || {};
     
-    // Execute Claude Code via WSL
-    const result = await this.executeClaudeCode(prompt, workingDirectory, options);
+    let memoryContext = null;
+    let enhancedPrompt = prompt;
+    
+    try {
+      // Load relevant memory context for the prompt
+      this.log('Loading relevant memory context...');
+      memoryContext = await this.memoryIntegration.loadRelevantContext(prompt, {
+        maxItems: 8,
+        categories: ['core', 'working', 'reference']
+      });
+      
+      // Build enhanced prompt with memory context
+      if (memoryContext.contextText && memoryContext.contextText.trim().length > 0) {
+        enhancedPrompt = `Context from memory:\n${memoryContext.contextText}\n\n---\n\nUser request: ${prompt}`;
+        this.log(`Enhanced prompt with memory context: ${memoryContext.summary}`);
+        this.log(`Memory optimization: ${memoryContext.optimization.contextPercent}% of memory used, ${memoryContext.optimization.tokensSaved} tokens saved`);
+      } else {
+        this.log('No relevant memory context found for this request');
+      }
+      
+    } catch (error) {
+      this.log(`Failed to load memory context: ${error.message}`);
+      // Continue without memory context
+    }
+    
+    // Execute Claude Code with enhanced prompt
+    const result = await this.executeClaudeCode(enhancedPrompt, workingDirectory, options);
+    
+    // Save conversation to memory if successful
+    if (result.success && result.output && result.output.trim().length > 0) {
+      try {
+        this.log('Saving conversation to memory...');
+        const conversationResult = await this.memoryIntegration.saveConversation(
+          prompt, // Original user prompt (not enhanced)
+          result.output,
+          sessionId || 'default',
+          memoryContext
+        );
+        this.log(`Conversation saved to memory: ${conversationResult.itemId}`);
+      } catch (error) {
+        this.log(`Failed to save conversation to memory: ${error.message}`);
+      }
+    }
     
     // Create response (matching file manager expected format)
     const responseData = {
@@ -121,7 +184,13 @@ class ClaudeWatcher {
       output: result.output,  // Keep both for compatibility
       error: result.error,
       executionTime: result.executionTime,
-      duration_ms: result.executionTime // Alternative field name
+      duration_ms: result.executionTime, // Alternative field name
+      // Trinity Memory Context for UI display
+      memoryContext: memoryContext ? {
+        summary: memoryContext.summary,
+        optimization: memoryContext.optimization,
+        artifacts: memoryContext.artifacts
+      } : null
     };
     
     // Write response file (same name as request for file manager compatibility)

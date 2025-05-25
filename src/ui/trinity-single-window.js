@@ -2224,7 +2224,7 @@ class TrinitySingleWindow {
   setupPanelActionHandlers() {
     // Memory panel actions
     document.getElementById('browse-memory-detailed')?.addEventListener('click', () => {
-      this.toggleMemoryBrowser();
+      this.openMemoryArtifactsViewer();
     });
     
     // Memory browser filters
@@ -2816,6 +2816,228 @@ class TrinitySingleWindow {
         item.style.display = 'none';
       }
     });
+  }
+
+  /**
+   * Open Memory Artifacts Viewer in overlay
+   */
+  openMemoryArtifactsViewer() {
+    try {
+      // Check if Memory Artifacts Viewer is available
+      if (typeof MemoryArtifactsViewer === 'undefined') {
+        // Load the Memory Artifacts Viewer script if not already loaded
+        this.loadMemoryArtifactsViewer().then(() => {
+          this.createMemoryArtifactsOverlay();
+        }).catch(error => {
+          console.error('Failed to load Memory Artifacts Viewer:', error);
+          this.showNotification('Memory Artifacts Viewer not available', 'error');
+        });
+      } else {
+        // Memory Artifacts Viewer is already loaded
+        this.createMemoryArtifactsOverlay();
+      }
+    } catch (error) {
+      console.error('Error opening Memory Artifacts Viewer:', error);
+      this.showNotification('Unable to open Memory Artifacts Viewer', 'error');
+    }
+  }
+
+  /**
+   * Load Memory Artifacts Viewer script dynamically
+   */
+  loadMemoryArtifactsViewer() {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = '../src/ui/memory-artifacts-viewer.js';
+      script.onload = () => {
+        console.log('[Trinity] Memory Artifacts Viewer loaded successfully');
+        resolve();
+      };
+      script.onerror = (error) => {
+        console.error('[Trinity] Failed to load Memory Artifacts Viewer:', error);
+        reject(error);
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  /**
+   * Create Memory Artifacts Viewer overlay
+   */
+  createMemoryArtifactsOverlay() {
+    // Create overlay container
+    const overlay = document.createElement('div');
+    overlay.className = 'trinity-memory-artifacts-overlay';
+    overlay.innerHTML = `
+      <div class="trinity-memory-artifacts-modal">
+        <div class="trinity-memory-artifacts-header">
+          <h2>🧠 Memory Artifacts</h2>
+          <button class="trinity-close-btn" id="close-memory-artifacts">✕</button>
+        </div>
+        <div class="trinity-memory-artifacts-content" id="memory-artifacts-container">
+          <!-- Memory Artifacts Viewer will be inserted here -->
+        </div>
+      </div>
+    `;
+
+    // Add overlay styles
+    const styles = document.createElement('style');
+    styles.textContent = `
+      .trinity-memory-artifacts-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(8px);
+      }
+
+      .trinity-memory-artifacts-modal {
+        background: #1a1a1a;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        width: 90%;
+        height: 90%;
+        max-width: 1200px;
+        max-height: 800px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      }
+
+      .trinity-memory-artifacts-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .trinity-memory-artifacts-header h2 {
+        margin: 0;
+        color: #e0e0e0;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .trinity-close-btn {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+
+      .trinity-close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #e0e0e0;
+      }
+
+      .trinity-memory-artifacts-content {
+        flex: 1;
+        overflow: hidden;
+        background: #161616;
+      }
+
+      /* Make Memory Artifacts Viewer fit the overlay */
+      .trinity-memory-artifacts-content .memory-artifacts-viewer {
+        height: 100%;
+        background: transparent;
+        border: none;
+      }
+    `;
+    document.head.appendChild(styles);
+
+    // Add to DOM
+    document.body.appendChild(overlay);
+
+    // Initialize Memory Artifacts Viewer
+    try {
+      const container = overlay.querySelector('#memory-artifacts-container');
+      
+      // Connect to Trinity memory integration if available
+      let memoryIntegration;
+      if (window.trinityMemoryIntegration) {
+        memoryIntegration = window.trinityMemoryIntegration;
+      } else {
+        // Create a mock memory integration that reads from filesystem
+        memoryIntegration = {
+          loadArtifacts: async () => {
+            try {
+              // Load actual memory artifacts from Trinity MVP memory directory
+              if (window.trinityAPI && window.trinityAPI.memory) {
+                const artifacts = await window.trinityAPI.memory.loadAll();
+                return artifacts || [];
+              }
+              return [];
+            } catch (error) {
+              console.warn('Could not load memory artifacts:', error);
+              return [];
+            }
+          },
+          getMemoryItems: () => [],
+          searchMemory: async (query) => {
+            try {
+              if (window.trinityAPI && window.trinityAPI.memory) {
+                return await window.trinityAPI.memory.search(query);
+              }
+              return [];
+            } catch (error) {
+              console.warn('Memory search failed:', error);
+              return [];
+            }
+          }
+        };
+      }
+
+      // Initialize Memory Artifacts Viewer
+      const viewer = new MemoryArtifactsViewer(memoryIntegration, {
+        syntaxHighlighting: true,
+        showMetadata: true,
+        allowFullscreen: false
+      });
+
+      // Mount the viewer
+      container.appendChild(viewer.container);
+
+      console.log('[Trinity] Memory Artifacts Viewer initialized successfully');
+      this.showNotification('Memory Artifacts Viewer opened', 'success');
+
+    } catch (error) {
+      console.error('Error initializing Memory Artifacts Viewer:', error);
+      this.showNotification('Failed to initialize Memory Artifacts Viewer', 'error');
+    }
+
+    // Setup close handlers
+    overlay.querySelector('#close-memory-artifacts').addEventListener('click', () => {
+      document.body.removeChild(overlay);
+    });
+
+    // Close on background click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        document.body.removeChild(overlay);
+      }
+    });
+
+    // Close on Escape key
+    const escapeHandler = (e) => {
+      if (e.key === 'Escape') {
+        document.body.removeChild(overlay);
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
   }
 
   /**
