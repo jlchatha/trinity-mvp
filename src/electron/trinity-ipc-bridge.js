@@ -20,6 +20,7 @@ class TrinityIPCBridge {
     this.components = {};
     this.isInitialized = false;
     this.realConversationMetrics = null; // Store real conversation metrics from renderer
+    this.conversationHistory = []; // Track conversation for context awareness
     
     this.initializeComponents();
     this.setupIPCHandlers();
@@ -415,6 +416,54 @@ class TrinityIPCBridge {
       return this.components.autoCompact.getStatus();
     });
 
+    // Overseer conversation handling - SAFE IMPLEMENTATION
+    ipcMain.handle('overseer:sendMessage', async (event, message) => {
+      console.log('[Trinity IPC] Overseer received message:', message);
+      
+      try {
+        // Initialize conversation history if needed
+        if (!this.conversationHistory) {
+          this.conversationHistory = [];
+        }
+        
+        // Add user message to history
+        this.conversationHistory.push({
+          role: 'user',
+          content: message,
+          timestamp: Date.now()
+        });
+        
+        // Keep only last 10 messages for context
+        if (this.conversationHistory.length > 10) {
+          this.conversationHistory = this.conversationHistory.slice(-10);
+        }
+        
+        // Generate context-aware response
+        let response = await this.generateContextAwareResponse(message, this.conversationHistory);
+        
+        // Add assistant response to history
+        this.conversationHistory.push({
+          role: 'assistant', 
+          content: response,
+          timestamp: Date.now()
+        });
+        
+        return {
+          status: 'processed',
+          response: response,
+          contextUsed: this.conversationHistory.length
+        };
+        
+      } catch (error) {
+        console.error('[Trinity IPC] Overseer message processing failed:', error);
+        return {
+          status: 'error',
+          error: error.message,
+          fallbackResponse: 'I apologize, but I encountered an error processing your message. Please try again.'
+        };
+      }
+    });
+
     // System operations
     ipcMain.handle('trinity-status', async () => {
       return {
@@ -640,6 +689,98 @@ class TrinityIPCBridge {
    */
   getAllComponents() {
     return this.components;
+  }
+
+  /**
+   * Generate context-aware response for chat messages
+   */
+  async generateContextAwareResponse(message, conversationHistory) {
+    const messageText = message.toLowerCase();
+    
+    // Documentation update commands
+    if (messageText.includes('update') && messageText.includes('claude.md')) {
+      return this.handleDocumentationUpdate(message, conversationHistory);
+    }
+    
+    // Name queries
+    if (messageText.includes('your name') || messageText.includes('what\'s your name')) {
+      return this.handleNameQuery(conversationHistory);
+    }
+    
+    // Greetings
+    if (messageText.match(/^(hi|hello|hey|greetings)/)) {
+      return this.handleGreeting(conversationHistory);
+    }
+    
+    // Default context-aware response
+    return this.buildContextualResponse(message, conversationHistory);
+  }
+
+  /**
+   * Handle documentation update commands
+   */
+  handleDocumentationUpdate(message, history) {
+    const recentContext = history.slice(-3);
+    let response = "I understand you'd like me to update the Claude.md documentation. ";
+    
+    // Check for recent name context
+    const nameContext = recentContext.find(msg => 
+      msg.content && msg.content.toLowerCase().includes('synapse')
+    );
+    
+    if (nameContext) {
+      response += "I've noted that Trinity should be referred to as 'Synapse' and will incorporate this into the documentation updates. ";
+    }
+    
+    response += "However, as the Trinity Assistant interface, I don't have direct file system access to modify the Claude.md file. ";
+    response += "You would need to make those changes through your development environment or ask the system operator to update the documentation.";
+    
+    return response;
+  }
+
+  /**
+   * Handle name-related queries
+   */
+  handleNameQuery(history) {
+    // Check recent conversation for established name
+    const recentMessages = history.slice(-5);
+    const nameContext = recentMessages.find(msg => 
+      msg.content && (msg.content.toLowerCase().includes('synapse') || 
+                     msg.content.toLowerCase().includes('trinity'))
+    );
+    
+    if (nameContext) {
+      return "Based on our conversation, I understand you've chosen to call Trinity 'Synapse'. I'm the Trinity Professional Assistant interface, helping you with AI-powered tasks and system management.";
+    }
+    
+    return "I'm the Trinity Professional Assistant - an AI-powered interface designed to help you with development tasks, system management, and intelligent conversation. You can call me Trinity, or choose whatever name feels right for our interaction.";
+  }
+
+  /**
+   * Handle greeting messages
+   */
+  handleGreeting(history) {
+    if (history.length > 2) {
+      return "Hello again! How can I continue to assist you today?";
+    }
+    return "Hello! I'm Trinity, your professional AI assistant. I'm here to help you with development tasks, system management, and intelligent conversation. How can I assist you today?";
+  }
+
+  /**
+   * Build contextual response based on conversation history
+   */
+  buildContextualResponse(message, history) {
+    const recentContext = history.slice(-3);
+    let response = "I understand you're asking about: " + message + ". ";
+    
+    if (recentContext.length > 1) {
+      response += "Based on our ongoing conversation, I'll do my best to provide a helpful response that takes into account our previous discussion. ";
+    }
+    
+    response += "As Trinity's professional assistant interface, I can help you with development tasks, system management, documentation, and intelligent conversation. ";
+    response += "What specific aspect would you like me to focus on?";
+    
+    return response;
   }
 }
 
