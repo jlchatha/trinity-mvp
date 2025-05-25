@@ -39,6 +39,7 @@ class TrinitySingleWindow {
     
     this.initializeSingleWindow();
     this.setupEventListeners();
+    this.loadMemoryStatistics();
     console.log('[Trinity Single Window] Single window architecture initialized successfully');
   }
 
@@ -152,11 +153,11 @@ class TrinitySingleWindow {
                 <div class="trinity-memory-stats">
                   <div class="trinity-stat-item">
                     <span class="trinity-stat-label">Total Items:</span>
-                    <span class="trinity-stat-value" id="memory-total-items">6</span>
+                    <span class="trinity-stat-value" id="memory-total-items">Loading...</span>
                   </div>
                   <div class="trinity-stat-item">
                     <span class="trinity-stat-label">Total Size:</span>
-                    <span class="trinity-stat-value" id="memory-total-size">95.6 KB</span>
+                    <span class="trinity-stat-value" id="memory-total-size">Loading...</span>
                   </div>
                 </div>
                 <div class="trinity-memory-actions">
@@ -2819,6 +2820,89 @@ class TrinitySingleWindow {
   }
 
   /**
+   * Load and display actual memory statistics
+   */
+  async loadMemoryStatistics() {
+    try {
+      const fs = require('fs').promises;
+      const path = require('path');
+      const os = require('os');
+      
+      const memoryDir = path.join(os.homedir(), '.trinity-mvp', 'memory');
+      let totalFiles = 0;
+      let totalSize = 0;
+      
+      // Check if memory directory exists
+      try {
+        await fs.access(memoryDir);
+      } catch (error) {
+        console.warn('[Memory Stats] Memory directory not found:', memoryDir);
+        this.updateMemoryDisplay(0, 0);
+        return;
+      }
+      
+      // Count files in all memory tiers
+      const tiers = ['core', 'working', 'reference', 'historical'];
+      
+      for (const tier of tiers) {
+        const tierDir = path.join(memoryDir, tier);
+        try {
+          const files = await fs.readdir(tierDir);
+          const jsonFiles = files.filter(file => file.endsWith('.json'));
+          
+          for (const file of jsonFiles) {
+            const filePath = path.join(tierDir, file);
+            try {
+              const stats = await fs.stat(filePath);
+              totalFiles++;
+              totalSize += stats.size;
+            } catch (fileError) {
+              console.warn(`[Memory Stats] Could not stat file ${filePath}:`, fileError.message);
+            }
+          }
+        } catch (tierError) {
+          // Tier directory doesn't exist, skip
+          console.log(`[Memory Stats] Tier directory ${tier} not found, skipping`);
+        }
+      }
+      
+      this.updateMemoryDisplay(totalFiles, totalSize);
+      console.log(`[Memory Stats] Loaded: ${totalFiles} files, ${this.formatFileSize(totalSize)}`);
+      
+    } catch (error) {
+      console.error('[Memory Stats] Error loading memory statistics:', error);
+      this.updateMemoryDisplay(0, 0);
+    }
+  }
+
+  /**
+   * Update memory display in UI
+   */
+  updateMemoryDisplay(fileCount, totalSize) {
+    const countElement = document.getElementById('memory-total-items');
+    const sizeElement = document.getElementById('memory-total-size');
+    
+    if (countElement) {
+      countElement.textContent = fileCount.toString();
+    }
+    
+    if (sizeElement) {
+      sizeElement.textContent = this.formatFileSize(totalSize);
+    }
+  }
+
+  /**
+   * Format file size for display
+   */
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+  }
+
+  /**
    * Open Memory Artifacts Viewer in overlay
    */
   openMemoryArtifactsViewer() {
@@ -2974,14 +3058,53 @@ class TrinitySingleWindow {
         memoryIntegration = {
           loadArtifacts: async () => {
             try {
-              // Load actual memory artifacts from Trinity MVP memory directory
-              if (window.trinityAPI && window.trinityAPI.memory) {
-                const artifacts = await window.trinityAPI.memory.loadAll();
-                return artifacts || [];
+              const fs = require('fs').promises;
+              const path = require('path');
+              const os = require('os');
+              
+              const memoryDir = path.join(os.homedir(), '.trinity-mvp', 'memory');
+              const artifacts = [];
+              const tiers = ['core', 'working', 'reference', 'historical'];
+              
+              for (const tier of tiers) {
+                const tierDir = path.join(memoryDir, tier);
+                try {
+                  const files = await fs.readdir(tierDir);
+                  const jsonFiles = files.filter(file => file.endsWith('.json'));
+                  
+                  for (const file of jsonFiles) {
+                    const filePath = path.join(tierDir, file);
+                    try {
+                      const content = await fs.readFile(filePath, 'utf8');
+                      const data = JSON.parse(content);
+                      
+                      artifacts.push({
+                        id: data.id || file,
+                        title: data.title || data.type || 'Memory Item',
+                        content: data.originalContent || data.compressedContent || JSON.stringify(data, null, 2),
+                        category: tier,
+                        type: data.type || 'unknown',
+                        created: data.timestamp || data.created || new Date().toISOString(),
+                        size: content.length,
+                        metadata: {
+                          path: filePath,
+                          tier: tier,
+                          originalData: data
+                        }
+                      });
+                    } catch (fileError) {
+                      console.warn(`[Memory Artifacts] Could not parse file ${filePath}:`, fileError.message);
+                    }
+                  }
+                } catch (tierError) {
+                  console.log(`[Memory Artifacts] Tier directory ${tier} not found, skipping`);
+                }
               }
-              return [];
+              
+              console.log(`[Memory Artifacts] Loaded ${artifacts.length} artifacts`);
+              return artifacts;
             } catch (error) {
-              console.warn('Could not load memory artifacts:', error);
+              console.error('Error loading memory artifacts:', error);
               return [];
             }
           },
