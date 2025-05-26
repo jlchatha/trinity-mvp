@@ -30,18 +30,33 @@ class ComplexQueryProcessor {
       architecturalAnalysis: /\b(architecture|architectural|structure|design|component|module)\b.*\b(analysis|review|assessment)\b/i
     };
     
-    // Complexity indicators
-    this.complexityIndicators = [
-      'delivery vs promises',
-      'promises vs delivery', 
-      'what we are delivering vs what we are promising',
-      'assess what',
-      'review and',
-      'analyze and',
-      'compare and',
-      'identify and',
-      'examine the'
-    ];
+    // Enhanced complexity indicators with scoring
+    this.complexityIndicators = {
+      multiStep: [
+        /\b(write|create|implement|build|design)\s+.*\b(plan|system|algorithm|architecture)\b/i,
+        /\b(calculate|compute|find|generate)\s+.*\b(first|all|every)\s+\d+/i,
+        /\b(analyze|review|examine)\s+.*\band\s+(recommend|suggest|provide|explain)/i
+      ],
+      metaCognitive: [
+        /\b(analyze|examine|review)\s+.*\b(your|my|this|own)\s+(response|answer|question)\b/i,
+        /\bwhat.*happening.*inside\b/i,
+        /\bhow.*you.*think|process|analyze\b/i
+      ],
+      memoryOperations: [
+        /\b(remember|recall|store|save)\s+that\b/i,
+        /\bwhat\s+(did\s+)?(i|you)\s+(tell|say|mention|discuss)\b/i,
+        /\b(based\s+on|from)\s+.*\b(earlier|previous|last|before)\b/i
+      ],
+      technical: [
+        /\b(blockchain|cryptographic|algorithm|implementation|architecture)\b/i,
+        /\b(security|verification|authentication|encryption)\b/i,
+        /\b(real-time|multi-layered|distributed|scalable)\b/i
+      ],
+      creative: [
+        /\b(write|create|compose|generate)\s+.*\b(poem|story|song|detailed|comprehensive)\b/i,
+        /\b(explain|describe|analyze)\s+.*\b(detailed|comprehensive|thorough)\b/i
+      ]
+    };
     
     this.logger.info('[ComplexQueryProcessor] Initialized with analytical processing capabilities');
   }
@@ -60,62 +75,66 @@ class ComplexQueryProcessor {
   }
 
   /**
-   * Classify query complexity and type
+   * Classify query complexity and type with scoring system
    */
   classifyQuery(message) {
     const lowerMessage = message.toLowerCase();
+    let complexityScore = 0;
+    let matchedCategories = [];
     
-    // Check for explicit complexity indicators
-    const hasComplexityIndicator = this.complexityIndicators.some(indicator => 
-      lowerMessage.includes(indicator.toLowerCase())
-    );
-    
-    if (hasComplexityIndicator) {
-      return {
-        isComplex: true,
-        type: 'explicit_complex',
-        reason: 'Contains explicit complexity indicators',
-        operations: this.identifyOperations(message)
-      };
-    }
-    
-    // Check against analytical patterns
-    const matchedPatterns = [];
-    for (const [patternName, pattern] of Object.entries(this.analyticalPatterns)) {
-      if (pattern.test(message)) {
-        matchedPatterns.push(patternName);
+    // Check each category
+    for (const [category, patterns] of Object.entries(this.complexityIndicators)) {
+      for (const pattern of patterns) {
+        if (pattern.test(message)) {
+          complexityScore += this.getCategoryWeight(category);
+          matchedCategories.push(category);
+          break;
+        }
       }
     }
     
-    if (matchedPatterns.length > 0) {
-      return {
-        isComplex: true,
-        type: 'analytical',
-        patterns: matchedPatterns,
-        reason: `Matches analytical patterns: ${matchedPatterns.join(', ')}`,
-        operations: this.identifyOperations(message)
-      };
+    // Additional complexity factors
+    const wordCount = message.split(/\s+/).length;
+    if (wordCount > 20) complexityScore += 1;
+    if (message.length > 200) complexityScore += 1;
+    if (/[?]{2,}|\.\.\.|[;:,]{2,}/.test(message)) complexityScore += 1;
+    
+    // Check against analytical patterns for backward compatibility
+    const matchedAnalyticalPatterns = [];
+    for (const [patternName, pattern] of Object.entries(this.analyticalPatterns)) {
+      if (pattern.test(message)) {
+        matchedAnalyticalPatterns.push(patternName);
+        complexityScore += 2; // Analytical patterns get weight of 2
+      }
     }
     
-    // Check for multi-step operations
-    const hasMultipleVerbs = this.countActionVerbs(message) >= 2;
-    const hasConjunctions = /\band\s+|\,\s*and\s+|\,\s*then\s+|\;\s*/.test(lowerMessage);
+    const isComplex = complexityScore >= 2;
     
-    if (hasMultipleVerbs && hasConjunctions) {
-      return {
-        isComplex: true,
-        type: 'multi_step',
-        reason: 'Multiple action verbs with conjunctions',
-        operations: this.identifyOperations(message)
-      };
-    }
-    
-    // Default to simple
     return {
-      isComplex: false,
-      type: 'simple',
-      reason: 'No complexity indicators found'
+      isComplex,
+      type: isComplex ? 'complex' : 'simple',
+      score: complexityScore,
+      categories: matchedCategories,
+      analyticalPatterns: matchedAnalyticalPatterns,
+      reason: isComplex ? 
+        `Complexity score: ${complexityScore}, categories: ${matchedCategories.join(', ')}` :
+        'Low complexity score',
+      operations: isComplex ? this.identifyOperations(message) : []
     };
+  }
+
+  /**
+   * Get weight for different complexity categories
+   */
+  getCategoryWeight(category) {
+    const weights = {
+      multiStep: 3,
+      metaCognitive: 3,
+      technical: 2,
+      memoryOperations: 2,
+      creative: 2
+    };
+    return weights[category] || 1;
   }
 
   /**
