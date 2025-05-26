@@ -4,7 +4,7 @@ Welcome to Trinity MVP! This guide will have you up and running in just 5 simple
 
 ## What You'll Need
 
-- **Mac computer** (macOS 10.15 or later)
+- **Linux or macOS computer** (RHEL 8+, Ubuntu 20.04+, Fedora 35+, or macOS 10.15+)
 - **Internet connection** for installation
 - **5-10 minutes** of your time
 
@@ -19,14 +19,22 @@ Welcome to Trinity MVP! This guide will have you up and running in just 5 simple
 
 ## Step 2: Run the Installer 🚀
 
-1. **Open Terminal** (Press Cmd+Space, type "Terminal", press Enter)
-2. **Run this command**:
+1. **Open Terminal** (Linux: Ctrl+Alt+T | macOS: Cmd+Space, type "Terminal", press Enter)
+2. **Run the setup command for your system**:
+
+   **Linux:**
+   ```bash
+   curl -sSL https://raw.githubusercontent.com/jlchatha/trinity-mvp/main/scripts/setup-linux.sh | bash
+   ```
+
+   **macOS:**
    ```bash
    curl -sSL https://raw.githubusercontent.com/jlchatha/trinity-mvp/main/scripts/setup-macos.sh | bash
    ```
+
 3. **Follow the prompts**: The installer will handle everything automatically
 
-> **What's happening?** The installer downloads and sets up Node.js, Claude Code, and Trinity MVP for you.
+> **What's happening?** The installer downloads and sets up Node.js, Claude Code, and Trinity MVP for your platform.
 
 ---
 
@@ -43,8 +51,14 @@ Welcome to Trinity MVP! This guide will have you up and running in just 5 simple
 
 ## Step 4: Start Trinity MVP ⚡
 
-1. **Look for the desktop shortcut**: "Trinity MVP.command"
-2. **Double-click to launch** Trinity MVP
+1. **Navigate to Trinity MVP directory**: 
+   ```bash
+   cd trinity-mvp
+   ```
+2. **Start the application**:
+   ```bash
+   npm start
+   ```
 3. **Enter your API key** when prompted
 4. **Click "Start Chatting"** to begin!
 
