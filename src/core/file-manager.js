@@ -21,7 +21,7 @@ class FileCommManager extends EventEmitter {
     this.sessionsDir = path.join(this.baseDir, 'sessions');
     this.logsDir = path.join(this.baseDir, 'logs');
     
-    this.defaultTimeout = options.timeout || 30000;
+    this.defaultTimeout = options.timeout || 70000; // 70s to allow 60s Claude Code + 10s buffer
     this.pollInterval = options.pollInterval || 100;
     this.cleanupInterval = options.cleanupInterval || 300000; // 5 minutes
     

@@ -432,9 +432,9 @@ class ClaudeWatcher {
           });
         });
         
-        // Timeout after 25 seconds (less than Trinity's 30-second timeout)
+        // Timeout after 60 seconds (increased for complex analytical queries)
         const timeoutId = setTimeout(() => {
-          console.log(`[${new Date().toISOString()}] TIMEOUT: Claude Code execution exceeded 25s, killing process`);
+          console.log(`[${new Date().toISOString()}] TIMEOUT: Claude Code execution exceeded 60s, killing process`);
           console.log(`[${new Date().toISOString()}] TIMEOUT: Command args: ${claudeArgs.join(' ')}`);
           console.log(`[${new Date().toISOString()}] TIMEOUT: Current stdout: "${stdout}"`);
           console.log(`[${new Date().toISOString()}] TIMEOUT: Current stderr: "${stderr}"`);
@@ -443,10 +443,10 @@ class ClaudeWatcher {
           resolve({
             success: false,
             output: stdout.trim(),
-            error: 'Claude Code execution timeout (25s) - Process was killed',
+            error: 'Claude Code execution timeout (60s) - Process was killed',
             executionTime
           });
-        }, 25000);
+        }, 60000);
         
       } catch (error) {
         const executionTime = Date.now() - startTime;
