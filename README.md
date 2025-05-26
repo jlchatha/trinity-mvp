@@ -8,7 +8,7 @@ Trinity MVP transforms your interaction with AI by providing **persistent memory
 
 🌟 **New to AI/Coding?** Perfect! Trinity is designed for anyone with ideas
 - [Quick Start Guide](docs/user/quick-start.md) - no technical experience needed
-- [Success Stories](#real-user-examples) - see what others have built
+- [Current Features](#current-release-status) - see what's working now
 
 🛠️ **Developer/Technical User?** You'll love the advanced features
 - Jump to [Technical Setup](#installation) for detailed configuration
