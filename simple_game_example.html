@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Game Example - Ball Bounce</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        canvas {
+            border: 2px solid #fff;
+            background: #000;
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        button {
+            background: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        .info {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Ball Bounce Game</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div class="controls">
+        <button onclick="addBall()">Add Ball</button>
+        <button onclick="clearBalls()">Clear All</button>
+        <button onclick="toggleGravity()">Toggle Gravity</button>
+    </div>
+    
+    <div class="info">
+        <p>Click to add balls at mouse position!</p>
+        <p>Balls: <span id="ballCount">0</span> | FPS: <span id="fps">0</span></p>
+    </div>
+
+    <script>
+        class Vector2 {
+            constructor(x = 0, y = 0) {
+                this.x = x;
+                this.y = y;
+            }
+            
+            add(other) {
+                return new Vector2(this.x + other.x, this.y + other.y);
+            }
+            
+            multiply(scalar) {
+                return new Vector2(this.x * scalar, this.y * scalar);
+            }
+            
+            magnitude() {
+                return Math.sqrt(this.x * this.x + this.y * this.y);
+            }
+        }
+
+        class Ball {
+            constructor(x, y) {
+                this.position = new Vector2(x, y);
+                this.velocity = new Vector2(
+                    (Math.random() - 0.5) * 400,
+                    (Math.random() - 0.5) * 400
+                );
+                this.radius = Math.random() * 20 + 10;
+                this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                this.bounce = 0.8;
+            }
+            
+            update(deltaTime, canvas) {
+                // Apply gravity if enabled
+                if (game.gravityEnabled) {
+                    this.velocity.y += 500 * deltaTime; // gravity
+                }
+                
+                // Update position
+                this.position = this.position.add(this.velocity.multiply(deltaTime));
+                
+                // Bounce off walls
+                if (this.position.x - this.radius <= 0 || this.position.x + this.radius >= canvas.width) {
+                    this.velocity.x *= -this.bounce;
+                    this.position.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.position.x));
+                }
+                
+                if (this.position.y - this.radius <= 0 || this.position.y + this.radius >= canvas.height) {
+                    this.velocity.y *= -this.bounce;
+                    this.position.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.position.y));
+                }
+                
+                // Apply friction
+                this.velocity = this.velocity.multiply(0.999);
+            }
+            
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                
+                // Add a subtle glow effect
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        class Game {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.balls = [];
+                this.running = true;
+                this.lastTime = 0;
+                this.frameCount = 0;
+                this.lastFpsUpdate = 0;
+                this.gravityEnabled = true;
+                this.mousePos = new Vector2(0, 0);
+                
+                this.setupEventListeners();
+                this.gameLoop(0);
+            }
+            
+            setupEventListeners() {
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    this.addBall(x, y);
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.mousePos.x = e.clientX - rect.left;
+                    this.mousePos.y = e.clientY - rect.top;
+                });
+            }
+            
+            addBall(x = null, y = null) {
+                if (x === null) x = this.mousePos.x;
+                if (y === null) y = this.mousePos.y;
+                
+                this.balls.push(new Ball(x, y));
+                this.updateBallCount();
+            }
+            
+            clearBalls() {
+                this.balls = [];
+                this.updateBallCount();
+            }
+            
+            toggleGravity() {
+                this.gravityEnabled = !this.gravityEnabled;
+                document.querySelector('button[onclick="toggleGravity()"]').textContent = 
+                    this.gravityEnabled ? 'Turn Off Gravity' : 'Turn On Gravity';
+            }
+            
+            updateBallCount() {
+                document.getElementById('ballCount').textContent = this.balls.length;
+            }
+            
+            gameLoop(timestamp) {
+                const deltaTime = (timestamp - this.lastTime) / 1000;
+                this.lastTime = timestamp;
+                
+                // Update FPS counter
+                this.frameCount++;
+                if (timestamp - this.lastFpsUpdate > 1000) {
+                    document.getElementById('fps').textContent = this.frameCount;
+                    this.frameCount = 0;
+                    this.lastFpsUpdate = timestamp;
+                }
+                
+                this.update(deltaTime);
+                this.render();
+                
+                if (this.running) {
+                    requestAnimationFrame(this.gameLoop.bind(this));
+                }
+            }
+            
+            update(deltaTime) {
+                this.balls.forEach(ball => {
+                    ball.update(deltaTime, this.canvas);
+                });
+                
+                // Check ball collisions
+                for (let i = 0; i < this.balls.length; i++) {
+                    for (let j = i + 1; j < this.balls.length; j++) {
+                        this.checkBallCollision(this.balls[i], this.balls[j]);
+                    }
+                }
+            }
+            
+            checkBallCollision(ball1, ball2) {
+                const dx = ball2.position.x - ball1.position.x;
+                const dy = ball2.position.y - ball1.position.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < ball1.radius + ball2.radius) {
+                    // Simple collision response
+                    const angle = Math.atan2(dy, dx);
+                    const sin = Math.sin(angle);
+                    const cos = Math.cos(angle);
+                    
+                    // Rotate velocities
+                    const vx1 = ball1.velocity.x * cos + ball1.velocity.y * sin;
+                    const vy1 = ball1.velocity.y * cos - ball1.velocity.x * sin;
+                    const vx2 = ball2.velocity.x * cos + ball2.velocity.y * sin;
+                    const vy2 = ball2.velocity.y * cos - ball2.velocity.x * sin;
+                    
+                    // Swap x velocities
+                    const temp = vx1;
+                    ball1.velocity.x = vx2 * cos - vy1 * sin;
+                    ball1.velocity.y = vy1 * cos + vx2 * sin;
+                    ball2.velocity.x = temp * cos - vy2 * sin;
+                    ball2.velocity.y = vy2 * cos + temp * sin;
+                    
+                    // Separate balls
+                    const overlap = ball1.radius + ball2.radius - distance;
+                    const separateX = cos * overlap * 0.5;
+                    const separateY = sin * overlap * 0.5;
+                    
+                    ball1.position.x -= separateX;
+                    ball1.position.y -= separateY;
+                    ball2.position.x += separateX;
+                    ball2.position.y += separateY;
+                }
+            }
+            
+            render() {
+                // Clear canvas with fade effect
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw all balls
+                this.balls.forEach(ball => {
+                    ball.draw(this.ctx);
+                });
+            }
+        }
+
+        // Initialize the game
+        const canvas = document.getElementById('gameCanvas');
+        const game = new Game(canvas);
+        
+        // Global functions for buttons
+        function addBall() {
+            game.addBall(game.canvas.width / 2, game.canvas.height / 2);
+        }
+        
+        function clearBalls() {
+            game.clearBalls();
+        }
+        
+        function toggleGravity() {
+            game.toggleGravity();
+        }
+        
+        // Add some initial balls
+        for (let i = 0; i < 5; i++) {
+            game.addBall(
+                Math.random() * game.canvas.width,
+                Math.random() * game.canvas.height
+            );
+        }
+    </script>
+</body>
+</html>

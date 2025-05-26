@@ -13,6 +13,7 @@ const MemoryHierarchy = require('../core/memory-hierarchy');
 const TaskRegistry = require('../core/task-registry');
 const RecoveryTools = require('../core/recovery-tools');
 const AutoCompactDetector = require('../core/auto-compact-detector');
+const ResponseSecurityFilter = require('../core/response-security-filter');
 
 class TrinityIPCBridge {
   constructor(mainWindow) {
@@ -21,6 +22,12 @@ class TrinityIPCBridge {
     this.isInitialized = false;
     this.realConversationMetrics = null; // Store real conversation metrics from renderer
     this.conversationHistory = []; // Track conversation for context awareness
+    
+    // Initialize security filter
+    this.securityFilter = new ResponseSecurityFilter({
+      logger: console,
+      strictMode: false
+    });
     
     this.initializeComponents();
     this.setupIPCHandlers();
@@ -756,16 +763,20 @@ class TrinityIPCBridge {
         `);
         
         if (response && response.response) {
-          return response.response;
+          // Apply security filtering to Claude Code responses
+          const filteredResponse = this.securityFilter.filterResponse(response.response);
+          return filteredResponse;
         }
       }
       
       // Fallback if Claude Code integration not available
-      return this.buildContextualFallback(message, conversationHistory);
+      const fallbackResponse = this.buildContextualFallback(message, conversationHistory);
+      return this.securityFilter.filterResponse(fallbackResponse);
       
     } catch (error) {
       console.error('[Trinity IPC] Error forwarding to Claude Code:', error);
-      return this.buildContextualFallback(message, conversationHistory);
+      const fallbackResponse = this.buildContextualFallback(message, conversationHistory);
+      return this.securityFilter.filterResponse(fallbackResponse);
     }
   }
 

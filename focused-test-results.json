@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-05-26T11:02:40.606Z",
+  "timestamp": "2025-05-26T21:56:31.936Z",
   "summary": {
     "totalTests": 5,
     "passedTests": 3,
@@ -18,8 +18,8 @@
       "isFallback": false,
       "hasExpected": true,
       "passed": true,
-      "response": "Paris is the capital of France.",
-      "executionTime": 4659
+      "response": "Paris.",
+      "executionTime": 5793
     },
     {
       "test": "Simple math calculation",
@@ -30,7 +30,7 @@
       "hasExpected": true,
       "passed": true,
       "response": "42",
-      "executionTime": 4295
+      "executionTime": 4820
     },
     {
       "test": "Memory storage test",
@@ -40,8 +40,8 @@
       "isFallback": false,
       "hasExpected": false,
       "passed": false,
-      "response": "I can see you're working with the Trinity System! Looking at your codebase, this is quite an impressive multi-agent AI framework. \n\nWhat would you like me to help you with today? I can assist with:\n\n-",
-      "executionTime": 8128
+      "response": "I understand! I'm ready to help you with any JavaScript-related tasks or questions you might have. Whether you're working on:\n\n- Frontend development (React, Vue, vanilla JS)\n- Backend work (Node.js, ",
+      "executionTime": 6376
     },
     {
       "test": "Memory recall test",
@@ -56,8 +56,8 @@
       "isFallback": false,
       "hasExpected": true,
       "passed": true,
-      "response": "The sky appears blue due to a phenomenon called **Rayleigh scattering**. \n\nWhen sunlight enters Earth's atmosphere, it collides with tiny gas molecules (mainly nitrogen and oxygen). These molecules sc",
-      "executionTime": 7305
+      "response": "The sky appears blue due to a phenomenon called **Rayleigh scattering**. \n\nWhen sunlight enters Earth's atmosphere, it collides with tiny gas molecules (mainly nitrogen and oxygen). These molecules ar",
+      "executionTime": 7929
     }
   ]
 }

@@ -5,6 +5,46 @@ const { EventEmitter } = require('events');
 const FileCommManager = require('./file-manager');
 
 /**
+ * Response Time Manager for Trinity MVP
+ * Handles timeout management and performance monitoring
+ */
+class ResponseTimeManager {
+  constructor(options = {}) {
+    this.maxResponseTime = options.maxResponseTime || 30000; // 30 seconds max
+    this.warningThreshold = options.warningThreshold || 15000; // 15 seconds warning
+  }
+  
+  async executeWithTimeout(operation, context) {
+    const startTime = Date.now();
+    let timeoutId;
+    
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`Response timeout after ${this.maxResponseTime}ms`));
+      }, this.maxResponseTime);
+    });
+    
+    const warningId = setTimeout(() => {
+      console.warn(`⚠️ Response taking longer than expected: ${context.prompt.substring(0, 100)}...`);
+    }, this.warningThreshold);
+    
+    try {
+      const result = await Promise.race([operation, timeoutPromise]);
+      const duration = Date.now() - startTime;
+      
+      if (duration > this.warningThreshold) {
+        console.warn(`🐌 Slow response: ${duration}ms for "${context.prompt.substring(0, 50)}..."`);
+      }
+      
+      return result;
+    } finally {
+      clearTimeout(timeoutId);
+      clearTimeout(warningId);
+    }
+  }
+}
+
+/**
  * Claude Code SDK Integration for Trinity MVP
  * Provides direct interface to Claude Code for background task execution
  * and session management with Trinity-style context preservation
@@ -109,6 +149,26 @@ class ClaudeCodeSDK extends EventEmitter {
     
     this.log('info', `Executing command in session ${sessionId}:`, prompt.substring(0, 100));
     
+    // Create response time manager
+    const responseManager = new ResponseTimeManager({
+      maxResponseTime: options.maxResponseTime || 30000,
+      warningThreshold: options.warningThreshold || 15000
+    });
+    
+    const context = { prompt, sessionId, options, startTime: Date.now() };
+    
+    // Wrap execution with timeout management
+    return responseManager.executeWithTimeout(
+      this.originalExecuteCommand(prompt, sessionId, taskId, options),
+      context
+    );
+  }
+
+  /**
+   * Original execute command logic (extracted for timeout wrapping)
+   * @private
+   */
+  async originalExecuteCommand(prompt, sessionId, taskId, options) {
     try {
       // Get system prompt from agent prompts if not provided
       let systemPrompt = options.systemPrompt;
