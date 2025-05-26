@@ -10,8 +10,9 @@ const path = require('path');
 const { spawn } = require('child_process');
 const os = require('os');
 
-// Trinity Memory Integration
-const TrinityMemoryIntegration = require('./src/core/trinity-memory-integration');
+// Trinity-Native Memory System
+const TrinityNativeMemory = require('./src/core/trinity-native-memory');
+const MemoryReferenceDetector = require('./src/core/memory-reference-detector');
 
 class ClaudeWatcher {
   constructor() {
@@ -27,17 +28,25 @@ class ClaudeWatcher {
     this.isRunning = false;
     this.pollInterval = 1000; // Check every second
     
-    // Initialize Trinity Memory Integration  
-    this.memoryIntegration = new TrinityMemoryIntegration({
+    // Initialize Trinity-Native Memory System
+    this.trinityMemory = new TrinityNativeMemory({
       baseDir: this.trinityDir,
-      sessionId: 'overseer-main', // Match the session ID used in conversations
       logger: {
         info: (msg) => this.log(`[MEMORY] ${msg}`),
+        warn: (msg) => this.log(`[MEMORY WARN] ${msg}`),
         error: (msg) => this.log(`[MEMORY ERROR] ${msg}`)
       }
     });
     
-    this.log('Claude Watcher starting up with Trinity Memory Integration...');
+    this.memoryDetector = new MemoryReferenceDetector({
+      logger: {
+        info: (msg) => this.log(`[DETECTOR] ${msg}`),
+        warn: (msg) => this.log(`[DETECTOR WARN] ${msg}`),
+        error: (msg) => this.log(`[DETECTOR ERROR] ${msg}`)
+      }
+    });
+    
+    this.log('Claude Watcher starting up with Trinity-Native Memory...');
     this.ensureDirectories();
     this.initializeMemory();
   }
@@ -67,10 +76,13 @@ class ClaudeWatcher {
   
   async initializeMemory() {
     try {
-      await this.memoryIntegration.initialize();
-      this.log('Trinity Memory Integration initialized successfully');
+      await this.trinityMemory.initialize();
+      this.log('Trinity-Native Memory initialized successfully');
+      
+      const stats = this.trinityMemory.getStats();
+      this.log(`Memory Stats: ${stats.totalConversations} conversations, ${stats.totalTopics} topics, ${stats.totalSessions} sessions`);
     } catch (error) {
-      this.log(`Failed to initialize memory integration: ${error.message}`);
+      this.log(`Failed to initialize Trinity-Native Memory: ${error.message}`);
     }
   }
   
@@ -135,30 +147,39 @@ class ClaudeWatcher {
     let enhancedPrompt = prompt;
     
     try {
-      // Load relevant memory context for the prompt (structured knowledge only)
-      this.log('Loading relevant memory context...');
-      memoryContext = await this.memoryIntegration.loadRelevantContext(prompt, {
-        maxItems: 8,
-        categories: ['core', 'working', 'reference'] // Removed 'conversation' to prevent recursive context
-      });
+      // Check if this prompt contains memory references
+      const hasMemoryReference = this.memoryDetector.detectsMemoryReference(prompt);
       
-      // Build enhanced prompt with memory context
-      if (memoryContext.contextText && memoryContext.contextText.trim().length > 0) {
-        const contextSize = memoryContext.contextText.length;
-        const MAX_CONTEXT_SIZE = 50000; // 50KB max context to prevent crashes
+      if (hasMemoryReference) {
+        this.log(`Memory reference detected in prompt: "${prompt}"`);
         
-        if (contextSize > MAX_CONTEXT_SIZE) {
-          this.log(`⚠️ Memory context too large (${contextSize} chars), truncating to prevent crash`);
-          const truncatedContext = memoryContext.contextText.substring(0, MAX_CONTEXT_SIZE) + '\n\n[Context truncated due to size...]';
-          enhancedPrompt = `Context from memory:\n${truncatedContext}\n\n---\n\nUser request: ${prompt}`;
+        // Load relevant memory context using Trinity-Native Memory
+        memoryContext = await this.trinityMemory.buildContextForClaude(prompt);
+        
+        if (memoryContext.contextText && memoryContext.contextText.trim().length > 0) {
+          // Write context file for Claude Code to read
+          const contextFilePath = path.join(this.trinityDir, 'memory', 'claude-context.txt');
+          
+          // Ensure memory directory exists
+          const memoryContextDir = path.dirname(contextFilePath);
+          if (!fs.existsSync(memoryContextDir)) {
+            fs.mkdirSync(memoryContextDir, { recursive: true });
+          }
+          
+          // Write context file
+          fs.writeFileSync(contextFilePath, memoryContext.contextText);
+          
+          // Enhanced message for Claude Code
+          enhancedPrompt = `${prompt}\n\nRELEVANT CONTEXT: Available in file: ${contextFilePath}`;
+          
+          this.log(`Memory context written to: ${contextFilePath}`);
+          this.log(`Context summary: ${memoryContext.summary}`);
+          this.log(`Memory context size: ${memoryContext.contextText.length} characters`);
         } else {
-          enhancedPrompt = `Context from memory:\n${memoryContext.contextText}\n\n---\n\nUser request: ${prompt}`;
+          this.log('Memory reference detected but no relevant context found');
         }
-        
-        this.log(`Enhanced prompt with memory context: ${memoryContext.summary} (${contextSize} chars)`);
-        this.log(`Memory optimization: ${memoryContext.optimization.contextPercent}% of memory used, ${memoryContext.optimization.tokensSaved} tokens saved`);
       } else {
-        this.log('No relevant memory context found for this request');
+        this.log('No memory reference detected - proceeding without memory context');
       }
       
     } catch (error) {
@@ -180,17 +201,20 @@ class ClaudeWatcher {
     // Execute Claude Code with enhanced prompt
     const result = await this.executeClaudeCode(enhancedPrompt, workingDirectory, options);
     
-    // Save conversation to memory if successful
+    // Save conversation to Trinity-Native Memory if successful
     if (result.success && result.output && result.output.trim().length > 0) {
       try {
-        this.log('Saving conversation to memory...');
-        const conversationResult = await this.memoryIntegration.saveConversation(
+        this.log('Saving conversation to Trinity-Native Memory...');
+        const conversationId = await this.trinityMemory.storeResponse(
           prompt, // Original user prompt (not enhanced)
           result.output,
-          sessionId || 'default',
-          memoryContext
+          sessionId || 'default'
         );
-        this.log(`Conversation saved to memory: ${conversationResult.itemId}`);
+        this.log(`Conversation saved to memory: ${conversationId}`);
+        
+        // Log memory stats
+        const stats = this.trinityMemory.getStats();
+        this.log(`Memory updated: ${stats.totalConversations} total conversations`);
       } catch (error) {
         this.log(`Failed to save conversation to memory: ${error.message}`);
       }
@@ -207,11 +231,11 @@ class ClaudeWatcher {
       error: result.error,
       executionTime: result.executionTime,
       duration_ms: result.executionTime, // Alternative field name
-      // Trinity Memory Context for UI display
+      // Trinity-Native Memory Context for UI display
       memoryContext: memoryContext ? {
         summary: memoryContext.summary,
-        optimization: memoryContext.optimization,
-        artifacts: memoryContext.artifacts
+        relevantConversations: memoryContext.relevantConversations,
+        artifacts: memoryContext.artifacts || []
       } : null
     };
     
