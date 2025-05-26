@@ -13,6 +13,7 @@ const os = require('os');
 // Trinity-Native Memory System
 const TrinityNativeMemory = require('./src/core/trinity-native-memory');
 const MemoryReferenceDetector = require('./src/core/memory-reference-detector');
+const ComplexQueryProcessor = require('./src/core/complex-query-processor');
 
 class ClaudeWatcher {
   constructor() {
@@ -43,6 +44,15 @@ class ClaudeWatcher {
         info: (msg) => this.log(`[DETECTOR] ${msg}`),
         warn: (msg) => this.log(`[DETECTOR WARN] ${msg}`),
         error: (msg) => this.log(`[DETECTOR ERROR] ${msg}`)
+      }
+    });
+    
+    this.complexQueryProcessor = new ComplexQueryProcessor({
+      baseDir: this.trinityDir,
+      logger: {
+        info: (msg) => this.log(`[COMPLEX-QUERY] ${msg}`),
+        warn: (msg) => this.log(`[COMPLEX-QUERY WARN] ${msg}`),
+        error: (msg) => this.log(`[COMPLEX-QUERY ERROR] ${msg}`)
       }
     });
     
@@ -145,16 +155,33 @@ class ClaudeWatcher {
     
     let memoryContext = null;
     let enhancedPrompt = prompt;
+    let complexQueryResult = null;
     
     try {
-      // Check if this prompt contains memory references
-      const hasMemoryReference = this.memoryDetector.detectsMemoryReference(prompt);
+      // Step 1: Check for complex query processing needs
+      const needsComplexProcessing = this.complexQueryProcessor.needsComplexProcessing(prompt);
+      
+      if (needsComplexProcessing) {
+        this.log(`🧠 Complex analytical query detected - enhancing for professional processing`);
+        complexQueryResult = await this.complexQueryProcessor.processComplexQuery(prompt);
+        
+        if (complexQueryResult.enhanced) {
+          enhancedPrompt = complexQueryResult.enhancedPrompt;
+          this.log(`✅ Query enhanced for analytical processing (${enhancedPrompt.length} chars)`);
+          this.log(`📋 Operations identified: ${JSON.stringify(complexQueryResult.operations)}`);
+        }
+      } else {
+        this.log('📝 Simple query - proceeding with standard processing');
+      }
+      
+      // Step 2: Check if this prompt contains memory references
+      const hasMemoryReference = this.memoryDetector.detectsMemoryReference(enhancedPrompt);
       
       if (hasMemoryReference) {
-        this.log(`Memory reference detected in prompt: "${prompt}"`);
+        this.log(`Memory reference detected in enhanced prompt`);
         
         // Load relevant memory context using Trinity-Native Memory
-        memoryContext = await this.trinityMemory.buildContextForClaude(prompt);
+        memoryContext = await this.trinityMemory.buildContextForClaude(enhancedPrompt);
         
         if (memoryContext.contextText && memoryContext.contextText.trim().length > 0) {
           // Write context file for Claude Code to read
@@ -169,8 +196,8 @@ class ClaudeWatcher {
           // Write context file
           fs.writeFileSync(contextFilePath, memoryContext.contextText);
           
-          // Enhanced message for Claude Code
-          enhancedPrompt = `${prompt}\n\nRELEVANT CONTEXT: Available in file: ${contextFilePath}`;
+          // Enhanced message for Claude Code (preserve complex query enhancements)
+          enhancedPrompt = `${enhancedPrompt}\n\nRELEVANT CONTEXT: Available in file: ${contextFilePath}`;
           
           this.log(`Memory context written to: ${contextFilePath}`);
           this.log(`Context summary: ${memoryContext.summary}`);
