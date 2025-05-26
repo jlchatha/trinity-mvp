@@ -18,6 +18,26 @@ class MemoryReferenceDetector {
     
     // Pattern categories for different types of memory references
     this.patterns = {
+      // Explicit memory requests
+      explicitMemory: [
+        /\b(remember|recall|do you remember|can you remember)\b/i,
+        /\bwhat did (i|you) (say|tell|mention|discuss|talk about)\b/i,
+        /\b(my|your) favorite\b/i,
+        /\bi (told|said|mentioned) you\b/i,
+        /\bwhat\s+(did\s+)?(i|you)\s+(tell|say|mention|discuss)\b/i,
+        /\bremember when (we|you|i) (discussed|talked about|mentioned)\b/i
+      ],
+
+      // Vague references
+      vagueReferences: [
+        /\b(that thing|the thing|what we|that stuff)\b.*\b(discussed|talked about|mentioned)\b/i,
+        /\bbased on (what|that|this)\b/i,
+        /\blike (you|we) said\b/i,
+        /\babout (that|what we|the thing)\b/i,
+        /\b(that|what we) (discussed|talked about|mentioned|said) (earlier|before|previously)\b/i,
+        /\bwhat we (discussed|talked about|mentioned) (earlier|before)\b/i
+      ],
+
       // Direct content references
       contentReferences: [
         /\b(that|the|last|previous) (poem|code|function|explanation|example|story|solution)\b/i,
@@ -89,15 +109,58 @@ class MemoryReferenceDetector {
   
   /**
    * Detect if a message contains memory references
-   * Returns boolean for simple detection
+   * Returns boolean for simple detection with enhanced scoring
    */
   detectsMemoryReference(message) {
     if (!message || typeof message !== 'string') return false;
     
-    const result = this.analyzeMemoryReferences(message);
-    return result.hasMemoryReference;
+    const lowerMessage = message.toLowerCase();
+    let memoryScore = 0;
+    let matchedPatterns = [];
+    
+    // Check all pattern categories
+    for (const [category, patterns] of Object.entries(this.patterns)) {
+      for (const pattern of patterns) {
+        if (pattern.test(message)) {
+          memoryScore += this.getPatternWeight(category);
+          matchedPatterns.push(category);
+          break;
+        }
+      }
+    }
+    
+    // Additional heuristics
+    if (/\b(my|your|our)\b.*\b(favorite|preference|choice)\b/i.test(message)) {
+      memoryScore += 2;
+      matchedPatterns.push('personal_preferences');
+    }
+    
+    const hasMemoryReference = memoryScore >= 1;
+    
+    if (hasMemoryReference) {
+      this.logger.info(`Memory reference detected: score=${memoryScore}, patterns=${matchedPatterns.join(', ')}`);
+    }
+    
+    return hasMemoryReference;
   }
   
+  /**
+   * Get weight for different pattern categories
+   */
+  getPatternWeight(category) {
+    const weights = {
+      explicitMemory: 3,
+      contextualReferences: 2,
+      contentReferences: 2,
+      vagueReferences: 1,
+      temporalReferences: 2,
+      contextContinuity: 1,
+      questionClarification: 1,
+      lineReferences: 3
+    };
+    return weights[category] || 1;
+  }
+
   /**
    * Comprehensive analysis of memory references in a message
    * Returns detailed analysis for advanced use cases
