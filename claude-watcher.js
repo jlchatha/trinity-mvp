@@ -15,6 +15,9 @@ const TrinityNativeMemory = require('./src/core/trinity-native-memory');
 const MemoryReferenceDetector = require('./src/core/memory-reference-detector');
 const ComplexQueryProcessor = require('./src/core/complex-query-processor');
 
+// Trinity System Awareness Components
+const ClaudeCodeContextEnhancer = require('./src/core/claude-code-context-enhancer');
+
 class ClaudeWatcher {
   constructor() {
     this.trinityDir = path.join(os.homedir(), '.trinity-mvp');
@@ -56,7 +59,19 @@ class ClaudeWatcher {
       }
     });
     
-    this.log('Claude Watcher starting up with Trinity-Native Memory...');
+    // Initialize Trinity System Awareness
+    this.contextEnhancer = new ClaudeCodeContextEnhancer({
+      systemDir: this.trinityDir,
+      enableCuriosity: true,
+      enableSystemAwareness: true,
+      logger: {
+        info: (msg) => this.log(`[SYSTEM-AWARENESS] ${msg}`),
+        warn: (msg) => this.log(`[SYSTEM-AWARENESS WARN] ${msg}`),
+        error: (msg) => this.log(`[SYSTEM-AWARENESS ERROR] ${msg}`)
+      }
+    });
+    
+    this.log('Claude Watcher starting up with Trinity-Native Memory and System Awareness...');
     this.ensureDirectories();
     this.initializeMemory();
   }
@@ -212,6 +227,43 @@ class ClaudeWatcher {
     } catch (error) {
       this.log(`Failed to load memory context: ${error.message}`);
       // Continue without memory context
+    }
+    
+    // Step 3: Apply Trinity System Awareness Enhancement
+    try {
+      this.log('🧠 Applying Trinity System Awareness enhancement...');
+      
+      // Build conversation history from session context (if available)
+      const conversationHistory = [];
+      if (userContext && userContext.previousMessages) {
+        conversationHistory.push(...userContext.previousMessages);
+      }
+      
+      // Apply system awareness and curiosity enhancement
+      const systemAwarePrompt = await this.contextEnhancer.enhanceWithSystemAwareness(
+        enhancedPrompt, 
+        conversationHistory,
+        {
+          workingDirectory: workingDirectory,
+          sessionId: sessionId,
+          forceEnhancement: false // Let the enhancer decide based on message content
+        }
+      );
+      
+      if (systemAwarePrompt !== enhancedPrompt) {
+        enhancedPrompt = systemAwarePrompt;
+        this.log('✅ System awareness enhancement applied');
+        
+        // Log the enhancement for debugging
+        const enhancementStats = this.contextEnhancer.getEnhancementStats();
+        this.log(`📊 Enhancement stats: awareness=${enhancementStats.system_awareness_enabled}, curiosity=${enhancementStats.curiosity_enabled}`);
+      } else {
+        this.log('ℹ️ No system awareness enhancement needed for this request');
+      }
+      
+    } catch (error) {
+      this.log(`⚠️ System awareness enhancement failed: ${error.message}`);
+      // Continue with existing enhancedPrompt without system awareness
     }
     
     // Final size validation before Claude Code execution
