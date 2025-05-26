@@ -558,77 +558,186 @@ class ClaudeWatcher {
   }
   
   /**
-   * Ensure Claude tools are enabled (fast, no timeouts)
-   * Uses the enabledTools command for bulk setup
+   * Ensure Claude tools are enabled with enhanced reliability
+   * Uses retry logic with progressive backoff for better success rates
    */
-  async ensureClaudeToolsEnabled(apiKey) {
+  async ensureClaudeToolsEnabled(apiKey, maxRetries = 3) {
+    // Check if tools are already configured (fast check)
     try {
-      // Check if tools are already configured (fast check)
       const claudeConfigPath = path.join(process.cwd(), '.claude', 'settings.json');
       if (fs.existsSync(claudeConfigPath)) {
         const settings = JSON.parse(fs.readFileSync(claudeConfigPath, 'utf8'));
         if (settings.allowedTools && settings.allowedTools.length > 0) {
           this.log('✅ Claude tools already configured');
-          return;
+          return { success: true, cached: true };
         }
       }
-      
-      // Trinity required tools
-      const requiredTools = ['Bash', 'Read', 'Write', 'Edit', 'LS', 'Glob', 'Grep'];
-      
-      // Cross-platform Claude path (same logic as executeClaudeCode)
-      let claudePath = 'claude';
-      if (os.platform() === 'linux') {
-        const linuxPath = '/home/alreadyinuse/.claude/local/claude';
-        if (fs.existsSync(linuxPath)) claudePath = linuxPath;
-      } else if (os.platform() === 'darwin') {
-        const macosPaths = [
-          path.join(os.homedir(), '.claude/local/claude'),
-          '/usr/local/bin/claude',
-          '/opt/homebrew/bin/claude'
-        ];
-        for (const testPath of macosPaths) {
-          if (fs.existsSync(testPath)) {
-            claudePath = testPath;
-            break;
-          }
+    } catch (error) {
+      this.log(`⚠️ Config check failed: ${error.message}`);
+    }
+    
+    // Trinity required tools
+    const requiredTools = ['Bash', 'Read', 'Write', 'Edit', 'LS', 'Glob', 'Grep'];
+    
+    // Cross-platform Claude path (same logic as executeClaudeCode)
+    let claudePath = 'claude';
+    if (os.platform() === 'linux') {
+      const linuxPath = '/home/alreadyinuse/.claude/local/claude';
+      if (fs.existsSync(linuxPath)) claudePath = linuxPath;
+    } else if (os.platform() === 'darwin') {
+      const macosPaths = [
+        path.join(os.homedir(), '.claude/local/claude'),
+        '/usr/local/bin/claude',
+        '/opt/homebrew/bin/claude'
+      ];
+      for (const testPath of macosPaths) {
+        if (fs.existsSync(testPath)) {
+          claudePath = testPath;
+          break;
         }
       }
-      
-      // Fast bulk tool setup (no individual timeouts)
-      this.log('⚡ Enabling Trinity tools in Claude Code...');
-      
-      return new Promise((resolve) => {
-        const proc = spawn(claudePath, ['config', 'add', 'allowedTools', ...requiredTools], {
-          stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, ANTHROPIC_API_KEY: apiKey }
-        });
+    }
+    
+    // Attempt tool setup with retry logic
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.log(`⚡ Enabling Trinity tools in Claude Code (attempt ${attempt}/${maxRetries})...`);
         
-        let output = '';
-        proc.stdout.on('data', (data) => output += data.toString());
-        proc.stderr.on('data', (data) => output += data.toString());
+        const result = await this.attemptToolSetup(claudePath, requiredTools, apiKey, attempt);
         
-        proc.on('close', (code) => {
-          if (code === 0) {
-            this.log('✅ Trinity tools enabled successfully');
-          } else {
-            this.log(`⚠️ Tool setup warning (code ${code}): ${output}`);
-          }
-          resolve(); // Always resolve to not block execution
-        });
+        if (result.success) {
+          this.log(`✅ Trinity tools enabled successfully on attempt ${attempt}`);
+          return { success: true, attempt, cached: false };
+        }
         
-        // Fast timeout (2 seconds max)
-        setTimeout(() => {
-          proc.kill();
-          this.log('⚡ Tool setup timeout (proceeding anyway)');
-          resolve();
-        }, 2000);
+        // Handle failure
+        const isLastAttempt = attempt === maxRetries;
+        if (isLastAttempt) {
+          this.log(`⚠️ Tool setup failed after ${maxRetries} attempts: ${result.error}`);
+          this.log('⚡ Trinity will continue with limited tool functionality');
+          return { success: false, error: result.error, attempts: maxRetries };
+        }
+        
+        // Progressive backoff delay: 1s, 2s, 4s
+        const backoffDelay = Math.pow(2, attempt - 1) * 1000;
+        this.log(`⏳ Waiting ${backoffDelay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        
+      } catch (error) {
+        const isLastAttempt = attempt === maxRetries;
+        if (isLastAttempt) {
+          this.log(`⚠️ Tool setup exception after ${maxRetries} attempts: ${error.message}`);
+          return { success: false, error: error.message, attempts: maxRetries };
+        }
+        
+        // Log warning but continue to retry
+        this.log(`⚠️ Tool setup attempt ${attempt} failed: ${error.message}`);
+      }
+    }
+    
+    return { success: false, error: 'Max retries exceeded', attempts: maxRetries };
+  }
+  
+  /**
+   * Single attempt at tool setup with enhanced error handling
+   * @private
+   */
+  async attemptToolSetup(claudePath, requiredTools, apiKey, attempt) {
+    // Progressive timeout scaling: 5s, 10s, 15s
+    const timeoutMs = Math.min(5000 + (attempt - 1) * 5000, 15000);
+    
+    return new Promise((resolve) => {
+      const proc = spawn(claudePath, ['config', 'add', 'allowedTools', ...requiredTools], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, ANTHROPIC_API_KEY: apiKey }
       });
       
-    } catch (error) {
-      this.log(`⚠️ Tool setup error: ${error.message}`);
-      // Don't block execution on tool setup failure
+      let stdout = '';
+      let stderr = '';
+      let resolved = false;
+      
+      proc.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+      
+      proc.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+      
+      proc.on('close', (code) => {
+        if (resolved) return;
+        resolved = true;
+        
+        if (code === 0) {
+          resolve({ success: true, output: stdout });
+        } else {
+          const errorType = this.classifyToolSetupError(code, stderr);
+          resolve({ 
+            success: false, 
+            error: `Exit code ${code}: ${stderr || stdout || 'Unknown error'}`,
+            errorType,
+            code
+          });
+        }
+      });
+      
+      proc.on('error', (error) => {
+        if (resolved) return;
+        resolved = true;
+        
+        const errorType = this.classifyToolSetupError(null, error.message);
+        resolve({ 
+          success: false, 
+          error: `Process error: ${error.message}`,
+          errorType
+        });
+      });
+      
+      // Progressive timeout with clear messaging
+      setTimeout(() => {
+        if (resolved) return;
+        resolved = true;
+        
+        proc.kill('SIGTERM');
+        resolve({ 
+          success: false, 
+          error: `Timeout after ${timeoutMs}ms`,
+          errorType: 'timeout'
+        });
+      }, timeoutMs);
+    });
+  }
+  
+  /**
+   * Classify tool setup errors for better retry logic
+   * @private
+   */
+  classifyToolSetupError(exitCode, errorMessage) {
+    const errorMsg = (errorMessage || '').toLowerCase();
+    
+    // Network-related errors (worth retrying)
+    if (errorMsg.includes('network') || errorMsg.includes('connection') || 
+        errorMsg.includes('timeout') || errorMsg.includes('enotfound')) {
+      return 'network';
     }
+    
+    // Authentication errors (probably won't retry-fix)
+    if (errorMsg.includes('auth') || errorMsg.includes('api key') || 
+        errorMsg.includes('unauthorized') || exitCode === 401) {
+      return 'auth';
+    }
+    
+    // Permission errors
+    if (errorMsg.includes('permission') || errorMsg.includes('eacces') || exitCode === 1) {
+      return 'permission';
+    }
+    
+    // Configuration errors
+    if (errorMsg.includes('config') || errorMsg.includes('invalid')) {
+      return 'config';
+    }
+    
+    return 'unknown';
   }
   
   stop() {
