@@ -726,7 +726,7 @@ class TrinityIPCBridge {
   async forwardToClaudeCode(message, conversationHistory) {
     try {
       // Build context from conversation history
-      const contextMessages = conversationHistory.slice(-6).map(entry => ({
+      const contextMessages = (conversationHistory || []).slice(-6).map(entry => ({
         role: entry.role,
         content: entry.content
       }));
@@ -773,7 +773,7 @@ class TrinityIPCBridge {
    * Build contextual fallback response when Claude Code unavailable
    */
   buildContextualFallback(message, history) {
-    const recentContext = history.slice(-3);
+    const recentContext = (history || []).slice(-3);
     
     // Check for action requests
     if (message.toLowerCase().includes('asking you to do') || 

@@ -10,6 +10,9 @@ const path = require('path');
 const { spawn } = require('child_process');
 const os = require('os');
 
+// Load environment variables from .env file
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
 // Trinity-Native Memory System
 const TrinityNativeMemory = require('./src/core/trinity-native-memory');
 const MemoryReferenceDetector = require('./src/core/memory-reference-detector');
@@ -17,6 +20,9 @@ const ComplexQueryProcessor = require('./src/core/complex-query-processor');
 
 // Trinity System Awareness Components
 const ClaudeCodeContextEnhancer = require('./src/core/claude-code-context-enhancer');
+
+// Trinity Identity Restoration Components
+const TrinityResponseEnhancer = require('./src/core/trinity-response-enhancer');
 
 class ClaudeWatcher {
   constructor() {
@@ -71,7 +77,19 @@ class ClaudeWatcher {
       }
     });
     
-    this.log('Claude Watcher starting up with Trinity-Native Memory and System Awareness...');
+    // Initialize Trinity Identity Restoration
+    this.trinityIdentity = new TrinityResponseEnhancer({
+      systemDir: this.trinityDir,
+      enableIdentityEnhancement: true,
+      enableCreativeHandling: true,
+      logger: {
+        info: (msg) => this.log(`[TRINITY-IDENTITY] ${msg}`),
+        warn: (msg) => this.log(`[TRINITY-IDENTITY WARN] ${msg}`),
+        error: (msg) => this.log(`[TRINITY-IDENTITY ERROR] ${msg}`)
+      }
+    });
+    
+    this.log('Claude Watcher starting up with Trinity-Native Memory, System Awareness, and Identity Restoration...');
     this.ensureDirectories();
     this.initializeMemory();
   }
