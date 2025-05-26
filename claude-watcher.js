@@ -348,8 +348,54 @@ class ClaudeWatcher {
   
   async executeClaudeCode(prompt, workingDirectory, options = {}) {
     const startTime = Date.now();
+    const maxResponseTime = options.maxResponseTime || 30000; // 30 seconds
+    const warningThreshold = options.warningThreshold || 15000; // 15 seconds
     
     return new Promise((resolve) => {
+      // Set up timeout management
+      let timeoutId;
+      let warningId;
+      let resolved = false;
+      
+      // Create timeout to enforce maximum response time
+      timeoutId = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          this.log(`⏰ Response timeout after ${maxResponseTime}ms for prompt: "${prompt.substring(0, 100)}..."`);
+          resolve({
+            success: false,
+            output: '',
+            error: `Response timeout after ${maxResponseTime}ms`,
+            executionTime: Date.now() - startTime
+          });
+        }
+      }, maxResponseTime);
+      
+      // Set up warning for slow responses
+      warningId = setTimeout(() => {
+        if (!resolved) {
+          this.log(`⚠️ Response taking longer than expected: ${prompt.substring(0, 100)}...`);
+        }
+      }, warningThreshold);
+      
+      // Wrap original resolve to include timing checks
+      const wrappedResolve = (result) => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeoutId);
+          clearTimeout(warningId);
+          
+          const duration = Date.now() - startTime;
+          if (duration > warningThreshold) {
+            this.log(`🐌 Slow response: ${duration}ms for "${prompt.substring(0, 50)}..."`);
+          }
+          
+          resolve({
+            ...result,
+            executionTime: duration
+          });
+        }
+      };
       try {
         // Get API key with development fallback
         let apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
@@ -381,11 +427,10 @@ class ClaudeWatcher {
         
         if (!apiKey) {
           this.log('ERROR: No ANTHROPIC_API_KEY found in environment');
-          return resolve({
+          return wrappedResolve({
             success: false,
             output: '',
-            error: 'No ANTHROPIC_API_KEY environment variable found',
-            executionTime: Date.now() - startTime
+            error: 'No ANTHROPIC_API_KEY environment variable found'
           });
         }
         
@@ -450,8 +495,6 @@ class ClaudeWatcher {
         });
         
         proc.on('close', (code) => {
-          clearTimeout(timeoutId);
-          const executionTime = Date.now() - startTime;
           
           this.log(`Claude Code process finished with exit code: ${code}`);
           this.log(`Claude Code stdout: ${stdout.trim()}`);
@@ -465,66 +508,44 @@ class ClaudeWatcher {
             // Parse JSON response like mvp-dev
             try {
               const jsonResponse = JSON.parse(stdout.trim());
-              resolve({
+              wrappedResolve({
                 success: true,
                 output: jsonResponse.result || jsonResponse.content || stdout.trim(),
                 error: null,
-                executionTime,
                 cost: jsonResponse.cost_usd,
                 sessionId: jsonResponse.session_id
               });
             } catch (parseError) {
               // Fallback to raw output if JSON parsing fails
-              resolve({
+              wrappedResolve({
                 success: true,
                 output: stdout.trim(),
-                error: null,
-                executionTime
+                error: null
               });
             }
           } else {
-            resolve({
+            wrappedResolve({
               success: false,
               output: stdout.trim(),
-              error: stderr.trim() || `Process exited with code ${code}, no output received`,
-              executionTime
+              error: stderr.trim() || `Process exited with code ${code}, no output received`
             });
           }
         });
         
         proc.on('error', (error) => {
-          const executionTime = Date.now() - startTime;
-          resolve({
+          wrappedResolve({
             success: false,
             output: '',
-            error: `Failed to spawn process: ${error.message}`,
-            executionTime
+            error: `Failed to spawn process: ${error.message}`
           });
         });
         
-        // Timeout after 60 seconds (increased for complex analytical queries)
-        const timeoutId = setTimeout(() => {
-          console.log(`[${new Date().toISOString()}] TIMEOUT: Claude Code execution exceeded 60s, killing process`);
-          console.log(`[${new Date().toISOString()}] TIMEOUT: Command args: ${claudeArgs.join(' ')}`);
-          console.log(`[${new Date().toISOString()}] TIMEOUT: Current stdout: "${stdout}"`);
-          console.log(`[${new Date().toISOString()}] TIMEOUT: Current stderr: "${stderr}"`);
-          proc.kill('SIGTERM');
-          const executionTime = Date.now() - startTime;
-          resolve({
-            success: false,
-            output: stdout.trim(),
-            error: 'Claude Code execution timeout (60s) - Process was killed',
-            executionTime
-          });
-        }, 60000);
         
       } catch (error) {
-        const executionTime = Date.now() - startTime;
-        resolve({
+        wrappedResolve({
           success: false,
           output: '',
-          error: `Execution error: ${error.message}`,
-          executionTime
+          error: `Execution error: ${error.message}`
         });
       }
     });
