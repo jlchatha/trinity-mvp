@@ -4372,7 +4372,7 @@ class TrinitySingleWindow {
    * Show typing indicator
    */
   showTypingIndicator() {
-    const typingIndicator = document.getElementById('trinity-typing-indicator');
+    const typingIndicator = document.getElementById('typingIndicator') || document.getElementById('trinity-typing-indicator');
     if (typingIndicator) {
       typingIndicator.style.display = 'block';
       const chatContent = document.getElementById('trinity-chat-messages');
@@ -4386,7 +4386,7 @@ class TrinitySingleWindow {
    * Hide typing indicator
    */
   hideTypingIndicator() {
-    const typingIndicator = document.getElementById('trinity-typing-indicator');
+    const typingIndicator = document.getElementById('typingIndicator') || document.getElementById('trinity-typing-indicator');
     if (typingIndicator) {
       typingIndicator.style.display = 'none';
     }
