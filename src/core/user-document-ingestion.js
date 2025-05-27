@@ -259,7 +259,7 @@ class UserDocumentIngestion {
                     processingInfo.codeInfo = {
                         functions,
                         classes,
-                        lines: rawContent.split('\n').length
+                        lines: rawContent.split('\n').filter(line => line.trim().length > 0).length
                     };
                     break;
                     
