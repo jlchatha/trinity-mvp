@@ -116,7 +116,9 @@ class TrinitySingleWindow {
                 </div>
               </div>
               
-              <!-- Typing Indicator -->
+              <!-- Chat messages go here dynamically -->
+              
+              <!-- Typing Indicator - positioned at end so it appears at bottom -->
               <div id="trinity-typing-indicator" class="trinity-typing-indicator" style="display: none;">
                 <div class="trinity-message assistant">
                   <div class="trinity-message-content">
@@ -2757,7 +2759,13 @@ class TrinitySingleWindow {
       </div>
     `;
     
-    chatContent.appendChild(messageDiv);
+    // Insert message before typing indicator (so typing indicator stays at bottom)
+    const typingIndicator = document.getElementById('trinity-typing-indicator');
+    if (typingIndicator && typingIndicator.parentNode === chatContent) {
+      chatContent.insertBefore(messageDiv, typingIndicator);
+    } else {
+      chatContent.appendChild(messageDiv);
+    }
     
     // Update conversation metrics for realistic token tracking
     this.updateConversationMetrics(content, sender);
