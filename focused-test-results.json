@@ -1,47 +1,29 @@
 {
-  "timestamp": "2025-05-26T21:56:31.936Z",
+  "timestamp": "2025-05-27T08:41:24.168Z",
   "summary": {
     "totalTests": 5,
-    "passedTests": 3,
-    "failedTests": 2,
+    "passedTests": 0,
+    "failedTests": 5,
     "fallbackCount": 0,
-    "successRate": 60,
+    "successRate": 0,
     "memoryPersistent": false
   },
-  "verdict": "FAIR - Some conversation flows working but needs improvement",
+  "verdict": "POOR - Significant conversation flow problems remain",
   "results": [
     {
       "test": "Basic factual question",
-      "prompt": "What is the capital of France?",
-      "expected": "paris",
-      "success": true,
-      "isFallback": false,
-      "hasExpected": true,
-      "passed": true,
-      "response": "Paris.",
-      "executionTime": 5793
+      "passed": false,
+      "error": "No response file"
     },
     {
       "test": "Simple math calculation",
-      "prompt": "What is 25 + 17?",
-      "expected": "42",
-      "success": true,
-      "isFallback": false,
-      "hasExpected": true,
-      "passed": true,
-      "response": "42",
-      "executionTime": 4820
+      "passed": false,
+      "error": "No response file"
     },
     {
       "test": "Memory storage test",
-      "prompt": "Remember that my favorite programming language is JavaScript.",
-      "expected": "remember",
-      "success": true,
-      "isFallback": false,
-      "hasExpected": false,
       "passed": false,
-      "response": "I understand! I'm ready to help you with any JavaScript-related tasks or questions you might have. Whether you're working on:\n\n- Frontend development (React, Vue, vanilla JS)\n- Backend work (Node.js, ",
-      "executionTime": 6376
+      "error": "No response file"
     },
     {
       "test": "Memory recall test",
@@ -50,14 +32,8 @@
     },
     {
       "test": "Scientific reasoning",
-      "prompt": "Why is the sky blue? Give a brief scientific explanation.",
-      "expected": "light",
-      "success": true,
-      "isFallback": false,
-      "hasExpected": true,
-      "passed": true,
-      "response": "The sky appears blue due to a phenomenon called **Rayleigh scattering**. \n\nWhen sunlight enters Earth's atmosphere, it collides with tiny gas molecules (mainly nitrogen and oxygen). These molecules ar",
-      "executionTime": 7929
+      "passed": false,
+      "error": "No response file"
     }
   ]
 }

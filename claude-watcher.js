@@ -221,6 +221,7 @@ class ClaudeWatcher {
     let memoryContext = null;
     let enhancedPrompt = prompt;
     let complexQueryResult = null;
+    let hasMemoryReference = false;
     
     try {
       // Step 1: Check for complex query processing needs
@@ -240,13 +241,13 @@ class ClaudeWatcher {
       }
       
       // Step 2: Check if this prompt contains memory references
-      const hasMemoryReference = this.memoryDetector.detectsMemoryReference(enhancedPrompt);
+      hasMemoryReference = this.memoryDetector.detectsMemoryReference(enhancedPrompt);
       
       if (hasMemoryReference) {
         this.log(`Memory reference detected in enhanced prompt`);
         
-        // Load relevant memory context using Trinity-Native Memory
-        memoryContext = await this.trinityMemory.buildContextForClaude(enhancedPrompt);
+        // Load relevant memory context using Trinity-Native Memory (session-first search)
+        memoryContext = await this.trinityMemory.buildContextForClaude(enhancedPrompt, sessionId);
         
         if (memoryContext.contextText && memoryContext.contextText.trim().length > 0) {
           // Write context file for Claude Code to read

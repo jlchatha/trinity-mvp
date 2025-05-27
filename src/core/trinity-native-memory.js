@@ -13,6 +13,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 
 class TrinityNativeMemory {
   constructor(options = {}) {
@@ -89,14 +90,42 @@ class TrinityNativeMemory {
   
   /**
    * Build context for Claude Code to read
-   * Core functionality: selective file loading with relevance scoring
+   * Core functionality: session-first search, then historical memories
    */
-  async buildContextForClaude(message) {
+  async buildContextForClaude(message, sessionId = 'default') {
     const startTime = Date.now();
     
     try {
-      // Find relevant conversation IDs
-      const relevantIds = this.findRelevantConversations(message);
+      // CRITICAL FIX: Search current session FIRST, then historical
+      const currentSessionIds = this.findRelevantConversationsInSession(message, sessionId);
+      
+      // If we found relevant content in current session, prioritize it
+      let relevantIds;
+      if (currentSessionIds.length > 0) {
+        this.logger.info(`[Trinity Memory] Found ${currentSessionIds.length} relevant items in current session`);
+        
+        // For session-specific queries, only return current session content
+        const isSessionSpecificQuery = /\b(this\s+conversation|in\s+this\s+session|you\s+(just\s+)?wrote|you\s+(just\s+)?created)\b/i.test(message);
+        const isLineSpecificQuery = /\b(last\s+line|first\s+line|what\s+(is|was)\s+the\s+(last|first|second|third|\d+)\s+(line|verse))\b/i.test(message);
+        
+        if (isSessionSpecificQuery || isLineSpecificQuery) {
+          // Session-specific or line-specific queries get ONLY current session content
+          relevantIds = currentSessionIds;
+          this.logger.info(`[Trinity Memory] ${isLineSpecificQuery ? 'Line-specific' : 'Session-specific'} query - returning only current session content`);
+        } else {
+          // General queries can include historical context for completeness
+          const historicalIds = this.findRelevantConversations(message)
+            .filter(id => !currentSessionIds.includes(id))
+            .slice(0, 2); // Only 2 historical items max when current session has content
+          
+          relevantIds = [...currentSessionIds, ...historicalIds];
+          this.logger.info(`[Trinity Memory] General query - including historical context`);
+        }
+      } else {
+        // No current session matches, search all historical memories
+        this.logger.info(`[Trinity Memory] No current session matches, searching historical memories`);
+        relevantIds = this.findRelevantConversations(message);
+      }
       
       if (relevantIds.length === 0) {
         this.stats.memoryMisses++;
@@ -211,13 +240,16 @@ class TrinityNativeMemory {
   }
   
   /**
-   * Store a conversation response with content type detection
+   * Store a conversation response with content type detection and unique content ID
    */
   async storeResponse(userMessage, assistantResponse, sessionId = 'default') {
     try {
       const conversationId = this.generateConversationId();
       const timestamp = new Date().toISOString();
       const contentType = this.detectContentType(assistantResponse);
+      
+      // CRITICAL FIX: Generate unique content identifiers to prevent name collisions
+      const contentMetadata = this.generateContentMetadata(assistantResponse, contentType, sessionId);
       
       const conversation = {
         id: conversationId,
@@ -227,10 +259,16 @@ class TrinityNativeMemory {
         assistantResponse,
         contentType,
         topics: this.extractTopics(userMessage + ' ' + assistantResponse),
+        // NEW: Content identification system
+        contentId: contentMetadata.contentId,
+        contentTitle: contentMetadata.title,
+        contentHash: contentMetadata.hash,
+        conversationIndex: await this.getConversationIndex(sessionId),
         metadata: {
           messageLength: userMessage.length,
           responseLength: assistantResponse.length,
-          detectedType: contentType
+          detectedType: contentType,
+          hasCreativeContent: contentMetadata.hasCreativeContent
         }
       };
       
@@ -256,6 +294,115 @@ class TrinityNativeMemory {
     }
   }
   
+  /**
+   * Find relevant conversations within the current session ONLY
+   * CRITICAL: Enhanced with content disambiguation and strict session isolation
+   */
+  findRelevantConversationsInSession(message, sessionId = 'default') {
+    const sessionConversations = Array.from(this.conversations.values())
+      .filter(conv => conv.sessionId === sessionId)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Most recent first
+    
+    if (sessionConversations.length === 0) {
+      this.logger.info(`[Trinity Memory] No conversations found in session ${sessionId}`);
+      return [];
+    }
+    
+    this.logger.info(`[Trinity Memory] Searching ${sessionConversations.length} conversations in current session ${sessionId}`);
+    
+    const relevantIds = new Set();
+    const messageTokens = this.tokenize(message.toLowerCase());
+    
+    // ENHANCED: Detect specific content requests with disambiguation
+    const isLastLineQuery = /\b(last|final)\s+(line|verse)\b/i.test(message);
+    const isSpecificLineQuery = /\b(\w+)\s+(line|verse)\b/i.test(message) || /\bline\s+\d+\b/i.test(message);
+    const isContentQuery = /\b(poem|code|function|explanation)\b/i.test(message);
+    
+    // For line-specific queries, prioritize most recent creative content
+    if ((isLastLineQuery || isSpecificLineQuery) && isContentQuery) {
+      this.logger.info(`[Trinity Memory] Detected line-specific query in current session`);
+      
+      // Find most recent creative content in current session
+      const recentCreative = sessionConversations
+        .filter(conv => conv.contentType === 'poem' || conv.contentType === 'code')
+        .slice(0, 2); // Most recent 2 creative items
+      
+      recentCreative.forEach(conv => {
+        relevantIds.add(conv.id);
+        this.logger.info(`[Trinity Memory] Added recent ${conv.contentType}: ${conv.id} (${conv.contentTitle || 'untitled'})`);
+      });
+      
+      // Return early for line queries - don't dilute with other content
+      if (relevantIds.size > 0) {
+        return Array.from(relevantIds);
+      }
+    }
+    
+    // Standard content type filtering within session
+    if (/poem/i.test(message)) {
+      sessionConversations
+        .filter(conv => conv.contentType === 'poem')
+        .forEach(conv => {
+          relevantIds.add(conv.id);
+          this.logger.info(`[Trinity Memory] Added poem: ${conv.contentTitle || 'untitled'} (${conv.contentHash})`);
+        });
+    }
+    
+    if (/code|function/i.test(message)) {
+      sessionConversations
+        .filter(conv => conv.contentType === 'code')
+        .forEach(conv => relevantIds.add(conv.id));
+    }
+    
+    // Enhanced topic matching with session context
+    if (relevantIds.size === 0) {
+      sessionConversations.forEach(conv => {
+        const conversationText = (conv.userMessage + ' ' + conv.assistantResponse).toLowerCase();
+        const tokenMatches = messageTokens.filter(token => conversationText.includes(token));
+        
+        // Require at least 2 token matches for session queries to avoid noise
+        if (tokenMatches.length >= 2) {
+          relevantIds.add(conv.id);
+        }
+      });
+    }
+    
+    // Score and sort by relevance within session with recency bias
+    const scoredIds = Array.from(relevantIds).map(id => {
+      const conversation = this.conversations.get(id);
+      if (!conversation) return null;
+      
+      let relevanceScore = this.calculateRelevanceScore(message, conversation);
+      
+      // CRITICAL: Add massive session bonus to ensure current session wins
+      relevanceScore += 2.0; // Huge session bonus
+      
+      return { 
+        id, 
+        score: relevanceScore, 
+        timestamp: conversation.timestamp,
+        contentTitle: conversation.contentTitle,
+        contentType: conversation.contentType 
+      };
+    }).filter(item => item !== null);
+    
+    // Sort by relevance, heavily favoring recency within session
+    scoredIds.sort((a, b) => {
+      // For equal relevance, strongly favor recency
+      if (Math.abs(a.score - b.score) < 0.3) {
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      }
+      return b.score - a.score;
+    });
+    
+    this.logger.info(`[Trinity Memory] Session search found ${scoredIds.length} relevant conversations`);
+    scoredIds.slice(0, 3).forEach((item, i) => {
+      this.logger.info(`  ${i+1}. ${item.contentTitle || 'untitled'} (${item.contentType}, score: ${item.score.toFixed(2)})`);
+    });
+    
+    return scoredIds.map(item => item.id);
+  }
+
   /**
    * Find relevant conversations based on message content
    * Uses topic matching, content type, and recency scoring
@@ -626,6 +773,79 @@ class TrinityNativeMemory {
   
   generateConversationId() {
     return 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+  
+  /**
+   * CRITICAL FIX: Generate unique content metadata to prevent name collisions
+   */
+  generateContentMetadata(response, contentType, sessionId) {
+    const hasCreativeContent = contentType === 'poem' || contentType === 'code';
+    
+    // Extract title from content if it's creative content
+    let title = null;
+    if (hasCreativeContent) {
+      title = this.extractContentTitle(response, contentType);
+    }
+    
+    // Generate unique content hash for disambiguation
+    const contentHash = crypto.createHash('md5')
+      .update(response.substring(0, 200)) // First 200 chars for uniqueness
+      .digest('hex')
+      .substring(0, 8);
+    
+    // Generate unique content ID
+    const timestamp = Date.now();
+    const contentId = hasCreativeContent 
+      ? `${contentType}_${timestamp}_${contentHash}`
+      : null;
+    
+    return {
+      contentId,
+      title,
+      hash: contentHash,
+      hasCreativeContent,
+      sessionScoped: true // Mark as session-aware content
+    };
+  }
+  
+  /**
+   * Extract title from creative content (poems, code)
+   */
+  extractContentTitle(response, contentType) {
+    if (contentType === 'poem') {
+      // Look for poem title patterns
+      const titlePatterns = [
+        /Here's "([^"]+)"/,
+        /titled "([^"]+)"/,
+        /called "([^"]+)"/,
+        /poem "([^"]+)"/,
+        /^"([^"]+)"$/m
+      ];
+      
+      for (const pattern of titlePatterns) {
+        const match = response.match(pattern);
+        if (match) {
+          return match[1];
+        }
+      }
+      
+      // Fallback: use first line if it looks like a title
+      const lines = response.split('\n').filter(line => line.trim());
+      if (lines.length > 0 && lines[0].length < 50 && !lines[0].includes(' ')) {
+        return lines[0].trim();
+      }
+    }
+    
+    return null; // No title detected
+  }
+  
+  /**
+   * Get conversation index within session (for ordering)
+   */
+  async getConversationIndex(sessionId) {
+    const sessionConversations = Array.from(this.conversations.values())
+      .filter(conv => conv.sessionId === sessionId);
+    return sessionConversations.length + 1;
   }
   
   tokenize(text) {

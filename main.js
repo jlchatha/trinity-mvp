@@ -6,6 +6,9 @@ const ClaudeCodeSDK = require('./src/core/claude-integration');
 const AGENT_PROMPTS = require('./src/core/ai-prompts');
 const { TrinityIPCBridge } = require('./src/electron/trinity-ipc-bridge');
 
+// Trinity Conversation Manager for current session awareness  
+const TrinityConversationManager = require('./src/core/trinity-conversation-manager');
+
 // Setup debug logging
 const logDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logDir)) {
@@ -70,6 +73,11 @@ class TrinityMVPApp {
       workingDirectory: __dirname,
       debugMode: process.env.NODE_ENV === 'development',
       logLevel: 'info'
+    });
+    
+    // Initialize Trinity Conversation Manager for current session awareness
+    this.conversationManager = new TrinityConversationManager({
+      logger: console
     });
     
     // Setup SDK event listeners
@@ -971,14 +979,29 @@ function setupTrinityAPIHandlers(trinityApp) {
     const message = typeof messageData === 'string' ? messageData : messageData.message;
     const memoryContext = typeof messageData === 'object' ? messageData.memoryContext : null;
     
-    console.log('Overseer message received:', message);
+    console.log('[CRITICAL FIX] Overseer message received:', message.substring(0, 100) + '...');
     if (memoryContext) {
-      console.log(`Memory context provided: ${memoryContext.artifacts?.length || 0} items`);
+      console.log(`[CRITICAL FIX] Memory context provided: ${memoryContext.artifacts?.length || 0} items`);
     }
     
     try {
-      // Enhance message with memory context if available and relevant
-      let enhancedMessage = message;
+      // CRITICAL FIX: Use Trinity Conversation Manager for current session awareness
+      const conversationResult = await trinityApp.conversationManager.processMessage(message);
+      
+      if (conversationResult.canHandle) {
+        // Trinity can answer this directly from current session
+        console.log('[CRITICAL FIX] Trinity answered directly from current session');
+        return {
+          status: 'processed',
+          response: conversationResult.response,
+          sessionId: trinityApp.conversationManager.sessionId,
+          method: 'trinity-direct'
+        };
+      }
+      
+      // Trinity needs Claude Code for this query
+      console.log('[CRITICAL FIX] Trinity delegating to Claude Code with enhanced context');
+      let enhancedMessage = conversationResult.enhancedMessage || message;
       
       // Check if this is a basic identity/system question that doesn't need memory context
       const isBasicQuestion = /^(what'?s your (name|role)|what is your (name|role)|who are you|what do you do|help|hello|hi)\??$/i.test(message.trim());
@@ -1006,6 +1029,9 @@ Please respond directly to the user's question. Only reference the memory contex
         }
       );
       
+      // CRITICAL FIX: Add Claude response to conversation manager
+      trinityApp.conversationManager.addAssistantResponse(result.result);
+      
       return { 
         status: 'processed', 
         response: result.result,
@@ -1018,6 +1044,10 @@ Please respond directly to the user's question. Only reference the memory contex
       // Fallback to direct Claude API (with enhanced message if memory context available)
       try {
         const directResponse = await trinityApp.executeDirectClaudeAPI(enhancedMessage);
+        
+        // CRITICAL FIX: Add direct API response to conversation manager
+        trinityApp.conversationManager.addAssistantResponse(directResponse);
+        
         return {
           status: 'processed',
           response: directResponse,
