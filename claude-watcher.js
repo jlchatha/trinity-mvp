@@ -66,6 +66,15 @@ class ClaudeWatcher {
       }
     });
     
+    this.timeoutManager = new TimeoutManager({
+      baseDir: this.trinityDir,
+      logger: {
+        info: (msg) => this.log(`[TIMEOUT] ${msg}`),
+        warn: (msg) => this.log(`[TIMEOUT WARN] ${msg}`),
+        error: (msg) => this.log(`[TIMEOUT ERROR] ${msg}`)
+      }
+    });
+    
     // Initialize Trinity System Awareness
     this.contextEnhancer = new ClaudeCodeContextEnhancer({
       systemDir: this.trinityDir,
@@ -296,8 +305,31 @@ class ClaudeWatcher {
       this.log(`✅ Prompt size validated: ${totalPromptSize} chars`);
     }
     
-    // Execute Claude Code with enhanced prompt
-    const result = await this.executeClaudeCode(enhancedPrompt, workingDirectory, options);
+    // Step 4: Determine optimal timeout configuration
+    const timeoutConfig = this.timeoutManager.determineTimeout(
+      enhancedPrompt, 
+      hasMemoryReference, 
+      complexQueryResult
+    );
+
+    this.log(`⏱️ Using ${timeoutConfig.category} timeout: ${timeoutConfig.maxResponseTime}ms for "${enhancedPrompt.substring(0, 50)}..."`);
+
+    // Execute Claude Code with dynamic timeout configuration
+    const result = await this.executeClaudeCode(enhancedPrompt, workingDirectory, {
+      ...options,
+      maxResponseTime: timeoutConfig.maxResponseTime,
+      warningThreshold: timeoutConfig.warningThreshold,
+      timeoutCategory: timeoutConfig.category
+    });
+    
+    // Record timeout manager performance data
+    if (result && timeoutConfig) {
+      this.timeoutManager.recordResult(
+        timeoutConfig.category,
+        result.executionTime || 0,
+        result.success || false
+      );
+    }
     
     // Save conversation to Trinity-Native Memory if successful
     if (result.success && result.output && result.output.trim().length > 0) {

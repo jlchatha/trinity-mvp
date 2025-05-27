@@ -132,16 +132,20 @@ class TimeoutManager {
    */
   isMemoryOperation(prompt) {
     const memoryPatterns = [
-      // Memory recall
+      // Memory recall - enhanced patterns
       /\b(remember|recall|what.*tell|what.*say|what.*mention)\b/i,
       /\b(my\s+favorite|I\s+told\s+you|we\s+discussed|earlier\s+conversation)\b/i,
+      /what\s+(was|did)\s+.*\b(that|you|we|I)\b/i,
+      /that\s+(poem|code|story|idea|thing)/i,
       
       // Memory storage
       /\b(remember\s+that|store\s+this|save\s+this|note\s+that)\b/i,
       
-      // Context references
+      // Context references - enhanced
       /\b(based\s+on|from|according\s+to)\s+.*\b(earlier|previous|last|before)\b/i,
-      /\b(in\s+our|from\s+our)\s+.*\b(conversation|discussion|chat)\b/i
+      /\b(in\s+our|from\s+our)\s+.*\b(conversation|discussion|chat)\b/i,
+      /what\s+did\s+we\s+(talk|discuss|chat)\s+about/i,
+      /you\s+(wrote|created|made|said)\s+(earlier|before)/i
     ];
     
     return memoryPatterns.some(pattern => pattern.test(prompt));
