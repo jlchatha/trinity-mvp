@@ -4375,9 +4375,12 @@ class TrinitySingleWindow {
     const typingIndicator = document.getElementById('typingIndicator') || document.getElementById('trinity-typing-indicator');
     if (typingIndicator) {
       typingIndicator.style.display = 'block';
-      const chatContent = document.getElementById('trinity-chat-messages');
+      // Scroll to show the typing indicator at bottom of chat
+      const chatContent = document.getElementById('trinity-chat-messages') || document.getElementById('messagesContainer');
       if (chatContent) {
-        chatContent.scrollTop = chatContent.scrollHeight;
+        setTimeout(() => {
+          chatContent.scrollTop = chatContent.scrollHeight;
+        }, 50); // Small delay to ensure DOM is updated
       }
     }
   }
