@@ -17,6 +17,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const TrinityNativeMemory = require('./src/core/trinity-native-memory');
 const MemoryReferenceDetector = require('./src/core/memory-reference-detector');
 const ComplexQueryProcessor = require('./src/core/complex-query-processor');
+const TimeoutManager = require('./src/core/timeout-manager');
 
 // Trinity System Awareness Components
 const ClaudeCodeContextEnhancer = require('./src/core/claude-code-context-enhancer');
