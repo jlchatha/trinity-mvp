@@ -291,13 +291,13 @@
                     Welcome to Trinity! I'm here to help with anything you'd like to work on.
                 </div>
             </div>
-        </div>
-
-        <div class="typing-indicator" id="typingIndicator">
-            <div class="typing-dots">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
             </div>
         </div>
 
@@ -410,15 +410,13 @@
 
         function showTypingIndicator() {
             typingIndicator.style.display = 'block';
-            messagesContainer.appendChild(typingIndicator);
+            // No need to appendChild since it's already in messagesContainer
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
         function hideTypingIndicator() {
             typingIndicator.style.display = 'none';
-            if (typingIndicator.parentNode) {
-                typingIndicator.parentNode.removeChild(typingIndicator);
-            }
+            // No need to removeChild, just hide it in place
         }
 
         function goBack() {
