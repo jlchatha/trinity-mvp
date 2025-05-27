@@ -1,7 +1,0 @@
-{
-    "smtp_server": "smtp.gmail.com",
-    "smtp_port": 587,
-    "sender_email": "your_email@gmail.com",
-    "sender_password": "your_app_password_here",
-    "default_recipient": "your_email@gmail.com"
-}
