@@ -1,6 +1,6 @@
 # Trinity MVP - Changelog
 
-## Version 1.2.0 - Professional Open Source Release (2024-11-27)
+## Version 1.2.0 - Professional Open Source Release (2025-05-27)
 
 ### 🎉 **MAJOR RELEASE: Complete Professional Transformation**
 
@@ -117,7 +117,7 @@
 
 ---
 
-## Version 1.1.0 - Cross-Platform Release (2024-05-23)
+## Version 1.1.0 - Cross-Platform Release (2025-05-23)
 
 ### 🎉 **MAJOR RELEASE: Native Platform Support**
 
