@@ -18,6 +18,7 @@ const TrinityNativeMemory = require('./src/core/trinity-native-memory');
 const MemoryReferenceDetector = require('./src/core/memory-reference-detector');
 const ComplexQueryProcessor = require('./src/core/complex-query-processor');
 const TimeoutManager = require('./src/core/timeout-manager');
+const QueueManager = require('./src/core/queue-manager');
 
 // Trinity System Awareness Components
 const ClaudeCodeContextEnhancer = require('./src/core/claude-code-context-enhancer');
@@ -72,6 +73,15 @@ class ClaudeWatcher {
         info: (msg) => this.log(`[TIMEOUT] ${msg}`),
         warn: (msg) => this.log(`[TIMEOUT WARN] ${msg}`),
         error: (msg) => this.log(`[TIMEOUT ERROR] ${msg}`)
+      }
+    });
+    
+    this.queueManager = new QueueManager({
+      baseDir: this.trinityDir,
+      logger: {
+        info: (msg) => this.log(`[QUEUE] ${msg}`),
+        warn: (msg) => this.log(`[QUEUE WARN] ${msg}`),
+        error: (msg) => this.log(`[QUEUE ERROR] ${msg}`)
       }
     });
     
@@ -143,9 +153,21 @@ class ClaudeWatcher {
     this.isRunning = true;
     this.log('Claude Watcher started - monitoring queue...');
     
+    // Initialize queue cleanup cycle counter
+    let cleanupCycle = 0;
+    const cleanupInterval = 30; // Run queue cleanup every 30 polling cycles (30 seconds)
+    
     while (this.isRunning) {
       try {
         await this.processQueue();
+        
+        // Periodic queue cleanup for stuck requests
+        cleanupCycle++;
+        if (cleanupCycle >= cleanupInterval) {
+          cleanupCycle = 0;
+          await this.performQueueCleanup();
+        }
+        
         await this.sleep(this.pollInterval);
       } catch (error) {
         this.log(`Error in main loop: ${error.message}`);
@@ -771,6 +793,27 @@ class ClaudeWatcher {
     }
     
     return 'unknown';
+  }
+  
+  /**
+   * Perform periodic queue cleanup to handle stuck requests
+   * @private
+   */
+  async performQueueCleanup() {
+    try {
+      const results = await this.queueManager.scanAndCleanup();
+      
+      if (results.stuckRequests.length > 0) {
+        this.log(`🧹 Queue cleanup: ${results.cleaned} cleaned, ${results.recovered} recovered, ${results.failed} failed`);
+        
+        // Log health stats after cleanup
+        const health = this.queueManager.getHealthStats();
+        this.log(`📊 Queue health: ${health.health.overallHealth}% (processing: ${health.queues.processing}, input: ${health.queues.input})`);
+      }
+      
+    } catch (error) {
+      this.log(`⚠️ Queue cleanup failed: ${error.message}`);
+    }
   }
   
   stop() {

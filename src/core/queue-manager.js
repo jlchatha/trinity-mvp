@@ -159,8 +159,8 @@ class QueueManager {
       
       // Category-specific timeout cleanup
       if (ageMs > timeoutThreshold) {
-        // Try to recover first for recent timeouts
-        if (ageMs < timeoutThreshold * 2) {
+        // Try to recover first for recent timeouts (within 1.5x threshold)
+        if (ageMs < timeoutThreshold * 1.5) {
           this.moveToInput(filePath, filename, 'Timeout recovery attempt');
           return {
             action: 'recover',
@@ -252,7 +252,10 @@ class QueueManager {
       /\b(my\s+favorite|I\s+told\s+you|we\s+discussed|earlier\s+conversation)\b/i,
       /what\s+(was|did)\s+.*\b(that|you|we|I)\b/i,
       /that\s+(poem|code|story|idea|thing)/i,
-      /\b(remember\s+that|store\s+this|save\s+this|note\s+that)\b/i
+      /\b(remember\s+that|store\s+this|save\s+this|note\s+that)\b/i,
+      /you\s+(mentioned|told|said)\s+(earlier|before)/i,
+      /what\s+did\s+we\s+(talk|discuss)\s+about/i,
+      /\b(earlier|previous|before)\b.*\b(conversation|discussion|chat)\b/i
     ];
     return patterns.some(pattern => pattern.test(prompt));
   }
