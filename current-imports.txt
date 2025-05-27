@@ -1,0 +1,1 @@
+src/core/complex-query-processor.js:      gapAssessment: /\b(gap|missing|lack|need|require|deficit)\b.*\b(feature|function|capabilit|implement)\b/i,
