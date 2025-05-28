@@ -17,8 +17,6 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const TrinityNativeMemory = require('./src/core/trinity-native-memory');
 const MemoryReferenceDetector = require('./src/core/memory-reference-detector');
 const ComplexQueryProcessor = require('./src/core/complex-query-processor');
-const TimeoutManager = require('./src/core/timeout-manager');
-const QueueManager = require('./src/core/queue-manager');
 
 // Trinity System Awareness Components
 const ClaudeCodeContextEnhancer = require('./src/core/claude-code-context-enhancer');
@@ -67,24 +65,6 @@ class ClaudeWatcher {
       }
     });
     
-    this.timeoutManager = new TimeoutManager({
-      baseDir: this.trinityDir,
-      logger: {
-        info: (msg) => this.log(`[TIMEOUT] ${msg}`),
-        warn: (msg) => this.log(`[TIMEOUT WARN] ${msg}`),
-        error: (msg) => this.log(`[TIMEOUT ERROR] ${msg}`)
-      }
-    });
-    
-    this.queueManager = new QueueManager({
-      baseDir: this.trinityDir,
-      logger: {
-        info: (msg) => this.log(`[QUEUE] ${msg}`),
-        warn: (msg) => this.log(`[QUEUE WARN] ${msg}`),
-        error: (msg) => this.log(`[QUEUE ERROR] ${msg}`)
-      }
-    });
-    
     // Initialize Trinity System Awareness
     this.contextEnhancer = new ClaudeCodeContextEnhancer({
       systemDir: this.trinityDir,
@@ -96,6 +76,11 @@ class ClaudeWatcher {
         error: (msg) => this.log(`[SYSTEM-AWARENESS ERROR] ${msg}`)
       }
     });
+    
+    // 🔧 DEBUG FLOW TRACING SYSTEM
+    this.DEBUG_ENABLED = process.env.TRINITY_DEBUG === 'true' || true; // TODO: Set to false for production
+    this.FLOW_TRACE_ID = null;
+    this.debugStep = 0;
     
     // Initialize Trinity Identity Restoration
     this.trinityIdentity = new TrinityResponseEnhancer({
@@ -127,6 +112,43 @@ class ClaudeWatcher {
     }
   }
   
+  // 🔧 DEBUG FLOW TRACING METHODS
+  debugTrace(step, message, data = null) {
+    if (!this.DEBUG_ENABLED) return;
+    
+    this.debugStep++;
+    const traceId = this.FLOW_TRACE_ID || 'NO_TRACE';
+    let debugMsg = `🔧 [TRACE:${traceId}:${this.debugStep}] ${step}: ${message}`;
+    
+    if (data) {
+      if (typeof data === 'string') {
+        debugMsg += ` | "${data}" (len:${data.length})`;
+      } else if (typeof data === 'object') {
+        debugMsg += ` | ${JSON.stringify(data, null, 0)}`;
+      } else {
+        debugMsg += ` | ${data} (${typeof data})`;
+      }
+    }
+    
+    this.log(debugMsg);
+  }
+  
+  startTrace(requestId, operation) {
+    if (!this.DEBUG_ENABLED) return;
+    
+    this.FLOW_TRACE_ID = `${requestId}_${operation}`;
+    this.debugStep = 0;
+    this.debugTrace('START', `Beginning ${operation} for ${requestId}`);
+  }
+  
+  endTrace(result = 'completed') {
+    if (!this.DEBUG_ENABLED) return;
+    
+    this.debugTrace('END', `Flow trace completed: ${result}`);
+    this.FLOW_TRACE_ID = null;
+    this.debugStep = 0;
+  }
+  
   ensureDirectories() {
     const dirs = [this.inputDir, this.processingDir, this.outputDir, this.failedDir, this.logsDir];
     dirs.forEach(dir => {
@@ -152,22 +174,11 @@ class ClaudeWatcher {
   async start() {
     this.isRunning = true;
     this.log('Claude Watcher started - monitoring queue...');
-    
-    // Initialize queue cleanup cycle counter
-    let cleanupCycle = 0;
-    const cleanupInterval = 30; // Run queue cleanup every 30 polling cycles (30 seconds)
+    this.log('🔧 STARTUP VERSION: May 28 2025 v2.1 - New code verification marker');
     
     while (this.isRunning) {
       try {
         await this.processQueue();
-        
-        // Periodic queue cleanup for stuck requests
-        cleanupCycle++;
-        if (cleanupCycle >= cleanupInterval) {
-          cleanupCycle = 0;
-          await this.performQueueCleanup();
-        }
-        
         await this.sleep(this.pollInterval);
       } catch (error) {
         this.log(`Error in main loop: ${error.message}`);
@@ -210,87 +221,134 @@ class ClaudeWatcher {
   }
   
   async processRequest(requestPath, filename) {
+    this.log(`🔍 EXECUTION_TRACE: processRequest ENTRY - ${filename}`);
+    
     // Read the request
     const requestData = JSON.parse(fs.readFileSync(requestPath, 'utf8'));
     this.log(`Request data: ${JSON.stringify(requestData, null, 2)}`);
     
-    const { sessionId, prompt, options = {} } = requestData;
+    const { sessionId, options = {} } = requestData;
+    // Accept both 'prompt' and 'message' field names for flexibility
+    const prompt = requestData.prompt || requestData.message;
+    
+    // 🔧 START FLOW TRACE
+    this.startTrace(requestData.requestId || filename, 'processRequest');
+    this.debugTrace('INIT', 'Request data parsed', { sessionId, promptLen: prompt?.length, options, promptField: requestData.prompt ? 'prompt' : 'message' });
     const workingDirectory = options.workingDirectory;
     const userContext = options.userContext || {};
     
     let memoryContext = null;
     let enhancedPrompt = prompt;
     let complexQueryResult = null;
-    let hasMemoryReference = false;
     
     try {
       // Step 1: Check for complex query processing needs
+      this.log(`🔍 TRACE: Starting request processing with prompt: "${prompt.substring(0, 50)}..." (${typeof prompt})`);
       const needsComplexProcessing = this.complexQueryProcessor.needsComplexProcessing(prompt);
       
       if (needsComplexProcessing) {
         this.log(`🧠 Complex analytical query detected - enhancing for professional processing`);
         complexQueryResult = await this.complexQueryProcessor.processComplexQuery(prompt);
         
-        if (complexQueryResult.enhanced) {
+        if (complexQueryResult.enhanced && complexQueryResult.enhancedPrompt) {
           enhancedPrompt = complexQueryResult.enhancedPrompt;
           this.log(`✅ Query enhanced for analytical processing (${enhancedPrompt.length} chars)`);
           this.log(`📋 Operations identified: ${JSON.stringify(complexQueryResult.operations)}`);
+        } else if (complexQueryResult.enhanced) {
+          this.log('⚠️ Complex query processor marked as enhanced but no enhancedPrompt provided - using original prompt');
         }
       } else {
         this.log('📝 Simple query - proceeding with standard processing');
       }
       
-      // Step 2: Check if this prompt contains memory references
-      hasMemoryReference = this.memoryDetector.detectsMemoryReference(enhancedPrompt);
-      
-      if (hasMemoryReference) {
-        this.log(`Memory reference detected in enhanced prompt`);
-        
-        // Load relevant memory context using Trinity-Native Memory (session-first search)
-        memoryContext = await this.trinityMemory.buildContextForClaude(enhancedPrompt, sessionId);
-        
-        if (memoryContext.contextText && memoryContext.contextText.trim().length > 0) {
-          // Write context file for Claude Code to read
-          const contextFilePath = path.join(this.trinityDir, 'memory', 'claude-context.txt');
-          
-          // Ensure memory directory exists
-          const memoryContextDir = path.dirname(contextFilePath);
-          if (!fs.existsSync(memoryContextDir)) {
-            fs.mkdirSync(memoryContextDir, { recursive: true });
-          }
-          
-          // Write context file
-          fs.writeFileSync(contextFilePath, memoryContext.contextText);
-          
-          // Enhanced message for Claude Code (preserve complex query enhancements)
-          enhancedPrompt = `${enhancedPrompt}\n\nRELEVANT CONTEXT: Available in file: ${contextFilePath}`;
-          
-          this.log(`Memory context written to: ${contextFilePath}`);
-          this.log(`Context summary: ${memoryContext.summary}`);
-          this.log(`Memory context size: ${memoryContext.contextText.length} characters`);
-        } else {
-          this.log('Memory reference detected but no relevant context found');
-        }
-      } else {
-        this.log('No memory reference detected - proceeding without memory context');
+      // CRITICAL: Validate enhancedPrompt before ANY memory system calls
+      this.log(`🔍 TRACE: Pre-validation enhancedPrompt: "${enhancedPrompt}" (type: ${typeof enhancedPrompt})`);
+      if (!enhancedPrompt || typeof enhancedPrompt !== 'string') {
+        this.log('⚠️ EMERGENCY: Invalid enhancedPrompt detected - using original prompt');
+        enhancedPrompt = prompt;
       }
+      this.log(`🔍 TRACE: Post-validation enhancedPrompt: "${enhancedPrompt}" (type: ${typeof enhancedPrompt})`);
       
-    } catch (error) {
-      this.log(`Failed to load memory context: ${error.message}`);
-      // Continue without memory context
-    }
+      // Step 2: Check if this prompt contains memory references
+      this.log(`🔍 EXECUTION_TRACE: About to call detectsMemoryReference with: "${enhancedPrompt}" (type: ${typeof enhancedPrompt})`);
+      try {
+              // AGGRESSIVE CRASH DEBUGGING - Phase 2
+      this.log(`🔍 AGGRESSIVE_TRACE: Pre-memory-detection state check`);
+      this.log(`🔍 AGGRESSIVE_TRACE: enhancedPrompt type: ${typeof enhancedPrompt}`);
+      this.log(`🔍 AGGRESSIVE_TRACE: enhancedPrompt value: "${enhancedPrompt}"`);
+      this.log(`🔍 AGGRESSIVE_TRACE: enhancedPrompt length: ${enhancedPrompt?.length}`);
+      this.log(`🔍 AGGRESSIVE_TRACE: memoryDetector exists: ${!!this.memoryDetector}`);
+      this.log(`🔍 AGGRESSIVE_TRACE: About to call detectsMemoryReference...`);
+      
+      // Extra validation before memory detector call
+      if (!enhancedPrompt) {
+        this.log('🚨 CRITICAL: enhancedPrompt is falsy before memory detection!');
+        enhancedPrompt = prompt || 'DEFAULT_PROMPT';
+      }
+      if (typeof enhancedPrompt !== 'string') {
+        this.log(`🚨 CRITICAL: enhancedPrompt is not string: ${typeof enhancedPrompt}`);
+        enhancedPrompt = String(enhancedPrompt);
+      }
+
+        const hasMemoryReference = this.memoryDetector.detectsMemoryReference(enhancedPrompt);
+        this.log(`🔍 EXECUTION_TRACE: detectsMemoryReference returned: ${hasMemoryReference}`);
+        
+        if (hasMemoryReference) {
+          this.log(`Memory reference detected in enhanced prompt`);
+          
+          // Load relevant memory context using Trinity-Native Memory
+          this.log(`📝 Passing to memory system: "${enhancedPrompt}" (type: ${typeof enhancedPrompt})`);
+          this.log(`🔍 EXECUTION_TRACE: About to call buildContextForClaude`);
+          memoryContext = await this.trinityMemory.buildContextForClaude(enhancedPrompt);
+          this.log(`🔍 EXECUTION_TRACE: buildContextForClaude completed successfully`);
+          
+          if (memoryContext.contextText && memoryContext.contextText.trim().length > 0) {
+            // Write context file for Claude Code to read
+            const contextFilePath = path.join(this.trinityDir, 'memory', 'claude-context.txt');
+            
+            // Ensure memory directory exists
+            const memoryContextDir = path.dirname(contextFilePath);
+            if (!fs.existsSync(memoryContextDir)) {
+              fs.mkdirSync(memoryContextDir, { recursive: true });
+            }
+            
+            // Write context file
+            fs.writeFileSync(contextFilePath, memoryContext.contextText);
+            
+            // Enhanced message for Claude Code with actual context content
+            enhancedPrompt = `${enhancedPrompt}\n\n=== RELEVANT CONTEXT FROM MEMORY ===\n${memoryContext.contextText}\n=== END CONTEXT ===`;
+            
+            this.log(`Memory context written to: ${contextFilePath}`);
+            this.log(`Context summary: ${memoryContext.summary}`);
+            this.log(`Memory context size: ${memoryContext.contextText.length} characters`);
+          } else {
+            this.log('Memory reference detected but no relevant context found');
+          }
+        } else {
+          this.log(`🔍 EXECUTION_TRACE: No memory reference detected, skipping memory context`);
+        }
+      } catch (memoryError) {
+        this.log(`🚨 EXECUTION_TRACE: Memory system error caught: ${memoryError.message}`);
+        this.log(`🚨 EXECUTION_TRACE: Error stack: ${memoryError.stack}`);
+        this.log(`Failed to load memory context: ${memoryError.message}`);
+        // Continue without memory context
+      }
     
     // Step 3: Apply Trinity System Awareness Enhancement
     try {
+      this.debugTrace('SYS_AWARE_START', 'Starting system awareness enhancement', enhancedPrompt);
       this.log('🧠 Applying Trinity System Awareness enhancement...');
+      this.log('🔧 CODE VERSION TEST: This message proves new code is loaded - May 28 2025 v2.1');
       
       // Build conversation history from session context (if available)
       const conversationHistory = [];
       if (userContext && userContext.previousMessages) {
         conversationHistory.push(...userContext.previousMessages);
       }
+      this.debugTrace('CONV_HISTORY', 'Conversation history built', { historyLength: conversationHistory.length });
       
       // Apply system awareness and curiosity enhancement
+      this.debugTrace('ENHANCE_BEFORE', 'Calling contextEnhancer.enhanceWithSystemAwareness', enhancedPrompt);
       const systemAwarePrompt = await this.contextEnhancer.enhanceWithSystemAwareness(
         enhancedPrompt, 
         conversationHistory,
@@ -300,6 +358,7 @@ class ClaudeWatcher {
           forceEnhancement: false // Let the enhancer decide based on message content
         }
       );
+      this.debugTrace('ENHANCE_AFTER', 'System awareness enhancement returned', systemAwarePrompt);
       
       if (systemAwarePrompt !== enhancedPrompt) {
         enhancedPrompt = systemAwarePrompt;
@@ -321,38 +380,20 @@ class ClaudeWatcher {
     const totalPromptSize = enhancedPrompt.length;
     const MAX_TOTAL_PROMPT_SIZE = 100000; // 100KB max total prompt
     
+    this.debugTrace('SIZE_CHECK', 'Final prompt size validation', { totalPromptSize, original: prompt });
+    
     if (totalPromptSize > MAX_TOTAL_PROMPT_SIZE) {
       this.log(`🚨 Total prompt too large (${totalPromptSize} chars), using original prompt to prevent crash`);
       enhancedPrompt = prompt; // Fallback to original prompt without context
+      this.debugTrace('SIZE_FALLBACK', 'Using original prompt due to size', prompt);
     } else {
       this.log(`✅ Prompt size validated: ${totalPromptSize} chars`);
     }
     
-    // Step 4: Determine optimal timeout configuration
-    const timeoutConfig = this.timeoutManager.determineTimeout(
-      enhancedPrompt, 
-      hasMemoryReference, 
-      complexQueryResult
-    );
-
-    this.log(`⏱️ Using ${timeoutConfig.category} timeout: ${timeoutConfig.maxResponseTime}ms for "${enhancedPrompt.substring(0, 50)}..."`);
-
-    // Execute Claude Code with dynamic timeout configuration
-    const result = await this.executeClaudeCode(enhancedPrompt, workingDirectory, {
-      ...options,
-      maxResponseTime: timeoutConfig.maxResponseTime,
-      warningThreshold: timeoutConfig.warningThreshold,
-      timeoutCategory: timeoutConfig.category
-    });
-    
-    // Record timeout manager performance data
-    if (result && timeoutConfig) {
-      this.timeoutManager.recordResult(
-        timeoutConfig.category,
-        result.executionTime || 0,
-        result.success || false
-      );
-    }
+    // Execute Claude Code with enhanced prompt
+    this.debugTrace('EXECUTE_START', 'Calling executeClaudeCode', enhancedPrompt);
+    const result = await this.executeClaudeCode(enhancedPrompt, workingDirectory, options, complexQueryResult);
+    this.debugTrace('EXECUTE_END', 'Claude Code execution completed', { success: result.success, outputLen: result.output?.length });
     
     // Save conversation to Trinity-Native Memory if successful
     if (result.success && result.output && result.output.trim().length > 0) {
@@ -400,58 +441,22 @@ class ClaudeWatcher {
     fs.unlinkSync(requestPath);
     
     this.log(`Request ${filename} completed successfully`);
+    
+    // 🔧 END FLOW TRACE
+    this.endTrace('success');
+    
+    } catch (error) {
+      this.log(`🚨 CRITICAL ERROR in processRequest: ${error.message}`);
+      this.log(`🚨 Error stack: ${error.stack}`);
+      this.endTrace('error');
+      throw error;
+    }
   }
   
-  async executeClaudeCode(prompt, workingDirectory, options = {}) {
+  async executeClaudeCode(prompt, workingDirectory, options = {}, complexQueryResult = null) {
     const startTime = Date.now();
-    const maxResponseTime = options.maxResponseTime || 30000; // 30 seconds
-    const warningThreshold = options.warningThreshold || 15000; // 15 seconds
     
     return new Promise((resolve) => {
-      // Set up timeout management
-      let timeoutId;
-      let warningId;
-      let resolved = false;
-      
-      // Create timeout to enforce maximum response time
-      timeoutId = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          this.log(`⏰ Response timeout after ${maxResponseTime}ms for prompt: "${prompt.substring(0, 100)}..."`);
-          resolve({
-            success: false,
-            output: '',
-            error: `Response timeout after ${maxResponseTime}ms`,
-            executionTime: Date.now() - startTime
-          });
-        }
-      }, maxResponseTime);
-      
-      // Set up warning for slow responses
-      warningId = setTimeout(() => {
-        if (!resolved) {
-          this.log(`⚠️ Response taking longer than expected: ${prompt.substring(0, 100)}...`);
-        }
-      }, warningThreshold);
-      
-      // Wrap original resolve to include timing checks
-      const wrappedResolve = (result) => {
-        if (!resolved) {
-          resolved = true;
-          clearTimeout(timeoutId);
-          clearTimeout(warningId);
-          
-          const duration = Date.now() - startTime;
-          if (duration > warningThreshold) {
-            this.log(`🐌 Slow response: ${duration}ms for "${prompt.substring(0, 50)}..."`);
-          }
-          
-          resolve({
-            ...result,
-            executionTime: duration
-          });
-        }
-      };
       try {
         // Get API key with development fallback
         let apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
@@ -483,10 +488,11 @@ class ClaudeWatcher {
         
         if (!apiKey) {
           this.log('ERROR: No ANTHROPIC_API_KEY found in environment');
-          return wrappedResolve({
+          return resolve({
             success: false,
             output: '',
-            error: 'No ANTHROPIC_API_KEY environment variable found'
+            error: 'No ANTHROPIC_API_KEY environment variable found',
+            executionTime: Date.now() - startTime
           });
         }
         
@@ -495,9 +501,13 @@ class ClaudeWatcher {
           this.log(`Tool setup error: ${error.message}`);
         });
         
-        // Build Claude Code command using working mvp-dev format
-        // Start with basic command (--continue will be tried in retry logic)
-        const claudeArgs = ['--print', '--output-format', 'json', prompt];
+        // Adaptive format selection based on query type and complexity
+        const outputFormat = this.selectOptimalOutputFormat(prompt, complexQueryResult);
+        this.log(`📊 Selected output format: ${outputFormat} for query type`);
+        
+        // Build Claude Code command using optimal format
+        this.log(`🔍 DEBUG: prompt before command build: "${prompt}" (type: ${typeof prompt}, length: ${prompt?.length || 0})`);
+        const claudeArgs = ['--print', '--output-format', outputFormat, prompt];
         
         // Cross-platform Claude Code path detection
         let claudePath = 'claude'; // Default to PATH lookup
@@ -551,6 +561,8 @@ class ClaudeWatcher {
         });
         
         proc.on('close', (code) => {
+          clearTimeout(timeoutId);
+          const executionTime = Date.now() - startTime;
           
           this.log(`Claude Code process finished with exit code: ${code}`);
           this.log(`Claude Code stdout: ${stdout.trim()}`);
@@ -561,47 +573,108 @@ class ClaudeWatcher {
           const isSuccess = code === 0 && hasOutput;
           
           if (isSuccess) {
-            // Parse JSON response like mvp-dev
-            try {
-              const jsonResponse = JSON.parse(stdout.trim());
-              wrappedResolve({
-                success: true,
-                output: jsonResponse.result || jsonResponse.content || stdout.trim(),
-                error: null,
-                cost: jsonResponse.cost_usd,
-                sessionId: jsonResponse.session_id
-              });
-            } catch (parseError) {
-              // Fallback to raw output if JSON parsing fails
-              wrappedResolve({
-                success: true,
-                output: stdout.trim(),
-                error: null
-              });
+            // Adaptive parsing based on selected output format
+            const output = stdout.trim();
+            
+            // Determine expected format from command args
+            const expectedFormat = claudeArgs.includes('json') ? 'json' : 'text';
+            this.log(`📋 Expected format: ${expectedFormat}, parsing accordingly`);
+            
+            if (expectedFormat === 'json') {
+              // JSON format expected - parse with text fallback
+              try {
+                const jsonResponse = JSON.parse(output);
+                resolve({
+                  success: true,
+                  output: jsonResponse.result || jsonResponse.content || output,
+                  error: null,
+                  executionTime,
+                  cost: jsonResponse.cost_usd,
+                  sessionId: jsonResponse.session_id,
+                  format: 'json'
+                });
+              } catch (parseError) {
+                this.log(`⚠️ JSON parsing failed, falling back to text: ${parseError.message}`);
+                resolve({
+                  success: true,
+                  output: output,
+                  error: null,
+                  executionTime,
+                  cost: null,
+                  sessionId: null,
+                  format: 'text-fallback'
+                });
+              }
+            } else {
+              // Text format expected - use directly with JSON attempt for metadata
+              try {
+                const jsonResponse = JSON.parse(output);
+                // If it's actually JSON, extract the content properly
+                resolve({
+                  success: true,
+                  output: jsonResponse.result || jsonResponse.content || output,
+                  error: null,
+                  executionTime,
+                  cost: jsonResponse.cost_usd,
+                  sessionId: jsonResponse.session_id,
+                  format: 'json-detected'
+                });
+              } catch (parseError) {
+                // Expected text format
+                resolve({
+                  success: true,
+                  output: output,
+                  error: null,
+                  executionTime,
+                  cost: null,
+                  sessionId: null,
+                  format: 'text'
+                });
+              }
             }
           } else {
-            wrappedResolve({
+            resolve({
               success: false,
               output: stdout.trim(),
-              error: stderr.trim() || `Process exited with code ${code}, no output received`
+              error: stderr.trim() || `Process exited with code ${code}, no output received`,
+              executionTime
             });
           }
         });
         
         proc.on('error', (error) => {
-          wrappedResolve({
+          const executionTime = Date.now() - startTime;
+          resolve({
             success: false,
             output: '',
-            error: `Failed to spawn process: ${error.message}`
+            error: `Failed to spawn process: ${error.message}`,
+            executionTime
           });
         });
         
+        // Timeout after 60 seconds (increased for complex analytical queries)
+        const timeoutId = setTimeout(() => {
+          console.log(`[${new Date().toISOString()}] TIMEOUT: Claude Code execution exceeded 60s, killing process`);
+          console.log(`[${new Date().toISOString()}] TIMEOUT: Command args: ${claudeArgs.join(' ')}`);
+          console.log(`[${new Date().toISOString()}] TIMEOUT: Current stdout: "${stdout}"`);
+          console.log(`[${new Date().toISOString()}] TIMEOUT: Current stderr: "${stderr}"`);
+          proc.kill('SIGTERM');
+          const executionTime = Date.now() - startTime;
+          resolve({
+            success: false,
+            output: stdout.trim(),
+            error: 'Claude Code execution timeout (60s) - Process was killed',
+            executionTime
+          });
+        }, 60000);
         
       } catch (error) {
-        wrappedResolve({
+        const executionTime = Date.now() - startTime;
+        resolve({
           success: false,
           output: '',
-          error: `Execution error: ${error.message}`
+          error: `Execution error: ${error.message}`,
+          executionTime
         });
       }
     });
@@ -614,207 +687,123 @@ class ClaudeWatcher {
   }
   
   /**
-   * Ensure Claude tools are enabled with enhanced reliability
-   * Uses retry logic with progressive backoff for better success rates
+   * Ensure Claude tools are enabled (fast, no timeouts)
+   * Uses the enabledTools command for bulk setup
    */
-  async ensureClaudeToolsEnabled(apiKey, maxRetries = 3) {
-    // Check if tools are already configured (fast check)
+  async ensureClaudeToolsEnabled(apiKey) {
     try {
+      // Check if tools are already configured (fast check)
       const claudeConfigPath = path.join(process.cwd(), '.claude', 'settings.json');
       if (fs.existsSync(claudeConfigPath)) {
         const settings = JSON.parse(fs.readFileSync(claudeConfigPath, 'utf8'));
         if (settings.allowedTools && settings.allowedTools.length > 0) {
           this.log('✅ Claude tools already configured');
-          return { success: true, cached: true };
+          return;
         }
       }
-    } catch (error) {
-      this.log(`⚠️ Config check failed: ${error.message}`);
-    }
-    
-    // Trinity required tools
-    const requiredTools = ['Bash', 'Read', 'Write', 'Edit', 'LS', 'Glob', 'Grep'];
-    
-    // Cross-platform Claude path (same logic as executeClaudeCode)
-    let claudePath = 'claude';
-    if (os.platform() === 'linux') {
-      const linuxPath = '/home/alreadyinuse/.claude/local/claude';
-      if (fs.existsSync(linuxPath)) claudePath = linuxPath;
-    } else if (os.platform() === 'darwin') {
-      const macosPaths = [
-        path.join(os.homedir(), '.claude/local/claude'),
-        '/usr/local/bin/claude',
-        '/opt/homebrew/bin/claude'
-      ];
-      for (const testPath of macosPaths) {
-        if (fs.existsSync(testPath)) {
-          claudePath = testPath;
-          break;
+      
+      // Trinity required tools
+      const requiredTools = ['Bash', 'Read', 'Write', 'Edit', 'LS', 'Glob', 'Grep'];
+      
+      // Cross-platform Claude path (same logic as executeClaudeCode)
+      let claudePath = 'claude';
+      if (os.platform() === 'linux') {
+        const linuxPath = '/home/alreadyinuse/.claude/local/claude';
+        if (fs.existsSync(linuxPath)) claudePath = linuxPath;
+      } else if (os.platform() === 'darwin') {
+        const macosPaths = [
+          path.join(os.homedir(), '.claude/local/claude'),
+          '/usr/local/bin/claude',
+          '/opt/homebrew/bin/claude'
+        ];
+        for (const testPath of macosPaths) {
+          if (fs.existsSync(testPath)) {
+            claudePath = testPath;
+            break;
+          }
         }
       }
-    }
-    
-    // Attempt tool setup with retry logic
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        this.log(`⚡ Enabling Trinity tools in Claude Code (attempt ${attempt}/${maxRetries})...`);
-        
-        const result = await this.attemptToolSetup(claudePath, requiredTools, apiKey, attempt);
-        
-        if (result.success) {
-          this.log(`✅ Trinity tools enabled successfully on attempt ${attempt}`);
-          return { success: true, attempt, cached: false };
-        }
-        
-        // Handle failure
-        const isLastAttempt = attempt === maxRetries;
-        if (isLastAttempt) {
-          this.log(`⚠️ Tool setup failed after ${maxRetries} attempts: ${result.error}`);
-          this.log('⚡ Trinity will continue with limited tool functionality');
-          return { success: false, error: result.error, attempts: maxRetries };
-        }
-        
-        // Progressive backoff delay: 1s, 2s, 4s
-        const backoffDelay = Math.pow(2, attempt - 1) * 1000;
-        this.log(`⏳ Waiting ${backoffDelay}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, backoffDelay));
-        
-      } catch (error) {
-        const isLastAttempt = attempt === maxRetries;
-        if (isLastAttempt) {
-          this.log(`⚠️ Tool setup exception after ${maxRetries} attempts: ${error.message}`);
-          return { success: false, error: error.message, attempts: maxRetries };
-        }
-        
-        // Log warning but continue to retry
-        this.log(`⚠️ Tool setup attempt ${attempt} failed: ${error.message}`);
-      }
-    }
-    
-    return { success: false, error: 'Max retries exceeded', attempts: maxRetries };
-  }
-  
-  /**
-   * Single attempt at tool setup with enhanced error handling
-   * @private
-   */
-  async attemptToolSetup(claudePath, requiredTools, apiKey, attempt) {
-    // Progressive timeout scaling: 5s, 10s, 15s
-    const timeoutMs = Math.min(5000 + (attempt - 1) * 5000, 15000);
-    
-    return new Promise((resolve) => {
-      const proc = spawn(claudePath, ['config', 'add', 'allowedTools', ...requiredTools], {
-        stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, ANTHROPIC_API_KEY: apiKey }
-      });
       
-      let stdout = '';
-      let stderr = '';
-      let resolved = false;
+      // Fast bulk tool setup (no individual timeouts)
+      this.log('⚡ Enabling Trinity tools in Claude Code...');
       
-      proc.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-      
-      proc.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-      
-      proc.on('close', (code) => {
-        if (resolved) return;
-        resolved = true;
-        
-        if (code === 0) {
-          resolve({ success: true, output: stdout });
-        } else {
-          const errorType = this.classifyToolSetupError(code, stderr);
-          resolve({ 
-            success: false, 
-            error: `Exit code ${code}: ${stderr || stdout || 'Unknown error'}`,
-            errorType,
-            code
-          });
-        }
-      });
-      
-      proc.on('error', (error) => {
-        if (resolved) return;
-        resolved = true;
-        
-        const errorType = this.classifyToolSetupError(null, error.message);
-        resolve({ 
-          success: false, 
-          error: `Process error: ${error.message}`,
-          errorType
+      return new Promise((resolve) => {
+        const proc = spawn(claudePath, ['config', 'add', 'allowedTools', ...requiredTools], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          env: { ...process.env, ANTHROPIC_API_KEY: apiKey }
         });
-      });
-      
-      // Progressive timeout with clear messaging
-      setTimeout(() => {
-        if (resolved) return;
-        resolved = true;
         
-        proc.kill('SIGTERM');
-        resolve({ 
-          success: false, 
-          error: `Timeout after ${timeoutMs}ms`,
-          errorType: 'timeout'
+        let output = '';
+        proc.stdout.on('data', (data) => output += data.toString());
+        proc.stderr.on('data', (data) => output += data.toString());
+        
+        proc.on('close', (code) => {
+          if (code === 0) {
+            this.log('✅ Trinity tools enabled successfully');
+          } else {
+            this.log(`⚠️ Tool setup warning (code ${code}): ${output}`);
+          }
+          resolve(); // Always resolve to not block execution
         });
-      }, timeoutMs);
-    });
-  }
-  
-  /**
-   * Classify tool setup errors for better retry logic
-   * @private
-   */
-  classifyToolSetupError(exitCode, errorMessage) {
-    const errorMsg = (errorMessage || '').toLowerCase();
-    
-    // Network-related errors (worth retrying)
-    if (errorMsg.includes('network') || errorMsg.includes('connection') || 
-        errorMsg.includes('timeout') || errorMsg.includes('enotfound')) {
-      return 'network';
-    }
-    
-    // Authentication errors (probably won't retry-fix)
-    if (errorMsg.includes('auth') || errorMsg.includes('api key') || 
-        errorMsg.includes('unauthorized') || exitCode === 401) {
-      return 'auth';
-    }
-    
-    // Permission errors
-    if (errorMsg.includes('permission') || errorMsg.includes('eacces') || exitCode === 1) {
-      return 'permission';
-    }
-    
-    // Configuration errors
-    if (errorMsg.includes('config') || errorMsg.includes('invalid')) {
-      return 'config';
-    }
-    
-    return 'unknown';
-  }
-  
-  /**
-   * Perform periodic queue cleanup to handle stuck requests
-   * @private
-   */
-  async performQueueCleanup() {
-    try {
-      const results = await this.queueManager.scanAndCleanup();
-      
-      if (results.stuckRequests.length > 0) {
-        this.log(`🧹 Queue cleanup: ${results.cleaned} cleaned, ${results.recovered} recovered, ${results.failed} failed`);
         
-        // Log health stats after cleanup
-        const health = this.queueManager.getHealthStats();
-        this.log(`📊 Queue health: ${health.health.overallHealth}% (processing: ${health.queues.processing}, input: ${health.queues.input})`);
-      }
+        // Fast timeout (2 seconds max)
+        setTimeout(() => {
+          proc.kill();
+          this.log('⚡ Tool setup timeout (proceeding anyway)');
+          resolve();
+        }, 2000);
+      });
       
     } catch (error) {
-      this.log(`⚠️ Queue cleanup failed: ${error.message}`);
+      this.log(`⚠️ Tool setup error: ${error.message}`);
+      // Don't block execution on tool setup failure
     }
+  }
+  
+  /**
+   * Select optimal output format based on query characteristics
+   */
+  selectOptimalOutputFormat(prompt, complexQueryResult) {
+    // TEMPORARY: Force text format to test hypothesis (like previous JSON issue fix)
+    this.log(`📊 FORMAT TEST: Forcing 'text' format for debugging stdin issue`);
+    return 'text';
+    
+    // DISABLED: Original adaptive logic (restore after text format validation)
+    /*
+    const queryAnalysis = {
+      isCreativeRequest: /\b(write|create|compose|generate|make|craft|design)\s+(a\s+)?(poem|story|song|essay|article|code|function|script)\b/i.test(prompt),
+      isDataQuery: /\b(analyze|calculate|compute|compare|statistics|data|metrics|performance|benchmark|results?)\b/i.test(prompt),
+      isStructuredOutput: /\b(list|table|format|json|structure|organize|categorize|breakdown)\b/i.test(prompt),
+      isComplexAnalytical: complexQueryResult && complexQueryResult.enhanced && complexQueryResult.operations && complexQueryResult.operations.length > 2,
+      hasMemoryReference: this.memoryDetector.detectsMemoryReference(prompt),
+      isLongFormQuery: prompt.length > 300,
+      isCodeRelated: /\b(code|function|class|method|variable|debug|error|bug|syntax|programming|javascript|python|typescript)\b/i.test(prompt)
+    };
+    */
+    
+    // Format selection logic based on query characteristics
+    if (queryAnalysis.isDataQuery || queryAnalysis.isComplexAnalytical) {
+      // Structured data queries benefit from JSON format for parsing metadata
+      return 'json';
+    }
+    
+    if (queryAnalysis.isCreativeRequest && !queryAnalysis.hasMemoryReference) {
+      // Creative content often works better with text format (cleaner output)
+      return 'text';
+    }
+    
+    if (queryAnalysis.isCodeRelated && queryAnalysis.isStructuredOutput) {
+      // Code analysis with structured output benefits from JSON metadata
+      return 'json';
+    }
+    
+    if (queryAnalysis.hasMemoryReference) {
+      // Memory-related queries may need JSON for session tracking
+      return 'json';
+    }
+    
+    // Default to text format for general queries (better Claude Code compatibility)
+    return 'text';
   }
   
   stop() {
