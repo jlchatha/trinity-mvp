@@ -24,6 +24,24 @@ Trinity MVP transforms your interaction with AI by providing **persistent memory
 - 🔄 Maintains project context and working patterns
 - ⚡ Local integration with 4-6 second response times
 
+## 🤝 AI Built With Integrity (No BS)
+
+**Technology That Actually Respects You**
+
+Most AI assistants are glorified chatbots that forget everything, can't touch your files, and treat you like a product. Trinity MVP is different: it's built with integrity to enhance your work without surveilling you.
+
+**What Trinity Actually Does (No Marketing BS):**
+- 🧠 **Genuine Memory**: Remembers conversations across sessions (stored locally on your machine)
+- 📁 **Real File Integration**: Reads/writes your actual files directly - no copy-paste hell
+- 🔐 **Honest Privacy**: Local conversation storage with transparent remote processing via Claude Code
+- ⚡ **Practical Performance**: 4-6 second responses with persistent context that builds over time
+
+**The Unvarnished Truth:**
+- **Not "never leaves your machine"** - current requests go to Claude's API with smart context
+- **Not "revolutionary AI research"** - it's thoughtful engineering that solves real problems
+- **Not "thousands of users"** - we're building our first community of people who value integrity
+- **Not "cutting-edge algorithms"** - practical file-based architecture that actually works
+
 ## 🎯 Why Trinity MVP?
 
 **The Problem**: Traditional AI assistants waste time re-explaining context, forget your preferences, and can't access your local files or projects.
@@ -177,10 +195,12 @@ See [Development Guide](docs/developer/development.md) for contributing guidelin
 
 ## 🔒 Security & Privacy
 
-- **Local Processing**: All file operations remain on your system
-- **API Security**: Secure Claude Code integration with official Anthropic APIs
-- **Data Privacy**: Project memory stored locally, not in external services
-- **Permission Model**: Explicit consent for file system access
+🔐 **Hybrid Local-First Privacy**: Trinity stores your conversation history, memory, and project context locally on your machine. When you send a request, Trinity prepares relevant context and sends it with your prompt to Claude via the Claude Code CLI tool, which handles communication with Anthropic's API. Your complete conversation history and memory patterns remain local - only the current request plus selected context is processed remotely.
+
+- **Local Data Sovereignty**: Conversation history and memory patterns stored in ~/.trinity-mvp/
+- **Transparent Processing**: Current requests + relevant context sent to Anthropic API via Claude Code
+- **Intelligent Context**: Trinity optimizes what data is shared while maintaining conversation continuity
+- **No Data Harvesting**: Your usage patterns and memory stay local; you're not the product
 
 ## 📈 Roadmap
 

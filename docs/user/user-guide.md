@@ -47,6 +47,26 @@ Unlike traditional AI that forgets everything between sessions, Trinity maintain
 - Performance metrics and usage patterns
 - Historical decision context
 
+### Privacy and Data Flow Reality
+
+**Understanding Trinity's Hybrid Architecture**
+
+Trinity uses a **hybrid local-first approach** to balance privacy with AI capability:
+
+**What Stays Local:**
+✅ Complete conversation history and memory patterns  
+✅ Your project context and working patterns  
+✅ File access patterns and preferences  
+✅ Memory hierarchy and stored knowledge  
+
+**What Goes Remote:**
+❌ Current user request/prompt  
+❌ Relevant context selected by Trinity for this conversation  
+❌ File contents when you specifically request analysis  
+
+**Why This Architecture:**
+Trinity's "magic" is **intelligent context management** - it remembers everything locally while sending only necessary context for each request. This enables persistent memory while minimizing data transmission and respecting your privacy boundaries.
+
 ### Building Effective Memory
 
 **Start Simple:**
