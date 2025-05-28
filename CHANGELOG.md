@@ -1,5 +1,33 @@
 # Trinity MVP - Changelog
 
+## Version 1.2.1 - Documentation Truth and Integrity Update (2025-05-27)
+
+### 📚 **DOCUMENTATION INTEGRITY RELEASE**
+
+**Truth and Transparency**:
+- ✅ **MAJOR**: Updated privacy documentation to reflect actual hybrid local-first architecture
+- ✅ **MAJOR**: Introduced "AI Built With Integrity (No BS)" positioning throughout documentation
+- ✅ **BREAKING**: Corrected false "never leaves your machine" claims in README and user guides
+- ✅ **NEW**: Added comprehensive truth analysis and honest technical positioning
+- ✅ **NEW**: Created docs/about/integrity.md explaining transparent data flow and commitment to honesty
+
+**Privacy Model Corrections**:
+- ✅ **CORRECTED**: Documented actual data flow between local storage and Anthropic API
+- ✅ **CLARIFIED**: Explained hybrid architecture benefits and trade-offs honestly
+- ✅ **REMOVED**: Marketing hyperbole in favor of technical accuracy
+- ✅ **ADDED**: Clear explanation of what stays local vs what goes to Claude API
+
+**Positioning Integrity**:
+- ✅ **POSITIONED**: "AI Built With Integrity (No BS)" as core messaging framework
+- ✅ **HONEST**: About technical capabilities - "thoughtful engineering" not "revolutionary research"
+- ✅ **TRANSPARENT**: About current user base and development stage
+- ✅ **CLEAR**: About platform limitations and system requirements
+
+**Documentation Standards**:
+- ✅ **ESTABLISHED**: TRUTH-CRITERIA.md for maintaining documentation integrity
+- ✅ **VALIDATED**: All public documentation against truth criteria before deployment
+- ✅ **COMMITTED**: To ongoing honesty and transparency in all user-facing information
+
 ## Version 1.2.0 - Professional Open Source Release (2025-05-27)
 
 ### 🎉 **MAJOR RELEASE: Complete Professional Transformation**
