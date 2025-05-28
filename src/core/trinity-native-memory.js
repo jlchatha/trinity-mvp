@@ -28,6 +28,11 @@ class TrinityNativeMemory {
     this.timeIndex = new Map();         // date -> Set(conversationIds)
     this.sessionIndex = new Map();      // sessionId -> metadata
     
+    // 🔧 MEMORY DEBUG TRAIL SYSTEM
+    this.DEBUG_ENABLED = process.env.TRINITY_MEMORY_DEBUG === 'true' || true; // TODO: Set to false for production
+    this.MEMORY_TRACE_ID = null;
+    this.memoryStep = 0;
+    
     // Performance tracking
     this.stats = {
       indexLoadTime: 0,
@@ -69,6 +74,45 @@ class TrinityNativeMemory {
     }
   }
   
+  // 🔧 MEMORY DEBUG TRAIL METHODS
+  memoryTrace(step, message, data = null) {
+    if (!this.DEBUG_ENABLED) return;
+    
+    this.memoryStep++;
+    const traceId = this.MEMORY_TRACE_ID || 'NO_TRACE';
+    let debugMsg = `🔧 [MEM-TRACE:${traceId}:${this.memoryStep}] ${step}: ${message}`;
+    
+    if (data) {
+      if (typeof data === 'string') {
+        debugMsg += ` | "${data.substring(0, 100)}..." (len:${data.length})`;
+      } else if (Array.isArray(data)) {
+        debugMsg += ` | [${data.length} items]`;
+      } else if (typeof data === 'object') {
+        debugMsg += ` | ${JSON.stringify(data, null, 0)}`;
+      } else {
+        debugMsg += ` | ${data} (${typeof data})`;
+      }
+    }
+    
+    console.log(debugMsg);
+  }
+  
+  startMemoryTrace(operation, query) {
+    if (!this.DEBUG_ENABLED) return;
+    
+    this.MEMORY_TRACE_ID = `${operation}_${Date.now()}`;
+    this.memoryStep = 0;
+    this.memoryTrace('START', `Beginning ${operation}`, query);
+  }
+  
+  endMemoryTrace(result = 'completed') {
+    if (!this.DEBUG_ENABLED) return;
+    
+    this.memoryTrace('END', `Memory trace completed: ${result}`);
+    this.MEMORY_TRACE_ID = null;
+    this.memoryStep = 0;
+  }
+  
   /**
    * Detect if a message contains memory references
    * Uses simple pattern matching for MVP scope
@@ -92,11 +136,37 @@ class TrinityNativeMemory {
    * Core functionality: selective file loading with relevance scoring
    */
   async buildContextForClaude(message) {
+
+    console.log(`🔍 MEMORY_TRACE: buildContextForClaude called with: "${message}" (type: ${typeof message})`);
+    console.log(`🔍 MEMORY_TRACE: message length: ${message?.length}`);
+    console.log(`🔍 MEMORY_TRACE: message constructor: ${message?.constructor?.name}`);
+    
+    if (!message || typeof message !== 'string') {
+      console.log('🚨 MEMORY_TRACE: Invalid message parameter!');
+      throw new Error(`Invalid message parameter: ${typeof message}`);
+    }
+    this.startMemoryTrace('buildContext', message);
     const startTime = Date.now();
     
     try {
+      // CRITICAL: Aggressive parameter validation
+      if (!message || typeof message !== 'string' || message.trim().length === 0) {
+        console.error(`[EMERGENCY] buildContextForClaude received invalid message: "${message}" (type: ${typeof message})`);
+        return {
+          contextText: '',
+          summary: 'Invalid message parameter provided',
+          artifacts: [],
+          relevantConversations: 0
+        };
+      }
+      
+      // Debug logging for parameter validation
+      console.log(`[DEBUG] buildContextForClaude received valid message: "${message}" (type: ${typeof message}, length: ${message.length})`);
+      
       // Find relevant conversation IDs
+      this.memoryTrace('SEARCH_START', 'Finding relevant conversations', message);
       const relevantIds = this.findRelevantConversations(message);
+      this.memoryTrace('SEARCH_RESULT', 'Found relevant conversations', relevantIds);
       
       if (relevantIds.length === 0) {
         this.stats.memoryMisses++;
@@ -181,11 +251,21 @@ class TrinityNativeMemory {
         selectedIds.slice(0, 3).forEach((id, index) => {
           const conv = this.conversations.get(id);
           if (conv) {
-            const preview = conv.userMessage.substring(0, 50);
-            this.logger.info(`  ${index + 1}. ${id}: "${preview}..." (${conv.contentType}, ${conv.timestamp.substring(11, 19)})`);
+            // EMERGENCY: Validate conversation properties before accessing
+            const userMessage = conv.userMessage || '[no message]';
+            const timestamp = conv.timestamp || '[no timestamp]';
+            const preview = userMessage.substring(0, 50);
+            const timeStr = typeof timestamp === 'string' && timestamp.length > 11 ? timestamp.substring(11, 19) : timestamp;
+            this.logger.info(`  ${index + 1}. ${id}: "${preview}..." (${conv.contentType}, ${timeStr})`);
           }
         });
       }
+      
+      this.memoryTrace('CONTEXT_BUILT', 'Context assembly completed', { 
+        selectedCount: selectedIds.length, 
+        executionTime: this.stats.contextAssemblyTime 
+      });
+      this.endMemoryTrace('success');
       
       return {
         contextText,
@@ -262,6 +342,17 @@ class TrinityNativeMemory {
    */
   findRelevantConversations(message) {
     const relevantIds = new Set();
+    
+    // AGGRESSIVE TRACE: Log all parameters received
+    console.log(`[TRACE] findRelevantConversations called with: "${message}" (type: ${typeof message})`);
+    console.log(`[TRACE] Stack trace:`, new Error().stack.split('\n').slice(1, 4).join('\n'));
+    
+    // CRITICAL: Validate message parameter before processing
+    if (!message || typeof message !== 'string') {
+      console.error(`[CRITICAL] findRelevantConversations received invalid message: ${message} (type: ${typeof message})`);
+      return []; // Return empty array instead of crashing
+    }
+    
     const messageTokens = this.tokenize(message.toLowerCase());
     
     // EMERGENCY FIX: Handle "just wrote" clarification queries with temporal proximity
@@ -562,6 +653,7 @@ class TrinityNativeMemory {
     let contextText = `User question: "${userMessage}"\n\n`;
     
     if (isLineQuery) {
+      this.memoryTrace('LINE_QUERY', 'Processing line-specific query', { isLineQuery, conversationCount: conversations.length });
       // For line queries, implement source hierarchy to prevent self-reinforcing errors
       const authoritativeContent = [];
       const previousQA = [];
@@ -595,14 +687,38 @@ class TrinityNativeMemory {
       // Show previous Q&A as reference only
       if (previousQA.length > 0) {
         contextText += `=== PREVIOUS Q&A (reference only - may contain errors) ===\n\n`;
-        previousQA.forEach((conv, index) => {
+        
+        // Sort by timestamp so most recent appears last (for "poem you just wrote" queries)
+        const sortedQA = previousQA.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        
+        sortedQA.forEach((conv, index) => {
           contextText += `--- Q&A ${index + 1} (${conv.contentType || 'general'}) ---\n`;
           contextText += `User: ${conv.userMessage}\n`;
           contextText += `Assistant: ${conv.assistantResponse}\n\n`;
         });
       }
       
-      contextText += `INSTRUCTION: When answering "${userMessage}", analyze the AUTHORITATIVE CONTENT above to find the correct line. Previous Q&A may contain errors - always verify against the full content.`;
+      contextText += `INSTRUCTION: When answering "${userMessage}", use the MOST RECENT poem from either section above. If the question asks about "the poem you just wrote", use the last poem in chronological order. The AUTHORITATIVE CONTENT and PREVIOUS Q&A are both valid - choose the most recent one.`;
+      
+      // 🔧 MEMORY DEBUG: Log what poems were found
+      this.memoryTrace('SOURCES_FOUND', 'Classified conversation sources', { 
+        authCount: authoritativeContent.length, 
+        qaCount: previousQA.length 
+      });
+      
+      authoritativeContent.forEach((conv, i) => {
+        this.memoryTrace('AUTH_SOURCE', `Authoritative[${i}]`, { 
+          timestamp: conv.timestamp, 
+          preview: conv.assistantResponse.substring(0, 100) 
+        });
+      });
+      
+      previousQA.forEach((conv, i) => {
+        this.memoryTrace('QA_SOURCE', `Previous Q&A[${i}]`, { 
+          timestamp: conv.timestamp, 
+          preview: conv.assistantResponse.substring(0, 100) 
+        });
+      });
       
     } else {
       // Standard context format for non-line queries
@@ -753,6 +869,12 @@ class TrinityNativeMemory {
    * Search memory by query
    */
   searchMemory(query, limit = 10) {
+    // EMERGENCY: Validate query parameter before processing
+    if (!query || typeof query !== 'string') {
+      console.error(`[CRITICAL] searchMemory received invalid query: ${query} (type: ${typeof query})`);
+      return []; // Return empty array instead of crashing
+    }
+    
     const relevantIds = this.findRelevantConversations(query);
     return relevantIds.slice(0, limit).map(id => this.conversations.get(id)).filter(Boolean);
   }

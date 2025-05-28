@@ -91,10 +91,19 @@ class MemoryReferenceDetector {
    * Detect if a message contains memory references
    * Returns boolean for simple detection
    */
-  detectsMemoryReference(message) {
-    if (!message || typeof message !== 'string') return false;
+    detectsMemoryReference(message) {
+    console.log(`🔍 DETECTOR_TRACE: detectsMemoryReference called with: "${message}" (type: ${typeof message})`);
+    console.log(`🔍 DETECTOR_TRACE: message length: ${message?.length}`);
+    console.log(`🔍 DETECTOR_TRACE: message constructor: ${message?.constructor?.name}`);
     
+    if (!message || typeof message !== 'string') {
+      console.log('🔍 DETECTOR_TRACE: Early return - invalid message');
+      return false;
+    }
+    
+    console.log(`🔍 DETECTOR_TRACE: About to call analyzeMemoryReferences...`);
     const result = this.analyzeMemoryReferences(message);
+    console.log(`🔍 DETECTOR_TRACE: analyzeMemoryReferences returned: ${JSON.stringify(result)}`);
     return result.hasMemoryReference;
   }
   
@@ -103,6 +112,7 @@ class MemoryReferenceDetector {
    * Returns detailed analysis for advanced use cases
    */
   analyzeMemoryReferences(message) {
+    console.log(`[ANALYZER ENTRY] analyzeMemoryReferences called with: "${message}" (type: ${typeof message})`);
     if (!message || typeof message !== 'string') {
       return {
         hasMemoryReference: false,
