@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Built With Integrity - Trinity MVP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --trinity-primary: #1a1a2e;
+            --trinity-secondary: #16213e;
+            --trinity-accent: #2a2a3e;
+            --trinity-blue: #4a9eff;
+            --trinity-text: #e0e0e0;
+            --trinity-text-secondary: #a0a0a0;
+            --trinity-success: #4ade80;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.7;
+            color: var(--trinity-text);
+            background: linear-gradient(135deg, var(--trinity-primary) 0%, var(--trinity-secondary) 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(74, 158, 255, 0.2);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--trinity-blue);
+        }
+        
+        .back-link {
+            color: var(--trinity-blue);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--trinity-blue);
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .back-link:hover {
+            background: var(--trinity-blue);
+            color: white;
+        }
+        
+        main {
+            margin-top: 100px;
+            padding: 3rem 0;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: var(--trinity-blue);
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem 0;
+            color: var(--trinity-text);
+            border-bottom: 2px solid var(--trinity-blue);
+            padding-bottom: 0.5rem;
+        }
+        
+        h3 {
+            font-size: 1.3rem;
+            margin: 2rem 0 1rem 0;
+            color: var(--trinity-blue);
+        }
+        
+        p, li {
+            margin-bottom: 1rem;
+            color: var(--trinity-text-secondary);
+        }
+        
+        .highlight-box {
+            background: rgba(42, 42, 62, 0.8);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            backdrop-filter: blur(10px);
+        }
+        
+        .truth-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .truth-card {
+            background: rgba(42, 42, 62, 0.6);
+            border: 1px solid rgba(74, 158, 255, 0.2);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+        
+        .truth-card h4 {
+            color: var(--trinity-success);
+            margin-bottom: 1rem;
+        }
+        
+        .not-card h4 {
+            color: #ff6b6b;
+        }
+        
+        ul {
+            padding-left: 1.5rem;
+        }
+        
+        strong {
+            color: var(--trinity-text);
+        }
+        
+        .promise-box {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.1) 0%, rgba(42, 42, 62, 0.8) 100%);
+            border: 2px solid var(--trinity-blue);
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2.5rem 0;
+            text-align: center;
+        }
+        
+        .promise-box p {
+            font-size: 1.2rem;
+            color: var(--trinity-text);
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .truth-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">Trinity MVP</div>
+            <a href="../index.html" class="back-link">← Back to Home</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <h1>AI Built With Integrity (No BS)</h1>
+            
+            <div class="highlight-box">
+                <p><strong>Trinity MVP is built on a simple principle: technology should respect users, not exploit them.</strong> In an industry full of hype, surveillance, and "revolutionary" claims, we choose integrity.</p>
+            </div>
+
+            <h2>What "No BS" Means</h2>
+            
+            <div class="truth-grid">
+                <div class="truth-card">
+                    <h4>Honest Technical Claims</h4>
+                    <ul>
+                        <li>We tell you exactly how Trinity works (hybrid local-first architecture)</li>
+                        <li>We admit our limitations (not revolutionary research, requires internet for AI processing)</li>
+                        <li>We're transparent about data flow (what stays local vs what goes to Anthropic)</li>
+                        <li>We don't inflate user numbers or create fake testimonials</li>
+                    </ul>
+                </div>
+                
+                <div class="truth-card">
+                    <h4>Respectful Technology</h4>
+                    <ul>
+                        <li>Your conversation history stays on your machine</li>
+                        <li>We optimize for user benefit, not data collection</li>
+                        <li>Clear explanations instead of marketing buzzwords</li>
+                        <li>Privacy by design, not privacy theater</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>Technical Honesty</h2>
+            
+            <div class="truth-grid">
+                <div class="truth-card">
+                    <h4>✅ What Trinity Actually Is</h4>
+                    <ul>
+                        <li>Thoughtfully designed local-first AI assistant</li>
+                        <li>Practical memory architecture that solves real problems</li>
+                        <li>LLM-optimized design built for language model workflows</li>
+                        <li>Production-ready implementation that actually works</li>
+                    </ul>
+                </div>
+                
+                <div class="truth-card not-card">
+                    <h4>❌ What Trinity Isn't</h4>
+                    <ul>
+                        <li>Groundbreaking AI research breakthrough</li>
+                        <li>Completely local processing (some data goes to Anthropic)</li>
+                        <li>Magic solution that solves all problems</li>
+                        <li>Enterprise-ready (yet - we're honest about current scope)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>Privacy Reality</h2>
+            
+            <div class="highlight-box">
+                <h3>Trinity uses a hybrid local-first privacy model:</h3>
+                <ol>
+                    <li><strong>Local Layer:</strong> Conversation history, memory patterns, and project context stored in <code>~/.trinity-mvp/</code></li>
+                    <li><strong>Remote Layer:</strong> Current requests + selected context sent to Anthropic via Claude Code CLI</li>
+                    <li><strong>Intelligent Context:</strong> Trinity determines what context is needed for each conversation</li>
+                </ol>
+                
+                <h3>Why This Approach:</h3>
+                <p>Pure local processing would mean no AI capability. Cloud-only would mean no privacy. Trinity's hybrid approach gives you persistent memory locally with AI processing remotely - honest about trade-offs while maximizing both privacy and functionality.</p>
+            </div>
+
+            <h2>Our Promise</h2>
+            
+            <div class="truth-grid">
+                <div class="truth-card">
+                    <ul>
+                        <li><strong>No surveillance capitalism</strong> - you're the user, not the product</li>
+                        <li><strong>No inflated claims</strong> - honest about what works and what doesn't</li>
+                    </ul>
+                </div>
+                
+                <div class="truth-card">
+                    <ul>
+                        <li><strong>No fake growth metrics</strong> - real community building over vanity numbers</li>
+                        <li><strong>No technical BS</strong> - clear explanations of how things actually work</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="promise-box">
+                <p>Trinity MVP respects both your intelligence and your data.</p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
