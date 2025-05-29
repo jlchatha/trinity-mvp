@@ -66,10 +66,14 @@ Welcome to Trinity MVP! This guide will have you up and running in just 5 simple
 
 ## Step 5: Try Your First Conversation 💬
 
+![Trinity MVP Main Interface](../images/trinity-main-interface-20250528.png)
+*Trinity MVP's clean, professional interface with quick-start guidance*
+
 **Say hello!** Try asking Trinity:
 - *"Hello! Can you introduce yourself?"*
 - *"What can you help me with?"*
 - *"How do I update Trinity MVP?"*
+- *"Write a short poem about artificial intelligence"*
 
 **That's it!** You're now ready to use Trinity MVP.
 
