@@ -2,6 +2,8 @@
 
 > **AI assistant that actually remembers - Perfect for anyone with ideas who wants AI that learns their style and grows with their projects**
 
+![Trinity MVP Main Interface](docs/images/trinity-main-interface-20250528.png)
+
 Trinity MVP transforms your interaction with AI by providing **persistent memory** and **local system integration**. Unlike traditional chat interfaces that forget previous conversations, Trinity builds cumulative knowledge about your projects, preferences, and working patterns.
 
 ## Choose Your Experience
@@ -63,6 +65,8 @@ Most AI assistants are glorified chatbots that forget everything, can't touch yo
 
 ## What Makes Trinity Different Right Now
 
+![Trinity Context Optimization Panel](docs/images/trinity-context-optimization-20250528.png)
+
 - **Only AI that shows you its memory usage** - See exactly what Trinity remembers
 - **Real-time context optimization** - Watch your token efficiency improve  
 - **Accurate conversation memory** - Ask Trinity about previous discussions, get correct quotes
@@ -108,6 +112,8 @@ npm start
 
 ### First Conversation
 
+![Trinity Conversation](docs/images/trinity-conversation-20250528.png)
+
 1. **Launch Trinity**: The interface loads with a professional chat interface
 2. **Start Chatting**: Begin with any question - Trinity learns your style as you interact
 3. **Access Files**: Ask Trinity to read, create, or modify files in your projects
@@ -122,6 +128,8 @@ npm start
 - **Context Optimization**: Loads only relevant information for each conversation
 
 ### Local System Integration
+![Trinity File Access](docs/images/trinity-file-access-20250528.png)
+
 - **File Operations**: Read, write, and modify files in your projects
 - **Command Execution**: Run development commands, scripts, and tools
 - **Project Navigation**: Understand and work with your existing project structure
