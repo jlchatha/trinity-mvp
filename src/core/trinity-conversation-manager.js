@@ -13,10 +13,12 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const ContentTypeClassifier = require('./content-type-classifier.js');
 
 class TrinityConversationManager {
   constructor(options = {}) {
     this.logger = options.logger || console;
+    this.contentClassifier = new ContentTypeClassifier({ logger: this.logger });
     
     // Current session tracking
     this.currentSession = [];
@@ -242,9 +244,17 @@ class TrinityConversationManager {
    * CRITICAL FIX: Made much more specific to prevent factual content being classified as creative
    */
   isCreativeContent(content) {
-    // SPECIFIC poem indicators (strict matching)
+    // Use the sophisticated ContentTypeClassifier instead of primitive heuristics
+    const classification = this.contentClassifier.classify(content);
+    
+    // Consider creative types: poem, story, creative writing
+    const creativeTypes = ['poem', 'story'];
+    if (creativeTypes.includes(classification.type)) {
+      return true;
+    }
+    
+    // Legacy specific patterns for backwards compatibility
     if (/Here's "([^"]+)"/i.test(content) || 
-        /^#\s+[A-Z]/m.test(content) || // Starts with "# Title"
         content.includes('*That\'s one of my favorite things about') || // Trinity poem signature
         (/poem/i.test(content) && content.split('\n').length > 10)) { // "poem" + multi-line
       return true;
@@ -269,15 +279,9 @@ class TrinityConversationManager {
    * Detect content type
    */
   detectContentType(content) {
-    if (content.includes('```') || /function|class|const\s+\w+/i.test(content)) {
-      return 'code';
-    }
-    
-    if (/Here's "([^"]+)"/i.test(content) || content.includes('poem')) {
-      return 'poem';
-    }
-    
-    return 'general';
+    // Use the sophisticated ContentTypeClassifier instead of primitive regex
+    const classification = this.contentClassifier.classify(content);
+    return classification.type;
   }
   
   /**

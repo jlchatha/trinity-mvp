@@ -1,0 +1,103 @@
+/* 
+ * EMERGENCY THEME DEBUG CSS
+ * This file contains very aggressive styling to force theme changes
+ */
+
+/* LIGHT THEME FORCE OVERRIDE */
+[data-theme="light"] {
+  --override-bg: #f5f5f5 !important;
+  --override-text: #121212 !important;
+  --override-header-bg: #e5e5e5 !important;
+  --override-border: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* DARK THEME FORCE OVERRIDE */
+:root:not([data-theme="light"]) {
+  --override-bg: #0a0a0a !important;
+  --override-text: #ffffff !important;
+  --override-header-bg: #1a1a1a !important;
+  --override-border: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* EXTREMELY AGGRESSIVE SELECTOR - TARGET EVERYTHING */
+html[data-theme="light"] *:not(.trinity-theme-icon-dark):not(.trinity-theme-icon-light) {
+  background-color: var(--override-bg) !important;
+  color: var(--override-text) !important;
+}
+
+/* Target specific key elements */
+html[data-theme="light"] body,
+html[data-theme="light"] .app-container,
+html[data-theme="light"] .main-content,
+html[data-theme="light"] .content-area,
+html[data-theme="light"] .chat-container,
+html[data-theme="light"] .trinity-unified-layout,
+html[data-theme="light"] .trinity-chat-panel,
+html[data-theme="light"] .trinity-chat-content,
+html[data-theme="light"] .trinity-chat-messages-container,
+html[data-theme="light"] .trinity-welcome-message,
+html[data-theme="light"] #trinity-chat-messages {
+  background-color: var(--override-bg) !important;
+  color: var(--override-text) !important;
+  border-color: var(--override-border) !important;
+}
+
+/* Force the Quick Start box to light theme */
+html[data-theme="light"] .trinity-quick-start {
+  background-color: #e3f2fd !important;
+  background: #e3f2fd !important;
+  border: 1px solid #90caf9 !important;
+  color: #1565c0 !important;
+}
+
+html[data-theme="light"] .header,
+html[data-theme="light"] .chat-header,
+html[data-theme="light"] .trinity-nav-status {
+  background-color: var(--override-header-bg) !important;
+  color: var(--override-text) !important;
+  border-color: var(--override-border) !important;
+}
+
+/* Special styles for the theme toggle button */
+html[data-theme="light"] #trinity-theme-toggle {
+  background-color: #0288d1 !important;
+  color: white !important;
+  border: 2px solid #0277bd !important;
+}
+
+html:not([data-theme="light"]) #trinity-theme-toggle {
+  background-color: #303030 !important;
+  color: white !important;
+  border: 2px solid #424242 !important;
+}
+
+/* Visual debug indicator */
+html[data-theme="light"]::before {
+  content: "LIGHT THEME ACTIVE";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 5px;
+  background-color: #0288d1 !important;
+  color: white !important;
+  text-align: center;
+  z-index: 99999;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+html:not([data-theme="light"])::before {
+  content: "DARK THEME ACTIVE";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 5px;
+  background-color: #303030 !important;
+  color: white !important;
+  text-align: center;
+  z-index: 99999;
+  font-size: 12px;
+  font-weight: bold;
+}

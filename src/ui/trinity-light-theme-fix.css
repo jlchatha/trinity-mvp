@@ -1,0 +1,131 @@
+/* Trinity Light Theme Fix - Aggressive Override */
+/* This file ensures light theme is applied to ALL elements */
+
+/* Root level light theme variables */
+:root[data-theme="light"] {
+  --trinity-bg-primary: #ffffff !important;
+  --trinity-bg-secondary: #f5f5f5 !important;
+  --trinity-bg-tertiary: #eeeeee !important;
+  --trinity-text-primary: #212121 !important;
+  --trinity-text-secondary: #666666 !important;
+  --trinity-text-muted: #999999 !important;
+  --trinity-border-color: #e0e0e0 !important;
+}
+
+/* Force light background on ALL elements when theme is light */
+html[data-theme="light"],
+html[data-theme="light"] body,
+html[data-theme="light"] body * {
+  background-color: var(--trinity-bg-primary) !important;
+  color: var(--trinity-text-primary) !important;
+}
+
+/* Specific overrides for known dark elements */
+html[data-theme="light"] .trinity-unified-layout,
+html[data-theme="light"] .trinity-chat-panel,
+html[data-theme="light"] .trinity-chat-content,
+html[data-theme="light"] .trinity-chat-messages-container,
+html[data-theme="light"] .trinity-welcome-message,
+html[data-theme="light"] .trinity-quick-start,
+html[data-theme="light"] .trinity-side-panels,
+html[data-theme="light"] .trinity-panel,
+html[data-theme="light"] .app-container,
+html[data-theme="light"] .main-content,
+html[data-theme="light"] .content-area,
+html[data-theme="light"] .chat-container,
+html[data-theme="light"] #trinity-chat-messages {
+  background-color: var(--trinity-bg-primary) !important;
+  color: var(--trinity-text-primary) !important;
+}
+
+/* Panels and cards get slightly different background */
+html[data-theme="light"] .trinity-panel,
+html[data-theme="light"] .trinity-quick-start,
+html[data-theme="light"] .trinity-card,
+html[data-theme="light"] .panel {
+  background-color: var(--trinity-bg-secondary) !important;
+  border: 1px solid var(--trinity-border-color) !important;
+}
+
+/* Headers stay slightly darker */
+html[data-theme="light"] .header,
+html[data-theme="light"] .chat-header,
+html[data-theme="light"] .trinity-nav-status,
+html[data-theme="light"] .trinity-panel-header {
+  background-color: var(--trinity-bg-tertiary) !important;
+  color: var(--trinity-text-primary) !important;
+}
+
+/* Input fields */
+html[data-theme="light"] input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] select {
+  background-color: #ffffff !important;
+  color: var(--trinity-text-primary) !important;
+  border: 1px solid var(--trinity-border-color) !important;
+}
+
+/* Code blocks */
+html[data-theme="light"] pre,
+html[data-theme="light"] code {
+  background-color: var(--trinity-bg-tertiary) !important;
+  color: var(--trinity-text-primary) !important;
+}
+
+/* Buttons */
+html[data-theme="light"] button,
+html[data-theme="light"] .btn {
+  background-color: var(--trinity-bg-tertiary) !important;
+  color: var(--trinity-text-primary) !important;
+  border: 1px solid var(--trinity-border-color) !important;
+}
+
+/* Links */
+html[data-theme="light"] a {
+  color: #1976d2 !important;
+}
+
+/* Scrollbars */
+html[data-theme="light"] ::-webkit-scrollbar {
+  background-color: var(--trinity-bg-secondary) !important;
+}
+
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background-color: #bdbdbd !important;
+}
+
+/* Shadow and borders */
+html[data-theme="light"] .shadow {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Override any inline styles */
+html[data-theme="light"] [style*="background-color: #0a0a0a"],
+html[data-theme="light"] [style*="background-color: #1a1a1a"],
+html[data-theme="light"] [style*="background-color: #2a2a2a"],
+html[data-theme="light"] [style*="background-color: rgb(10, 10, 10)"],
+html[data-theme="light"] [style*="background-color: rgb(26, 26, 26)"],
+html[data-theme="light"] [style*="background-color: rgb(42, 42, 42)"] {
+  background-color: var(--trinity-bg-primary) !important;
+}
+
+/* Ensure theme toggle button is visible */
+html[data-theme="light"] #trinity-theme-toggle {
+  background-color: var(--trinity-bg-tertiary) !important;
+  color: var(--trinity-text-primary) !important;
+  border: 2px solid var(--trinity-border-color) !important;
+}
+
+/* Notification styles for light theme */
+html[data-theme="light"] .trinity-notification {
+  background-color: #ffffff !important;
+  color: var(--trinity-text-primary) !important;
+  border: 1px solid var(--trinity-border-color) !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+}
+
+/* Force repaint on theme change */
+html[data-theme="light"] {
+  transform: translateZ(0);
+  will-change: transform;
+}

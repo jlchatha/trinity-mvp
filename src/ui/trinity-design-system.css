@@ -1,0 +1,554 @@
+/* Trinity MVP Design System
+ * Core CSS variables and design tokens
+ * Created: May 29, 2025
+ */
+
+:root {
+  /* Color palette */
+  --trinity-bg-primary: #0a0a0a;
+  --trinity-bg-primary-rgb: 10, 10, 10;
+  --trinity-bg-secondary: #1a1a1a;
+  --trinity-bg-secondary-rgb: 26, 26, 26;
+  --trinity-bg-tertiary: #2a2a2a;
+  --trinity-bg-tertiary-rgb: 42, 42, 42;
+  
+  --trinity-text-primary: #ffffff;
+  --trinity-text-secondary: #e0e0e0;
+  --trinity-text-muted: #a0a0a0;
+  
+  --trinity-accent-primary: #4a9eff;
+  --trinity-accent-primary-rgb: 74, 158, 255;
+  --trinity-accent-secondary: #7c3aed;
+  --trinity-accent-secondary-rgb: 124, 58, 237;
+  --trinity-accent-info: #4fc3f7;
+  --trinity-accent-info-rgb: 79, 195, 247;
+  
+  --trinity-status-success: #4caf50;
+  --trinity-status-warning: #ff9800;
+  --trinity-status-error: #f44336;
+  --trinity-status-critical: #d50000;
+  
+  /* Gradients */
+  --trinity-gradient-primary: linear-gradient(45deg, #4a9eff, #7c3aed);
+  --trinity-gradient-background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
+  --trinity-gradient-info: linear-gradient(135deg, rgba(79, 195, 247, 0.2) 0%, rgba(29, 233, 182, 0.15) 100%);
+  
+  /* Opacity levels */
+  --trinity-opacity-high: 1.0;
+  --trinity-opacity-medium: 0.7;
+  --trinity-opacity-low: 0.5;
+  --trinity-opacity-ultralow: 0.1;
+  
+  /* Typography */
+  --trinity-font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --trinity-font-code: 'Menlo', 'Monaco', 'Courier New', monospace;
+  --trinity-font-literary: 'Georgia', serif;
+  
+  --trinity-font-xs: 0.75rem;  /* 12px */
+  --trinity-font-sm: 0.875rem; /* 14px */
+  --trinity-font-md: 1rem;     /* 16px */
+  --trinity-font-lg: 1.25rem;  /* 20px */
+  --trinity-font-xl: 1.5rem;   /* 24px */
+  
+  --trinity-weight-regular: 400;
+  --trinity-weight-medium: 500;
+  --trinity-weight-semibold: 600;
+  --trinity-weight-bold: 700;
+  
+  --trinity-line-tight: 1.2;
+  --trinity-line-normal: 1.5;
+  --trinity-line-relaxed: 1.8;
+  
+  /* Spacing */
+  --trinity-space-xs: 0.25rem;  /* 4px */
+  --trinity-space-sm: 0.5rem;   /* 8px */
+  --trinity-space-md: 1rem;     /* 16px */
+  --trinity-space-lg: 1.5rem;   /* 24px */
+  --trinity-space-xl: 2rem;     /* 32px */
+  --trinity-space-xxl: 3rem;    /* 48px */
+  
+  /* Borders & Shadows */
+  --trinity-radius-xs: 3px;
+  --trinity-radius-sm: 6px;
+  --trinity-radius-md: 8px;
+  --trinity-radius-lg: 12px;
+  --trinity-radius-round: 50%;
+  
+  --trinity-border-subtle: 1px solid rgba(255, 255, 255, 0.1);
+  --trinity-border-medium: 1px solid rgba(255, 255, 255, 0.2);
+  --trinity-border-accent: 1px solid rgba(79, 195, 247, 0.4);
+  --trinity-border-dashed: 2px dashed rgba(255, 255, 255, 0.2);
+  
+  --trinity-shadow-subtle: 0 2px 6px rgba(0, 0, 0, 0.2);
+  --trinity-shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --trinity-shadow-large: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --trinity-shadow-glow: 0 0 15px rgba(79, 195, 247, 0.4);
+  
+  /* UI-specific variables */
+  --trinity-bg-input: rgba(255, 255, 255, 0.1);
+  --trinity-bg-input-focus: rgba(255, 255, 255, 0.15);
+  --trinity-bg-message: rgba(255, 255, 255, 0.1);
+  --trinity-bg-highlight: rgba(79, 195, 247, 0.1);
+  --trinity-border-primary: rgba(255, 255, 255, 0.2);
+  
+  /* Animation & Transitions */
+  --trinity-ease-standard: ease;
+  --trinity-ease-entrance: ease-out;
+  --trinity-ease-exit: ease-in;
+  --trinity-ease-bounce: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  --trinity-duration-instant: 0.1s;
+  --trinity-duration-fast: 0.2s;
+  --trinity-duration-normal: 0.3s;
+  --trinity-duration-slow: 0.5s;
+  --trinity-duration-deliberate: 0.8s;
+}
+
+/* Light theme - Will be activated with [data-theme="light"] */
+[data-theme="light"] {
+  --trinity-bg-primary: #f5f5f5;
+  --trinity-bg-primary-rgb: 245, 245, 245;
+  --trinity-bg-secondary: #e5e5e5;
+  --trinity-bg-secondary-rgb: 229, 229, 229;
+  --trinity-bg-tertiary: #d5d5d5;
+  --trinity-bg-tertiary-rgb: 213, 213, 213;
+  
+  --trinity-text-primary: #121212;
+  --trinity-text-secondary: #323232;
+  --trinity-text-muted: #555555;
+  
+  --trinity-accent-primary: #0a84ff;
+  --trinity-accent-primary-rgb: 10, 132, 255;
+  --trinity-accent-secondary: #6200ee;
+  --trinity-accent-secondary-rgb: 98, 0, 238;
+  --trinity-accent-info: #0288d1;
+  --trinity-accent-info-rgb: 2, 136, 209;
+  
+  --trinity-status-success: #2e7d32;
+  --trinity-status-warning: #e65100;
+  --trinity-status-error: #c62828;
+  --trinity-status-critical: #b71c1c;
+  
+  --trinity-gradient-primary: linear-gradient(45deg, #0a84ff, #6200ee);
+  --trinity-gradient-background: linear-gradient(135deg, #f5f5f5 0%, #e5e5e5 50%, #d5d5d5 100%);
+  --trinity-gradient-info: linear-gradient(135deg, rgba(2, 136, 209, 0.2) 0%, rgba(0, 191, 165, 0.15) 100%);
+  
+  --trinity-border-subtle: 1px solid rgba(0, 0, 0, 0.1);
+  --trinity-border-medium: 1px solid rgba(0, 0, 0, 0.2);
+  --trinity-border-accent: 1px solid rgba(10, 132, 255, 0.4);
+  --trinity-border-dashed: 2px dashed rgba(0, 0, 0, 0.2);
+  
+  --trinity-shadow-subtle: 0 2px 6px rgba(0, 0, 0, 0.1);
+  --trinity-shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --trinity-shadow-large: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --trinity-shadow-glow: 0 0 15px rgba(10, 132, 255, 0.4);
+  
+  /* UI-specific variables for light theme */
+  --trinity-bg-input: rgba(0, 0, 0, 0.05);
+  --trinity-bg-input-focus: rgba(0, 0, 0, 0.08);
+  --trinity-bg-message: rgba(0, 0, 0, 0.05);
+  --trinity-bg-highlight: rgba(2, 136, 209, 0.1);
+  --trinity-border-primary: rgba(0, 0, 0, 0.2);
+}
+
+/* Apply universal transitions for smooth theme switching */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* CRITICAL DEBUG STYLES - Force visible theme changes */
+html[data-theme="light"] {
+  background-color: #f5f5f5 !important;
+}
+
+/* Targeted light theme enforcement for main containers */
+[data-theme="light"] .trinity-unified-layout,
+[data-theme="light"] .trinity-chat-panel,
+[data-theme="light"] .trinity-chat-content,
+[data-theme="light"] .trinity-chat-messages-container,
+[data-theme="light"] .trinity-welcome-message {
+  background-color: var(--trinity-bg-primary) !important;
+  color: var(--trinity-text-primary) !important;
+}
+
+/* Quick Start box light theme */
+[data-theme="light"] .trinity-quick-start {
+  background-color: #e3f2fd !important;
+  border-color: #90caf9 !important;
+  color: var(--trinity-text-primary) !important;
+}
+
+html[data-theme="light"] body {
+  background-color: #ffffff !important;
+  color: #121212 !important;
+  background: #ffffff !important;
+}
+
+/* ULTRA-AGGRESSIVE LIGHT THEME SELECTORS */
+html[data-theme="light"] .trinity-unified-layout,
+html[data-theme="light"] .trinity-chat-panel,
+html[data-theme="light"] .trinity-chat-content,
+html[data-theme="light"] .trinity-chat-messages-container,
+html[data-theme="light"] .trinity-welcome-message,
+html[data-theme="light"] .trinity-quick-start {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #121212 !important;
+}
+
+html[data-theme="light"] .app-container,
+html[data-theme="light"] .main-content,
+html[data-theme="light"] .content-area,
+html[data-theme="light"] .chat-container {
+  background-color: #ffffff !important;
+  color: #121212 !important;
+}
+
+html[data-theme="light"] .header,
+html[data-theme="light"] .chat-header,
+html[data-theme="light"] .trinity-nav-status {
+  background-color: #e5e5e5 !important;
+  color: #121212 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-theme="light"] .trinity-status-item,
+html[data-theme="light"] .trinity-label,
+html[data-theme="light"] .trinity-value,
+html[data-theme="light"] .welcome-message,
+html[data-theme="light"] .welcome-subtitle,
+html[data-theme="light"] .placeholder-title,
+html[data-theme="light"] .placeholder-description {
+  color: #121212 !important;
+}
+
+/* Specific overrides for Trinity MVP components */
+html[data-theme="light"] .trinity-chat-messages-container {
+  background-color: #ffffff !important;
+}
+
+html[data-theme="light"] .trinity-panel-header {
+  background: #e5e5e5 !important;
+}
+
+html[data-theme="light"] .trinity-panel-content {
+  background: #ffffff !important;
+}
+
+html[data-theme="light"] .trinity-quick-start {
+  background: rgba(2, 136, 209, 0.1) !important;
+  border-color: rgba(2, 136, 209, 0.3) !important;
+}
+
+/* Make theme toggle button more obvious */
+html[data-theme="light"] #trinity-theme-toggle {
+  background-color: #0288d1 !important;
+  color: white !important;
+  border: 1px solid #0277bd !important;
+  box-shadow: 0 2px 4px rgba(2, 136, 209, 0.3) !important;
+}
+
+html:not([data-theme="light"]) #trinity-theme-toggle {
+  background-color: #303030 !important;
+  color: white !important;
+  border: 1px solid #424242 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* FIX: Dark mode status bar should be dark, not light */
+html:not([data-theme="light"]) .trinity-nav-status {
+  background-color: var(--trinity-bg-secondary) !important;
+  background: var(--trinity-bg-secondary) !important;
+  border-bottom: var(--trinity-border-subtle) !important;
+}
+
+/* FIX: Light mode status bar needs light background with dark text */
+html[data-theme="light"] .trinity-nav-status {
+  background-color: #f5f5f5 !important;
+  background: #f5f5f5 !important;
+  color: #121212 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-theme="light"] .trinity-status-item {
+  color: #121212 !important;
+}
+
+html[data-theme="light"] .trinity-status-item .trinity-label {
+  color: #616161 !important;
+}
+
+html[data-theme="light"] .trinity-status-item .trinity-value {
+  color: #121212 !important;
+  font-weight: 600;
+}
+
+/* FIX: Light mode input area needs proper contrast */
+html[data-theme="light"] .trinity-chat-input-area {
+  background-color: #f5f5f5 !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-theme="light"] .trinity-input-container {
+  background-color: #f5f5f5 !important;
+}
+
+html[data-theme="light"] #trinity-chat-input {
+  background-color: #ffffff !important;
+  color: #121212 !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+}
+
+html[data-theme="light"] #trinity-chat-input::placeholder {
+  color: #616161 !important;
+}
+
+html[data-theme="light"] .trinity-send-btn {
+  background-color: #0288d1 !important;
+  color: white !important;
+}
+
+html[data-theme="light"] .trinity-send-btn:hover {
+  background-color: #0277bd !important;
+}
+
+html[data-theme="light"] .trinity-send-icon {
+  color: white !important;
+}
+
+/* FIX: Light mode sidebar text visibility */
+html[data-theme="light"] .trinity-side-panels {
+  background-color: #f5f5f5 !important;
+  color: #121212 !important;
+}
+
+html[data-theme="light"] .trinity-panel {
+  background-color: #ffffff !important;
+  color: #121212 !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-theme="light"] .trinity-panel-header {
+  background-color: #e5e5e5 !important;
+  color: #121212 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-theme="light"] .trinity-panel-header h3 {
+  color: #121212 !important;
+}
+
+html[data-theme="light"] .trinity-panel-content {
+  background-color: #ffffff !important;
+  color: #121212 !important;
+}
+
+html[data-theme="light"] .trinity-panel-content * {
+  color: #121212 !important;
+}
+
+/* Ensure all panel text is visible in light mode */
+html[data-theme="light"] .trinity-panel .trinity-label,
+html[data-theme="light"] .trinity-panel .trinity-value,
+html[data-theme="light"] .trinity-panel p,
+html[data-theme="light"] .trinity-panel span,
+html[data-theme="light"] .trinity-panel div {
+  color: #121212 !important;
+}
+
+/* Dark mode sidebar panels should remain dark */
+html:not([data-theme="light"]) .trinity-side-panels {
+  background-color: var(--trinity-bg-primary) !important;
+}
+
+html:not([data-theme="light"]) .trinity-panel {
+  background-color: var(--trinity-bg-secondary) !important;
+  border: var(--trinity-border-subtle) !important;
+}
+
+html:not([data-theme="light"]) .trinity-panel-header {
+  background-color: var(--trinity-bg-tertiary) !important;
+  border-bottom: var(--trinity-border-subtle) !important;
+}
+
+html:not([data-theme="light"]) .trinity-panel-content {
+  background-color: var(--trinity-bg-secondary) !important;
+}
+
+/* Theme-specific notification styles */
+html[data-theme="light"] .trinity-notification {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #121212 !important;
+  border: 1px solid rgba(2, 136, 209, 0.6) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+html[data-theme="light"] .trinity-notification.success {
+  border: 1px solid rgba(46, 125, 50, 0.6) !important;
+  background: rgba(240, 255, 240, 0.95) !important;
+  color: #2e7d32 !important;
+  font-weight: bold !important;
+}
+
+/* Dark theme (default) explicit styles */
+html:not([data-theme="light"]) body {
+  background-color: #0a0a0a !important;
+  color: #ffffff !important;
+}
+
+html:not([data-theme="light"]) .app-container,
+html:not([data-theme="light"]) .main-content,
+html:not([data-theme="light"]) .content-area,
+html:not([data-theme="light"]) .chat-container {
+  background-color: #0a0a0a !important;
+  color: #ffffff !important;
+}
+
+html:not([data-theme="light"]) .header,
+html:not([data-theme="light"]) .chat-header,
+html:not([data-theme="light"]) .trinity-nav-status {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Theme-specific body styles - ensure direct application of theme colors */
+body {
+  background-color: var(--trinity-bg-primary);
+  color: var(--trinity-text-primary);
+}
+
+[data-theme="light"] body {
+  background-color: var(--trinity-bg-primary);
+  color: var(--trinity-text-primary);
+}
+
+/* Main UI components - ensure theme colors are applied */
+.app-container {
+  background-color: var(--trinity-bg-primary);
+  color: var(--trinity-text-primary);
+}
+
+.main-content {
+  background-color: var(--trinity-bg-primary);
+  color: var(--trinity-text-primary);
+}
+
+.sidebar {
+  background-color: var(--trinity-bg-secondary);
+  color: var(--trinity-text-secondary);
+}
+
+.header {
+  background-color: var(--trinity-bg-secondary);
+  color: var(--trinity-text-primary);
+  border-bottom: var(--trinity-border-subtle);
+}
+
+.chat-container {
+  background-color: var(--trinity-bg-primary);
+  color: var(--trinity-text-primary);
+}
+
+.trinity-nav-status {
+  background-color: var(--trinity-bg-primary);
+  color: var(--trinity-text-primary);
+  border-bottom: var(--trinity-border-subtle);
+}
+
+/* Force theme colors for status bar to ensure they update */
+[data-theme="light"] .trinity-nav-status {
+  background-color: var(--trinity-bg-primary) !important;
+  color: var(--trinity-text-primary) !important;
+  border-bottom: var(--trinity-border-subtle) !important;
+}
+
+[data-theme="light"] .trinity-status-item {
+  color: var(--trinity-text-secondary) !important;
+}
+
+[data-theme="light"] .trinity-label {
+  color: var(--trinity-text-muted) !important;
+}
+
+[data-theme="light"] .trinity-value {
+  color: var(--trinity-accent-info) !important;
+}
+
+[data-theme="light"] .app-container,
+[data-theme="light"] .main-content,
+[data-theme="light"] .content-area,
+[data-theme="light"] .chat-container {
+  background-color: var(--trinity-bg-primary) !important;
+  color: var(--trinity-text-primary) !important;
+}
+
+[data-theme="light"] .header,
+[data-theme="light"] .chat-header {
+  background-color: var(--trinity-bg-secondary) !important;
+  color: var(--trinity-text-primary) !important;
+  border-bottom: var(--trinity-border-subtle) !important;
+}
+
+[data-theme="light"] .welcome-message,
+[data-theme="light"] .placeholder-title,
+[data-theme="light"] .chat-title {
+  color: var(--trinity-text-primary) !important;
+}
+
+[data-theme="light"] .welcome-subtitle,
+[data-theme="light"] .placeholder-description,
+[data-theme="light"] .chat-status {
+  color: var(--trinity-text-muted) !important;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes typingDot {
+  0%, 60%, 100% { opacity: 0.3; }
+  30% { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+/* Utility classes */
+.trinity-animate-fade-in {
+  animation: fadeIn var(--trinity-duration-normal) var(--trinity-ease-entrance);
+}
+
+.trinity-animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+.trinity-animate-typing {
+  animation: typingDot 1.4s infinite;
+}
+
+.trinity-animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0)
+  );
+  background-size: 1000px 100%;
+}

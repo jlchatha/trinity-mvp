@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trinity MVP - Professional Assistant</title>
+    <link rel="stylesheet" href="../src/ui/trinity-design-system.css">
     <style>
         * {
             margin: 0;
@@ -13,8 +14,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
-            color: #ffffff;
+            background: var(--trinity-gradient-background, linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%));
+            color: var(--trinity-text-primary, #ffffff);
             height: 100vh;
             overflow: hidden;
         }
@@ -26,7 +27,7 @@
 
         .sidebar {
             width: 300px;
-            background: rgba(20, 20, 20, 0.8);
+            background: var(--trinity-bg-secondary, rgba(20, 20, 20, 0.8));
             backdrop-filter: blur(10px);
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
@@ -737,6 +738,9 @@
         // NOTE: Original TrinityStatusBarIntegration replaced with enhanced version
     </script>
 
+    <!-- Theme System -->
+    <script src="../src/ui/theme-switcher.js"></script>
+    
     <!-- Enhanced Trinity Status Bar Integration -->
     <script src="../src/ui/trinity-status-bar.js"></script>
     

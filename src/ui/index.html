@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trinity MVP - Professional Assistant</title>
+    <link rel="stylesheet" href="trinity-design-system.css">
+    <link rel="stylesheet" href="theme-debug.css">
     <style>
         * {
             margin: 0;
@@ -12,11 +14,12 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
-            color: #ffffff;
+            font-family: var(--trinity-font-primary);
+            background: var(--trinity-gradient-background);
+            color: var(--trinity-text-primary);
             height: 100vh;
             overflow: hidden;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         .app-container {
@@ -26,9 +29,9 @@
 
         .sidebar {
             width: 300px;
-            background: rgba(20, 20, 20, 0.8);
+            background: rgba(var(--trinity-bg-secondary-rgb, 26, 26, 26), 0.8);
             backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            border-right: var(--trinity-border-subtle);
             display: flex;
             flex-direction: column;
             display: none; /* Hidden by default for clean user experience */
@@ -40,14 +43,14 @@
 
         .sidebar-header {
             padding: 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: var(--trinity-border-subtle);
         }
 
         .trinity-title {
             font-size: 1.5rem;
             font-weight: 300;
             letter-spacing: 0.1em;
-            background: linear-gradient(45deg, #4a9eff, #7c3aed, #f59e0b);
+            background: var(--trinity-gradient-primary, linear-gradient(45deg, #4a9eff, #7c3aed, #f59e0b));
             background-size: 400% 400%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -64,7 +67,7 @@
             display: flex;
             align-items: center;
             padding: 0.75rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: var(--trinity-border-subtle);
         }
 
         .status-dot {
@@ -72,21 +75,21 @@
             height: 8px;
             border-radius: 50%;
             margin-right: 0.75rem;
-            background: #10b981;
+            background: var(--trinity-status-success, #10b981);
             animation: pulse 2s ease-in-out infinite;
         }
 
         .status-dot.warning {
-            background: #f59e0b;
+            background: var(--trinity-status-warning, #f59e0b);
         }
 
         .status-dot.error {
-            background: #ef4444;
+            background: var(--trinity-status-error, #ef4444);
         }
 
         .status-label {
             font-size: 0.9rem;
-            color: #a0a0a0;
+            color: var(--trinity-text-muted);
         }
 
         .main-content {
@@ -98,8 +101,8 @@
 
         .header {
             padding: 1.5rem 2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(10, 10, 10, 0.5);
+            border-bottom: var(--trinity-border-subtle);
+            background: rgba(var(--trinity-bg-primary-rgb), 0.5);
         }
 
         .welcome-message {
@@ -109,7 +112,7 @@
         }
 
         .welcome-subtitle {
-            color: #a0a0a0;
+            color: var(--trinity-text-muted);
             font-size: 0.9rem;
         }
 
@@ -137,11 +140,11 @@
             font-size: 1.5rem;
             font-weight: 300;
             margin-bottom: 1rem;
-            color: #e0e0e0;
+            color: var(--trinity-text-secondary);
         }
 
         .placeholder-description {
-            color: #a0a0a0;
+            color: var(--trinity-text-muted);
             line-height: 1.6;
             margin-bottom: 2rem;
         }
@@ -161,7 +164,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(45deg, #4a9eff, #7c3aed);
+            background: var(--trinity-gradient-primary);
             color: white;
         }
 
@@ -172,12 +175,21 @@
 
         .btn-secondary {
             background: rgba(255, 255, 255, 0.1);
-            color: #e0e0e0;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--trinity-text-secondary);
+            border: var(--trinity-border-medium);
         }
 
         .btn-secondary:hover {
             background: rgba(255, 255, 255, 0.15);
+        }
+        
+        [data-theme="light"] .btn-secondary {
+            background: rgba(0, 0, 0, 0.05);
+            border: var(--trinity-border-medium);
+        }
+        
+        [data-theme="light"] .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.1);
         }
 
         @keyframes gradient-shift {
@@ -190,6 +202,8 @@
             50% { opacity: 1; }
         }
     </style>
+    <link rel="stylesheet" href="trinity-light-theme-fix.css">
+    <link rel="stylesheet" href="force-light-theme.css">
 </head>
 <body>
     <div class="app-container">
@@ -310,7 +324,10 @@
     </script>
     
     <!-- Trinity UI Components -->
+    <script src="theme-switcher.js"></script>
     <script src="trinity-status-bar.js"></script>
     <script src="trinity-renderer-integration.js"></script>
+    <script src="theme-toggle-fix.js"></script>
+    <script src="auto-theme-toggle.js"></script>
 </body>
 </html>

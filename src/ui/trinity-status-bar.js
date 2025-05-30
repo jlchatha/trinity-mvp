@@ -19,9 +19,39 @@ class TrinityStatusBar {
     this.updateFrequency = 5000; // 5 seconds
     this.lastUpdate = null;
     
+    // Initialize theme from saved preference
+    this.initializeTheme();
+    
     this.initializeStatusBar();
     this.setupEventListeners();
     console.log('[Trinity Status Bar] Enhanced Trinity Status Bar initialized successfully');
+  }
+  
+  /**
+   * Initialize theme from saved preference and apply direct DOM styling
+   */
+  initializeTheme() {
+    // Use theme-switcher.js if available, otherwise handle theme directly
+    if (window.trinityThemeSwitcher) {
+      console.log('[Trinity Status Bar] Using trinityThemeSwitcher for theme management');
+      // Theme will be handled by trinityThemeSwitcher
+    } else {
+      const savedTheme = localStorage.getItem('trinity-theme') || 'dark';
+      
+      if (savedTheme === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+      
+      console.log(`[Trinity Status Bar] Applied saved theme: ${savedTheme}`);
+      
+      // Apply direct DOM styling immediately
+      setTimeout(() => {
+        this.applyDirectStyling(savedTheme);
+        console.log(`[Trinity Status Bar] Applied direct styling for ${savedTheme} theme on initialization`);
+      }, 100); // Small delay to ensure DOM is ready
+    }
   }
 
   /**
@@ -109,6 +139,10 @@ class TrinityStatusBar {
         <button class="trinity-quick-btn" id="trinity-checkpoint" title="Create Checkpoint">
           <span class="trinity-icon">💾</span>
         </button>
+        <button class="trinity-quick-btn" id="trinity-theme-toggle" title="Toggle Theme (Dark/Light)">
+          <span class="trinity-theme-icon-dark">🌙 Dark</span>
+          <span class="trinity-theme-icon-light">☀️ Light</span>
+        </button>
       </div>
     `;
     
@@ -183,14 +217,20 @@ class TrinityStatusBar {
     styles.id = 'trinity-ambient-styles';
     styles.textContent = `
       .trinity-nav-status {
-        background: rgba(15, 15, 15, 0.9);
+        background: rgba(var(--trinity-bg-primary-rgb, 15, 15, 15), 0.9);
         backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: var(--trinity-border-subtle, 1px solid rgba(255, 255, 255, 0.1));
         padding: 12px 20px;
         display: flex;
         flex-direction: column;
         gap: 12px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        font-family: var(--trinity-font-primary, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
+        transition: all 0.3s ease;
+      }
+      
+      [data-theme="light"] .trinity-nav-status {
+        background: rgba(var(--trinity-bg-primary-rgb, 245, 245, 245), 0.9);
+        border-bottom: var(--trinity-border-subtle, 1px solid rgba(0, 0, 0, 0.1));
       }
       
       .trinity-ambient-status {
@@ -210,7 +250,8 @@ class TrinityStatusBar {
         align-items: center;
         gap: 6px;
         font-size: 13px;
-        color: #e0e0e0;
+        color: var(--trinity-text-secondary);
+        transition: color 0.3s ease;
       }
       
       .trinity-icon {
@@ -218,20 +259,22 @@ class TrinityStatusBar {
       }
       
       .trinity-label {
-        font-weight: 500;
-        color: #b0b0b0;
+        font-weight: var(--trinity-weight-medium, 500);
+        color: var(--trinity-text-muted, #b0b0b0);
+        transition: color 0.3s ease;
       }
       
       .trinity-value {
-        color: #4fc3f7;
-        font-weight: 600;
+        color: var(--trinity-accent-info, #4fc3f7);
+        font-weight: var(--trinity-weight-semibold, 600);
+        transition: color 0.3s ease;
       }
       
-      .trinity-value.success { color: #4caf50; }
-      .trinity-value.warning { color: #ff9800; }
-      .trinity-value.error { color: #f44336; }
+      .trinity-value.success { color: var(--trinity-status-success, #4caf50); }
+      .trinity-value.warning { color: var(--trinity-status-warning, #ff9800); }
+      .trinity-value.error { color: var(--trinity-status-error, #f44336); }
       .trinity-value.critical { 
-        color: #f44336; 
+        color: var(--trinity-status-critical, #f44336); 
         animation: pulse-critical 2s infinite;
       }
       
@@ -247,19 +290,47 @@ class TrinityStatusBar {
       
       .trinity-quick-btn {
         background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: #e0e0e0;
+        border: var(--trinity-border-medium, 1px solid rgba(255, 255, 255, 0.2));
+        color: var(--trinity-text-secondary, #e0e0e0);
         padding: 6px 10px;
-        border-radius: 6px;
+        border-radius: var(--trinity-radius-sm, 6px);
         cursor: pointer;
         transition: all 0.2s ease;
         font-size: 12px;
       }
       
       .trinity-quick-btn:hover {
-        background: rgba(79, 195, 247, 0.2);
-        border-color: rgba(79, 195, 247, 0.4);
-        color: #4fc3f7;
+        background: rgba(var(--trinity-accent-info-rgb, 79, 195, 247), 0.2);
+        border-color: rgba(var(--trinity-accent-info-rgb, 79, 195, 247), 0.4);
+        color: var(--trinity-accent-info, #4fc3f7);
+      }
+      
+      [data-theme="light"] .trinity-quick-btn {
+        background: rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        color: var(--trinity-text-secondary);
+      }
+      
+      [data-theme="light"] .trinity-quick-btn:hover {
+        background: rgba(var(--trinity-accent-info-rgb, 79, 195, 247), 0.1);
+        border-color: rgba(var(--trinity-accent-info-rgb, 79, 195, 247), 0.4);
+        color: var(--trinity-accent-info);
+      }
+      
+      .trinity-theme-icon-dark {
+        display: inline;
+      }
+      
+      .trinity-theme-icon-light {
+        display: none;
+      }
+      
+      [data-theme="light"] .trinity-theme-icon-dark {
+        display: none;
+      }
+      
+      [data-theme="light"] .trinity-theme-icon-light {
+        display: inline;
       }
       
       .trinity-drop-zone {
@@ -767,6 +838,11 @@ class TrinityStatusBar {
       this.createQuickCheckpoint();
     });
     
+    // Theme toggle
+    document.getElementById('trinity-theme-toggle')?.addEventListener('click', () => {
+      this.toggleTheme();
+    });
+    
     // Quick actions
     document.getElementById('create-task-btn')?.addEventListener('click', () => {
       this.showTaskCreator();
@@ -857,11 +933,48 @@ class TrinityStatusBar {
         }
       }
       
-      // Update recovery status
-      const recoveryEl = document.getElementById('recovery-value');
-      if (recoveryEl) {
-        recoveryEl.textContent = 'Ready';
-        recoveryEl.className = 'trinity-value success';
+      // Update recovery status with real data from Trinity API
+      try {
+        const recoveryEl = document.getElementById('recovery-value');
+        if (recoveryEl) {
+          // Get auto-compact recovery status via Trinity API
+          const autoCompactStatus = window.trinityAPI ? await window.trinityAPI.autoCompact.getStatus() : null;
+          
+          if (autoCompactStatus) {
+            if (autoCompactStatus.recoveryNeeded && autoCompactStatus.recoverySuccessful) {
+              const recoveryTime = new Date(autoCompactStatus.lastTimestamp);
+              const timeAgo = this.getTimeAgo(recoveryTime);
+              
+              recoveryEl.textContent = `Recovered ${timeAgo}`;
+              recoveryEl.className = 'trinity-value success';
+              recoveryEl.title = `Auto-compact recovery successful at ${recoveryTime.toLocaleTimeString()}`;
+            } else if (autoCompactStatus.recoveryNeeded && !autoCompactStatus.recoverySuccessful) {
+              recoveryEl.textContent = 'Recovery Failed';
+              recoveryEl.className = 'trinity-value error';
+              recoveryEl.title = 'Auto-compact recovery failed. Check logs for details.';
+            } else {
+              recoveryEl.textContent = 'Ready';
+              recoveryEl.className = 'trinity-value success';
+              recoveryEl.title = 'Auto-compact recovery system ready';
+            }
+            
+            // Add click handler for recovery details
+            recoveryEl.style.cursor = 'pointer';
+            recoveryEl.onclick = () => this.showRecoveryDetails(autoCompactStatus);
+          } else {
+            recoveryEl.textContent = 'Ready';
+            recoveryEl.className = 'trinity-value success';
+            recoveryEl.title = 'Auto-compact recovery system ready';
+          }
+        }
+      } catch (error) {
+        console.error('Recovery status update failed:', error);
+        // Fallback
+        const recoveryEl = document.getElementById('recovery-value');
+        if (recoveryEl) {
+          recoveryEl.textContent = 'Ready';
+          recoveryEl.className = 'trinity-value success';
+        }
       }
       
       // Update context optimization status with real Trinity API data
@@ -1040,6 +1153,109 @@ class TrinityStatusBar {
         'Professional context dashboard'
       ]
     };
+  }
+  
+  /**
+   * Format time ago in a human-readable format
+   */
+  getTimeAgo(date) {
+    if (!date) return '';
+    
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    if (seconds < 60) {
+      return 'just now';
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      return `${minutes}m ago`;
+    } else if (seconds < 86400) {
+      const hours = Math.floor(seconds / 3600);
+      return `${hours}h ago`;
+    } else {
+      const days = Math.floor(seconds / 86400);
+      return `${days}d ago`;
+    }
+  }
+  
+  /**
+   * Show recovery details in a modal
+   */
+  showRecoveryDetails(status) {
+    console.log('[Trinity Status] Opening recovery details...');
+    
+    const recoveryTime = status.lastTimestamp ? new Date(status.lastTimestamp) : new Date();
+    const statusLabel = status.recoveryNeeded && status.recoverySuccessful ? 
+      'Recovery successful' : status.recoveryNeeded && !status.recoverySuccessful ? 
+      'Recovery failed' : 'No recovery needed';
+      
+    const statusClass = status.recoveryNeeded && status.recoverySuccessful ? 
+      'success' : status.recoveryNeeded && !status.recoverySuccessful ? 
+      'error' : 'normal';
+      
+    // Create modal for recovery details
+    const modal = document.createElement('div');
+    modal.className = 'trinity-modal-overlay';
+    modal.innerHTML = `
+      <div class="trinity-modal-content">
+        <div class="trinity-modal-header">
+          <h3>🔄 Auto-Compact Recovery Details</h3>
+          <button class="trinity-modal-close" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+        </div>
+        
+        <div class="trinity-modal-body">
+          <div class="recovery-status-overview">
+            <div class="recovery-status-item">
+              <span class="recovery-status-label">Status:</span>
+              <span class="recovery-status-value ${statusClass}">${statusLabel}</span>
+            </div>
+            
+            <div class="recovery-status-item">
+              <span class="recovery-status-label">Time:</span>
+              <span class="recovery-status-value">${recoveryTime.toLocaleString()}</span>
+            </div>
+            
+            <div class="recovery-status-item">
+              <span class="recovery-status-label">Environment:</span>
+              <span class="recovery-status-value">${status.environment || 'trinity-mvp'}</span>
+            </div>
+          </div>
+          
+          <div class="recovery-explanation">
+            <h4>What is Auto-Compact Recovery?</h4>
+            <p>Auto-compact occurs when Trinity's conversation context reaches its limit. The system automatically preserves essential context while clearing older messages to maintain performance and functionality.</p>
+            <p>Recovery ensures your conversation continues smoothly with preserved context and memory.</p>
+          </div>
+          
+          <div class="recovery-features">
+            <h4>Active Protection Features</h4>
+            <ul>
+              ${(status.features || [
+                'Context preservation',
+                'Automatic recovery',
+                'Conversation continuity'
+              ]).map(feature => `<li>${feature}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+        
+        <div class="trinity-modal-footer">
+          <button class="trinity-btn trinity-btn-primary" onclick="this.parentElement.parentElement.parentElement.remove()">Close</button>
+        </div>
+      </div>
+    `;
+    
+    // Add modal styles if not already present
+    this.addModalStyles();
+    
+    document.body.appendChild(modal);
+    
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
   }
 
   /**
@@ -1366,6 +1582,14 @@ class TrinityStatusBar {
   showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `trinity-notification ${type}`;
+    
+    // For theme changes, make notifications more obvious
+    if (message.includes('THEME ACTIVATED')) {
+      notification.style.fontSize = '14px';
+      notification.style.padding = '15px 20px';
+      notification.style.fontWeight = 'bold';
+    }
+    
     notification.textContent = message;
     
     document.body.appendChild(notification);
@@ -1436,6 +1660,182 @@ class TrinityStatusBar {
 
   showRecoveryPanel() {
     this.showNotification('Trinity: Recovery panel (coming soon)', 'info');
+  }
+  
+  /**
+   * Toggle between light and dark themes using direct DOM styling
+   */
+  toggleTheme() {
+    let currentTheme;
+    
+    // Use theme-switcher if available
+    if (window.trinityThemeSwitcher) {
+      currentTheme = window.trinityThemeSwitcher.toggleTheme();
+      console.log(`[Trinity Status Bar] Using trinityThemeSwitcher to toggle theme to: ${currentTheme}`);
+    } else {
+      // Direct implementation
+      const html = document.documentElement;
+      currentTheme = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      
+      if (currentTheme === 'light') {
+        html.setAttribute('data-theme', 'light');
+      } else {
+        html.removeAttribute('data-theme');
+      }
+      
+      // Apply direct DOM styling to bypass CSS inheritance issues
+      this.applyDirectStyling(currentTheme);
+      
+      // Save theme preference to localStorage
+      localStorage.setItem('trinity-theme', currentTheme);
+      
+      // Dispatch theme change event for other components
+      window.dispatchEvent(new CustomEvent('trinity-theme-changed', { 
+        detail: { theme: currentTheme } 
+      }));
+      
+      console.log(`[Trinity Status Bar] Theme changed to: ${currentTheme}`);
+    }
+    
+    // Show a much more obvious notification
+    const themeMessage = currentTheme === 'light' 
+      ? '☀️ LIGHT THEME ACTIVATED' 
+      : '🌙 DARK THEME ACTIVATED';
+    
+    this.showNotification(themeMessage, currentTheme === 'light' ? 'success' : 'info');
+    
+    return currentTheme;
+  }
+  
+  /**
+   * Apply direct DOM styling to key UI elements to bypass CSS inheritance issues
+   * @param {string} theme - 'dark' or 'light'
+   */
+  applyDirectStyling(theme) {
+    console.log(`[Trinity Status Bar] Applying direct styling for ${theme} theme`);
+    
+    // Define theme colors
+    const colors = {
+      dark: {
+        bg: '#0a0a0a',
+        bgSecondary: '#1a1a1a',
+        bgTertiary: '#2a2a2a',
+        text: '#ffffff',
+        textSecondary: '#e0e0e0',
+        textMuted: '#a0a0a0',
+        border: 'rgba(255, 255, 255, 0.1)'
+      },
+      light: {
+        bg: '#f5f5f5',
+        bgSecondary: '#e5e5e5',
+        bgTertiary: '#d5d5d5',
+        text: '#121212',
+        textSecondary: '#323232',
+        textMuted: '#555555',
+        border: 'rgba(0, 0, 0, 0.1)'
+      }
+    };
+    
+    // Get references to key UI elements
+    const elements = {
+      html: document.documentElement,
+      body: document.body,
+      appContainer: document.querySelector('.app-container'),
+      mainContent: document.querySelector('.main-content'),
+      sidebar: document.querySelector('.sidebar'),
+      header: document.querySelector('.header'),
+      contentArea: document.querySelector('.content-area'),
+      chatContainer: document.querySelector('.chat-container'),
+      statusBar: document.querySelector('.trinity-nav-status, .trinity-status-bar'),
+      buttons: Array.from(document.querySelectorAll('.trinity-quick-btn'))
+    };
+    
+    // Apply styles to each element directly
+    if (elements.html) {
+      elements.html.style.backgroundColor = colors[theme].bg;
+      elements.html.style.color = colors[theme].text;
+    }
+    
+    if (elements.body) {
+      elements.body.style.backgroundColor = colors[theme].bg;
+      elements.body.style.color = colors[theme].text;
+    }
+    
+    if (elements.appContainer) {
+      elements.appContainer.style.backgroundColor = colors[theme].bg;
+      elements.appContainer.style.color = colors[theme].text;
+    }
+    
+    if (elements.mainContent) {
+      elements.mainContent.style.backgroundColor = colors[theme].bg;
+      elements.mainContent.style.color = colors[theme].text;
+    }
+    
+    if (elements.sidebar) {
+      elements.sidebar.style.backgroundColor = colors[theme].bgSecondary;
+      elements.sidebar.style.color = colors[theme].textSecondary;
+      elements.sidebar.style.borderRight = `1px solid ${colors[theme].border}`;
+    }
+    
+    if (elements.header) {
+      elements.header.style.backgroundColor = colors[theme].bgSecondary;
+      elements.header.style.color = colors[theme].text;
+      elements.header.style.borderBottom = `1px solid ${colors[theme].border}`;
+    }
+    
+    if (elements.contentArea) {
+      elements.contentArea.style.backgroundColor = colors[theme].bg;
+      elements.contentArea.style.color = colors[theme].text;
+    }
+    
+    if (elements.chatContainer) {
+      elements.chatContainer.style.backgroundColor = colors[theme].bg;
+      elements.chatContainer.style.color = colors[theme].text;
+    }
+    
+    if (elements.statusBar) {
+      elements.statusBar.style.backgroundColor = colors[theme].bgSecondary;
+      elements.statusBar.style.color = colors[theme].text;
+      elements.statusBar.style.borderBottom = `1px solid ${colors[theme].border}`;
+    }
+    
+    // Apply to all buttons with .trinity-quick-btn class
+    elements.buttons.forEach(button => {
+      if (theme === 'light') {
+        button.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+        button.style.color = colors[theme].textSecondary;
+        button.style.border = `1px solid rgba(0, 0, 0, 0.2)`;
+      } else {
+        button.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        button.style.color = colors[theme].textSecondary;
+        button.style.border = `1px solid rgba(255, 255, 255, 0.2)`;
+      }
+    });
+    
+    // Force a reflow to ensure styles are applied
+    void document.documentElement.offsetHeight;
+    
+    // Log elements that were styled for debugging
+    const styledElements = Object.entries(elements)
+      .filter(([key, el]) => el && key !== 'buttons')
+      .map(([key]) => key);
+    
+    console.log(`[Trinity Status Bar] Applied direct styling to: ${styledElements.join(', ')}`);
+    
+    // Also apply the direct styling to any iframes
+    document.querySelectorAll('iframe').forEach(iframe => {
+      try {
+        const iframeDoc = iframe.contentDocument;
+        if (iframeDoc) {
+          iframeDoc.documentElement.style.backgroundColor = colors[theme].bg;
+          iframeDoc.documentElement.style.color = colors[theme].text;
+          iframeDoc.body.style.backgroundColor = colors[theme].bg;
+          iframeDoc.body.style.color = colors[theme].text;
+        }
+      } catch (e) {
+        // Ignore cross-origin issues
+      }
+    });
   }
 
   openFilePicker() {
@@ -1779,6 +2179,90 @@ class TrinityStatusBar {
       
       .trinity-btn-secondary:hover {
         background: rgba(255, 255, 255, 0.15);
+      }
+      
+      /* Recovery Status Styles */
+      .recovery-status-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      
+      .recovery-status-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      
+      .recovery-status-label {
+        font-size: 12px;
+        color: #888;
+      }
+      
+      .recovery-status-value {
+        font-size: 14px;
+        color: #e0e0e0;
+        font-weight: 600;
+      }
+      
+      .recovery-status-value.success {
+        color: #4caf50;
+      }
+      
+      .recovery-status-value.error {
+        color: #f44336;
+      }
+      
+      .recovery-explanation {
+        background: rgba(79, 195, 247, 0.1);
+        border: 1px solid rgba(79, 195, 247, 0.2);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      
+      .recovery-explanation h4 {
+        color: #4fc3f7;
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      
+      .recovery-explanation p {
+        color: #b0b0b0;
+        font-size: 13px;
+        line-height: 1.5;
+        margin: 0 0 8px 0;
+      }
+      
+      .recovery-explanation p:last-child {
+        margin-bottom: 0;
+      }
+      
+      .recovery-features {
+        margin-top: 16px;
+      }
+      
+      .recovery-features h4 {
+        color: #e0e0e0;
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      
+      .recovery-features ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+      
+      .recovery-features li {
+        color: #b0b0b0;
+        font-size: 13px;
+        margin-bottom: 4px;
       }
       
       /* Context Transparency Styles */

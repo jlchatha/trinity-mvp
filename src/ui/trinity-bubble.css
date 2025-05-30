@@ -1,0 +1,358 @@
+/**
+ * Trinity Bubble Component Styles
+ * Professional glass morphism design matching Trinity's dark theme
+ */
+
+.trinity-bubble {
+  position: fixed;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(0.95);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.trinity-bubble--animated {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trinity-bubble--visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+/* Bubble inner container */
+.trinity-bubble__inner {
+  position: relative;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+/* Content area */
+.trinity-bubble__content {
+  padding: 12px 16px;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: 300px;
+}
+
+/* Size variants */
+.trinity-bubble--small .trinity-bubble__content {
+  padding: 8px 12px;
+  font-size: 12px;
+  max-width: 200px;
+}
+
+.trinity-bubble--large .trinity-bubble__content {
+  padding: 16px 20px;
+  font-size: 16px;
+  max-width: 400px;
+}
+
+/* Theme variants */
+.trinity-bubble--default .trinity-bubble__inner {
+  background: rgba(20, 20, 20, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.trinity-bubble--success .trinity-bubble__inner {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(34, 197, 94, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.trinity-bubble--warning .trinity-bubble__inner {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(245, 158, 11, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.trinity-bubble--error .trinity-bubble__inner {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(239, 68, 68, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.trinity-bubble--info .trinity-bubble__inner {
+  background: rgba(74, 158, 255, 0.2);
+  border-color: rgba(74, 158, 255, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(74, 158, 255, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Arrow positioning */
+.trinity-bubble__arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent;
+}
+
+/* Arrow for top position */
+.trinity-bubble--top.trinity-bubble--with-arrow .trinity-bubble__arrow {
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-top-color: rgba(20, 20, 20, 0.95);
+  border-bottom: none;
+}
+
+.trinity-bubble--top.trinity-bubble--success .trinity-bubble__arrow {
+  border-top-color: rgba(34, 197, 94, 0.2);
+}
+
+.trinity-bubble--top.trinity-bubble--warning .trinity-bubble__arrow {
+  border-top-color: rgba(245, 158, 11, 0.2);
+}
+
+.trinity-bubble--top.trinity-bubble--error .trinity-bubble__arrow {
+  border-top-color: rgba(239, 68, 68, 0.2);
+}
+
+.trinity-bubble--top.trinity-bubble--info .trinity-bubble__arrow {
+  border-top-color: rgba(74, 158, 255, 0.2);
+}
+
+/* Arrow for bottom position */
+.trinity-bubble--bottom.trinity-bubble--with-arrow .trinity-bubble__arrow {
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom-color: rgba(20, 20, 20, 0.95);
+  border-top: none;
+}
+
+.trinity-bubble--bottom.trinity-bubble--success .trinity-bubble__arrow {
+  border-bottom-color: rgba(34, 197, 94, 0.2);
+}
+
+.trinity-bubble--bottom.trinity-bubble--warning .trinity-bubble__arrow {
+  border-bottom-color: rgba(245, 158, 11, 0.2);
+}
+
+.trinity-bubble--bottom.trinity-bubble--error .trinity-bubble__arrow {
+  border-bottom-color: rgba(239, 68, 68, 0.2);
+}
+
+.trinity-bubble--bottom.trinity-bubble--info .trinity-bubble__arrow {
+  border-bottom-color: rgba(74, 158, 255, 0.2);
+}
+
+/* Arrow for left position */
+.trinity-bubble--left.trinity-bubble--with-arrow .trinity-bubble__arrow {
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left-color: rgba(20, 20, 20, 0.95);
+  border-right: none;
+}
+
+.trinity-bubble--left.trinity-bubble--success .trinity-bubble__arrow {
+  border-left-color: rgba(34, 197, 94, 0.2);
+}
+
+.trinity-bubble--left.trinity-bubble--warning .trinity-bubble__arrow {
+  border-left-color: rgba(245, 158, 11, 0.2);
+}
+
+.trinity-bubble--left.trinity-bubble--error .trinity-bubble__arrow {
+  border-left-color: rgba(239, 68, 68, 0.2);
+}
+
+.trinity-bubble--left.trinity-bubble--info .trinity-bubble__arrow {
+  border-left-color: rgba(74, 158, 255, 0.2);
+}
+
+/* Arrow for right position */
+.trinity-bubble--right.trinity-bubble--with-arrow .trinity-bubble__arrow {
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-right-color: rgba(20, 20, 20, 0.95);
+  border-left: none;
+}
+
+.trinity-bubble--right.trinity-bubble--success .trinity-bubble__arrow {
+  border-right-color: rgba(34, 197, 94, 0.2);
+}
+
+.trinity-bubble--right.trinity-bubble--warning .trinity-bubble__arrow {
+  border-right-color: rgba(245, 158, 11, 0.2);
+}
+
+.trinity-bubble--right.trinity-bubble--error .trinity-bubble__arrow {
+  border-right-color: rgba(239, 68, 68, 0.2);
+}
+
+.trinity-bubble--right.trinity-bubble--info .trinity-bubble__arrow {
+  border-right-color: rgba(74, 158, 255, 0.2);
+}
+
+/* Center position (no arrow) */
+.trinity-bubble--center {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+.trinity-bubble--center.trinity-bubble--visible {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Interactive elements within bubbles */
+.trinity-bubble__content a {
+  color: #4a9eff;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.trinity-bubble__content a:hover {
+  border-bottom-color: #4a9eff;
+}
+
+.trinity-bubble__content code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.trinity-bubble__content .trinity-bubble__actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.trinity-bubble__content .trinity-bubble__button {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.trinity-bubble__content .trinity-bubble__button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.trinity-bubble__content .trinity-bubble__button--primary {
+  background: rgba(74, 158, 255, 0.3);
+  border-color: rgba(74, 158, 255, 0.5);
+}
+
+.trinity-bubble__content .trinity-bubble__button--primary:hover {
+  background: rgba(74, 158, 255, 0.4);
+}
+
+/* Animation variants */
+.trinity-bubble--slide-up {
+  transform: translateY(10px) scale(0.95);
+}
+
+.trinity-bubble--slide-up.trinity-bubble--visible {
+  transform: translateY(0) scale(1);
+}
+
+.trinity-bubble--slide-down {
+  transform: translateY(-10px) scale(0.95);
+}
+
+.trinity-bubble--slide-down.trinity-bubble--visible {
+  transform: translateY(0) scale(1);
+}
+
+.trinity-bubble--fade {
+  transform: scale(1);
+}
+
+.trinity-bubble--fade.trinity-bubble--visible {
+  transform: scale(1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .trinity-bubble__content {
+    max-width: 250px;
+    font-size: 13px;
+  }
+  
+  .trinity-bubble--large .trinity-bubble__content {
+    max-width: 300px;
+  }
+  
+  .trinity-bubble__arrow {
+    border-width: 6px;
+  }
+  
+  .trinity-bubble--top.trinity-bubble--with-arrow .trinity-bubble__arrow,
+  .trinity-bubble--bottom.trinity-bubble--with-arrow .trinity-bubble__arrow {
+    bottom: -12px;
+  }
+  
+  .trinity-bubble--bottom.trinity-bubble--with-arrow .trinity-bubble__arrow {
+    top: -12px;
+  }
+  
+  .trinity-bubble--left.trinity-bubble--with-arrow .trinity-bubble__arrow,
+  .trinity-bubble--right.trinity-bubble--with-arrow .trinity-bubble__arrow {
+    right: -12px;
+  }
+  
+  .trinity-bubble--right.trinity-bubble--with-arrow .trinity-bubble__arrow {
+    left: -12px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .trinity-bubble__inner {
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  .trinity-bubble__content {
+    color: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .trinity-bubble,
+  .trinity-bubble--animated {
+    transition: opacity 0.1s ease;
+  }
+  
+  .trinity-bubble--visible {
+    transform: scale(1);
+  }
+}

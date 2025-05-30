@@ -28,7 +28,14 @@ class ContentTypeClassifier {
           /const\s+\w+\s*=/,
           /import\s+.*from/,
           /console\.log/,
-          /\w+\.\w+\(/
+          /\w+\.\w+\(/,
+          // Technical/factual content patterns
+          /##?\s+[A-Z][^#]*$/m, // Markdown headers (##, ###)
+          /\b(overview|characteristics|specifications|features|description|definition)\b/i,
+          /\b(inches|pounds|feet|meters|kilograms|centimeters)\b/i, // Measurements
+          /\b(originally|developed|bred|designed|built|manufactured)\b/i, // Technical language
+          /\b\d+[-–]\d+\s+(inches|pounds|feet|years|century)\b/i, // Measurement ranges
+          /\b(males?|females?|size|build|weight|height)\b/i // Physical characteristics
         ],
         scorer: (text) => {
           const lines = text.split(/[\n\r]+/).filter(line => line.trim());

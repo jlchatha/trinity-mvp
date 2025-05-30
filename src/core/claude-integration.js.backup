@@ -134,27 +134,7 @@ class ClaudeCodeSDK extends EventEmitter {
     
     // No fallback API key - users must provide their own
     this.log('error', 'No ANTHROPIC_API_KEY found. Please set your API key in environment variables.');
-    if (!process.env.TRINITY_UI_TEST) throw new Error('ANTHROPIC_API_KEY environment variable is required. Please set your Claude API key.');
-  }
-
-  /**
-   * Check if a query is simple and doesn't need full Trinity context
-   */
-  isSimpleQuery(prompt) {
-    // Short queries are likely simple
-    if (prompt.length < 100) {
-      // Check for complex indicators
-      const complexIndicators = [
-        /\b(implement|create|build|develop|analyze|debug|fix)\b/i,
-        /\b(code|function|class|system|architecture)\b/i,
-        /\b(trinity|overseer|worker|agent)\b/i
-      ];
-      
-      // If no complex indicators found, treat as simple
-      return !complexIndicators.some(pattern => pattern.test(prompt));
-    }
-    
-    return false;
+    throw new Error('ANTHROPIC_API_KEY environment variable is required. Please set your Claude API key.');
   }
 
   /**
@@ -193,19 +173,10 @@ class ClaudeCodeSDK extends EventEmitter {
       // Get system prompt from agent prompts if not provided
       let systemPrompt = options.systemPrompt;
       if (!systemPrompt) {
-        // Check if this is a simple query that doesn't need the full OVERSEER context
-        const isSimpleQuery = this.isSimpleQuery(prompt);
-        
-        if (isSimpleQuery) {
-          // Use minimal system prompt for simple queries
-          systemPrompt = "You are a helpful AI assistant. Answer the user's question directly and concisely.";
-        } else {
-          // Use full agent prompts for complex queries
-          const agentPrompts = require('./ai-prompts');
-          systemPrompt = options.role === 'OVERSEER' ? 
-            agentPrompts.OVERSEER.systemPrompt : 
-            agentPrompts.WORKER.systemPrompt;
-        }
+        const agentPrompts = require('./ai-prompts');
+        systemPrompt = options.role === 'OVERSEER' ? 
+          agentPrompts.OVERSEER.systemPrompt : 
+          agentPrompts.WORKER.systemPrompt;
       }
       
       // Send request via file communication

@@ -1,0 +1,63 @@
+/* FORCE LIGHT THEME - Ultra Aggressive Override */
+/* This should override EVERYTHING */
+
+* {
+  background-color: #ffffff !important;
+  color: #212121 !important;
+  background-image: none !important;
+}
+
+html, body {
+  background-color: #ffffff !important;
+  color: #212121 !important;
+}
+
+/* Override any element with style attribute */
+[style] {
+  background-color: #ffffff !important;
+  color: #212121 !important;
+}
+
+/* Common dark theme colors to override */
+[style*="0a0a0a"],
+[style*="1a1a1a"],
+[style*="2a2a2a"],
+[style*="rgb(10"],
+[style*="rgb(26"],
+[style*="rgb(42"] {
+  background-color: #ffffff !important;
+  color: #212121 !important;
+}
+
+/* Electron specific */
+webview {
+  background-color: #ffffff !important;
+}
+
+/* Panels and sections */
+.panel, .card, .section, .container {
+  background-color: #f5f5f5 !important;
+  border: 1px solid #e0e0e0 !important;
+}
+
+/* Headers */
+.header, header, .nav, nav {
+  background-color: #eeeeee !important;
+}
+
+/* Inputs */
+input, textarea, select {
+  background-color: #ffffff !important;
+  color: #212121 !important;
+  border: 1px solid #cccccc !important;
+}
+
+/* Force immediate repaint */
+* {
+  animation: forceRepaint 0.1s;
+}
+
+@keyframes forceRepaint {
+  from { opacity: 0.99; }
+  to { opacity: 1; }
+}

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trinity - Chat</title>
+    <link rel="stylesheet" href="trinity-design-system.css">
+    <link rel="stylesheet" href="theme-debug.css">
     <style>
         * {
             margin: 0;
@@ -12,9 +14,9 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
-            color: #ffffff;
+            font-family: var(--trinity-font-primary);
+            background: var(--trinity-gradient-background);
+            color: var(--trinity-text-primary);
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -33,26 +35,26 @@
 
         /* Header */
         .chat-header {
-            padding: 1rem 2rem;
-            background: rgba(20, 20, 20, 0.8);
+            padding: var(--trinity-space-md) var(--trinity-space-xl);
+            background: var(--trinity-bg-secondary);
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: var(--trinity-border-subtle);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .chat-title {
-            font-size: 1.25rem;
-            font-weight: 500;
+            font-size: var(--trinity-font-lg);
+            font-weight: var(--trinity-weight-medium);
         }
 
         .chat-status {
-            font-size: 0.875rem;
-            color: #a0a0a0;
+            font-size: var(--trinity-font-sm);
+            color: var(--trinity-text-muted);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: var(--trinity-space-sm);
         }
 
         .status-dot {
@@ -76,23 +78,23 @@
         /* Message bubbles */
         .message {
             max-width: 80%;
-            padding: 1rem 1.25rem;
-            border-radius: 1rem;
+            padding: var(--trinity-space-md) var(--trinity-space-lg);
+            border-radius: var(--trinity-radius-lg);
             position: relative;
-            animation: fadeIn 0.3s ease-out;
+            animation: fadeIn var(--trinity-duration-normal) var(--trinity-ease-entrance);
         }
 
         .message.user {
             align-self: flex-end;
-            background: linear-gradient(45deg, #4a9eff, #7c3aed);
-            color: white;
+            background: var(--trinity-gradient-primary);
+            color: var(--trinity-text-primary);
         }
 
         .message.assistant {
             align-self: flex-start;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: var(--trinity-border-subtle);
         }
 
         .message.system {
@@ -100,13 +102,117 @@
             background: rgba(255, 165, 0, 0.2);
             border: 1px solid rgba(255, 165, 0, 0.3);
             color: #ffa500;
-            font-size: 0.875rem;
+            font-size: var(--trinity-font-sm);
             max-width: 60%;
             text-align: center;
         }
 
         .message-content {
-            line-height: 1.6;
+            line-height: var(--trinity-line-normal);
+        }
+        
+        /* Content Type Styling */
+        .poem-content {
+            font-family: var(--trinity-font-literary);
+            line-height: var(--trinity-line-relaxed);
+            padding: var(--trinity-space-lg) var(--trinity-space-xl);
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid rgba(124, 58, 237, 0.5);
+            white-space: pre-wrap;
+            margin: 1em 0;
+            position: relative;
+        }
+        
+        .poem-content::before {
+            content: '📝 Poem';
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            font-size: var(--trinity-font-xs);
+            color: rgba(255, 255, 255, 0.4);
+            font-family: var(--trinity-font-primary);
+        }
+        
+        .code-block {
+            font-family: var(--trinity-font-code);
+            background: var(--trinity-bg-tertiary);
+            color: var(--trinity-text-secondary);
+            padding: var(--trinity-space-md);
+            border-radius: var(--trinity-radius-md);
+            overflow-x: auto;
+            white-space: pre;
+            line-height: var(--trinity-line-normal);
+            margin: 1em 0;
+            position: relative;
+            border: var(--trinity-border-subtle);
+        }
+        
+        .code-block::before {
+            content: attr(data-language);
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            font-size: var(--trinity-font-xs);
+            color: rgba(255, 255, 255, 0.4);
+            font-family: var(--trinity-font-primary);
+            text-transform: uppercase;
+        }
+        
+        /* Basic syntax highlighting */
+        .code-block .keyword {
+            color: #c678dd;
+        }
+        
+        .code-block .string {
+            color: #98c379;
+        }
+        
+        .code-block .number {
+            color: #d19a66;
+        }
+        
+        .code-block .function {
+            color: #61afef;
+        }
+        
+        .code-block .comment {
+            color: #5c6370;
+            font-style: italic;
+        }
+        
+        .code-block .class {
+            color: #e5c07b;
+        }
+        
+        .story-content {
+            font-family: var(--trinity-font-literary);
+            line-height: var(--trinity-line-relaxed);
+            padding: var(--trinity-space-lg);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--trinity-radius-md);
+            margin: 1em 0;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .story-content::before {
+            content: '📖 Story';
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            font-size: var(--trinity-font-xs);
+            color: rgba(255, 255, 255, 0.4);
+            font-family: var(--trinity-font-primary);
+        }
+        
+        .story-content p {
+            margin-bottom: 1em;
+        }
+        
+        .story-content h1, .story-content h2, .story-content h3 {
+            margin-top: 0;
+            margin-bottom: 1em;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .message-time {
@@ -114,29 +220,89 @@
             opacity: 0.7;
             margin-top: 0.5rem;
         }
+        
+        /* Recovery notification */
+        .recovery-notification {
+          position: fixed;
+          top: var(--trinity-space-lg);
+          right: var(--trinity-space-lg);
+          background: var(--trinity-bg-secondary);
+          backdrop-filter: blur(10px);
+          border: var(--trinity-border-accent);
+          border-radius: var(--trinity-radius-md);
+          padding: var(--trinity-space-sm) var(--trinity-space-md);
+          display: flex;
+          align-items: center;
+          gap: var(--trinity-space-sm);
+          box-shadow: var(--trinity-shadow-medium);
+          z-index: 1000;
+          transform: translateX(100%);
+          transition: transform var(--trinity-duration-normal) var(--trinity-ease-standard);
+          max-width: 320px;
+        }
+        
+        .recovery-notification.show {
+          transform: translateX(0);
+        }
+        
+        .recovery-icon {
+          font-size: var(--trinity-font-xl);
+          color: var(--trinity-accent-info);
+        }
+        
+        .recovery-content {
+          flex: 1;
+        }
+        
+        .recovery-title {
+          font-weight: var(--trinity-weight-semibold);
+          margin-bottom: 4px;
+          color: var(--trinity-text-secondary);
+        }
+        
+        .recovery-description {
+          font-size: var(--trinity-font-sm);
+          color: var(--trinity-text-muted);
+        }
+        
+        .recovery-close {
+          background: none;
+          border: none;
+          color: var(--trinity-text-muted);
+          font-size: var(--trinity-font-lg);
+          cursor: pointer;
+          padding: 4px;
+          border-radius: var(--trinity-radius-xs);
+          line-height: 1;
+        }
+        
+        .recovery-close:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: var(--trinity-text-secondary);
+        }
 
         /* Typing indicator */
         .typing-indicator {
             align-self: flex-start;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1rem;
-            padding: 1rem 1.25rem;
+            border: var(--trinity-border-subtle);
+            border-radius: var(--trinity-radius-lg);
+            padding: var(--trinity-space-md) var(--trinity-space-lg);
             display: none;
         }
 
         .typing-dots {
             display: flex;
-            gap: 0.25rem;
+            gap: var(--trinity-space-xs);
             align-items: center;
         }
 
         .typing-dot {
             width: 6px;
             height: 6px;
-            border-radius: 50%;
-            background: #a0a0a0;
+            border-radius: var(--trinity-radius-round);
+            background: var(--trinity-text-muted);
             animation: typingDot 1.4s infinite;
         }
 
@@ -150,15 +316,15 @@
 
         /* Input area */
         .input-container {
-            padding: 1rem 2rem;
-            background: rgba(20, 20, 20, 0.8);
+            padding: var(--trinity-space-md) var(--trinity-space-xl);
+            background: var(--trinity-bg-secondary);
             backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: var(--trinity-border-subtle);
         }
 
         .input-form {
             display: flex;
-            gap: 1rem;
+            gap: var(--trinity-space-md);
             align-items: flex-end;
         }
 
@@ -170,75 +336,56 @@
         .message-input {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 1rem;
+            border: var(--trinity-border-medium);
+            border-radius: var(--trinity-radius-lg);
             padding: 0.75rem 1rem;
-            color: white;
-            font-size: 1rem;
+            color: var(--trinity-text-primary);
+            font-size: var(--trinity-font-md);
             resize: none;
             min-height: 48px;
             max-height: 120px;
             font-family: inherit;
-            line-height: 1.5;
+            line-height: var(--trinity-line-normal);
         }
 
         .message-input:focus {
             outline: none;
-            border-color: #4a9eff;
+            border-color: var(--trinity-accent-primary);
             box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2);
         }
 
         .message-input::placeholder {
-            color: #a0a0a0;
+            color: var(--trinity-text-muted);
         }
 
         .send-button {
-            background: linear-gradient(45deg, #4a9eff, #7c3aed);
+            background: var(--trinity-gradient-primary);
             border: none;
-            border-radius: 50%;
+            border-radius: var(--trinity-radius-round);
             width: 48px;
             height: 48px;
-            color: white;
+            color: var(--trinity-text-primary);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            transition: all var(--trinity-duration-fast) var(--trinity-ease-standard);
         }
 
         .send-button:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+            box-shadow: var(--trinity-shadow-medium);
         }
 
         .send-button:disabled {
-            opacity: 0.5;
+            opacity: var(--trinity-opacity-low);
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        @keyframes typingDot {
-            0%, 60%, 100% { opacity: 0.3; }
-            30% { opacity: 1; }
-        }
+        /* Animations - Using predefined keyframes from design system */
+        /* These are now defined in trinity-design-system.css */
 
         /* Scrollbar styling */
         .messages-container::-webkit-scrollbar {
@@ -251,37 +398,90 @@
 
         .messages-container::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
+            border-radius: var(--trinity-radius-xs);
         }
 
         /* Back button */
         .back-button {
             background: none;
             border: none;
-            color: #a0a0a0;
+            color: var(--trinity-text-muted);
             cursor: pointer;
-            font-size: 1rem;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
+            font-size: var(--trinity-font-md);
+            padding: var(--trinity-space-sm);
+            border-radius: var(--trinity-radius-sm);
+            transition: all var(--trinity-duration-fast) var(--trinity-ease-standard);
         }
 
         .back-button:hover {
             background: rgba(255, 255, 255, 0.1);
-            color: white;
+            color: var(--trinity-text-primary);
+        }
+        
+        /* Theme toggle button */
+        .theme-toggle {
+            background: none;
+            border: var(--trinity-border-subtle);
+            color: var(--trinity-text-muted);
+            cursor: pointer;
+            font-size: var(--trinity-font-md);
+            padding: var(--trinity-space-xs) var(--trinity-space-sm);
+            border-radius: var(--trinity-radius-sm);
+            transition: all var(--trinity-duration-fast) var(--trinity-ease-standard);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--trinity-text-primary);
+            border-color: var(--trinity-accent-primary);
+        }
+        
+        .theme-icon-dark {
+            display: var(--trinity-icon-dark-display, inline);
+        }
+        
+        .theme-icon-light {
+            display: var(--trinity-icon-light-display, none);
+        }
+        
+        [data-theme="light"] .theme-icon-dark {
+            display: none;
+        }
+        
+        [data-theme="light"] .theme-icon-light {
+            display: inline;
         }
     </style>
+    <link rel="stylesheet" href="trinity-light-theme-fix.css">
 </head>
 <body>
+    <div class="recovery-notification" id="recovery-notification">
+        <div class="recovery-icon">🔄</div>
+        <div class="recovery-content">
+            <div class="recovery-title">Context Restored</div>
+            <div class="recovery-description">Trinity has automatically restored your conversation context.</div>
+        </div>
+        <button class="recovery-close" onclick="dismissRecoveryNotification()">×</button>
+    </div>
+
     <div class="chat-container">
         <div class="chat-header">
-            <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: var(--trinity-space-md);">
                 <button class="back-button" onclick="goBack()">← Back</button>
                 <div class="chat-title">Trinity Chat</div>
             </div>
-            <div class="chat-status">
-                <div class="status-dot"></div>
-                <span id="statusText">Connected</span>
+            <div style="display: flex; align-items: center; gap: var(--trinity-space-md);">
+                <button id="theme-toggle" class="theme-toggle" title="Toggle Theme" onclick="toggleTheme()">
+                    <span class="theme-icon-dark">🌙</span>
+                    <span class="theme-icon-light">☀️</span>
+                </button>
+                <div class="chat-status">
+                    <div class="status-dot"></div>
+                    <span id="statusText">Connected</span>
+                </div>
             </div>
         </div>
 
@@ -392,6 +592,155 @@
             messageInput.focus();
         }
 
+        // Format message content based on content type
+        function formatMessageContent(content) {
+            // Check if content is a poem (simplified detection)
+            if (isPoemContent(content)) {
+                return `<div class="poem-content">${content}</div>`;
+            }
+            
+            // Replace code blocks with syntax highlighted versions
+            content = formatCodeBlocks(content);
+            
+            // Check if content is a story
+            if (isStoryContent(content)) {
+                return `<div class="story-content">${content}</div>`;
+            }
+            
+            // Regular content
+            return content;
+        }
+        
+        // Check if content appears to be a poem
+        function isPoemContent(content) {
+            // Simple heuristic: Short lines, multiple line breaks
+            const lines = content.trim().split('\n');
+            
+            // If it explicitly mentions being a poem
+            if (content.match(/(?:here['']s a|I wrote a|a poem about|poem titled)/i)) {
+                return true;
+            }
+            
+            // Check for poem structure (at least 4 short lines with consistent pattern)
+            if (lines.length >= 4) {
+                const shortLines = lines.filter(line => line.trim().length > 0 && line.trim().length < 50);
+                return shortLines.length >= 4 && (shortLines.length / lines.length) > 0.7;
+            }
+            
+            return false;
+        }
+        
+        // Check if content appears to be a story
+        function isStoryContent(content) {
+            // Check for story indicators
+            if (content.match(/(?:here['']s a story|once upon a time|chapter|the end)/i)) {
+                return true;
+            }
+            
+            // Check for narrative structure (longer content with paragraphs)
+            const paragraphs = content.split('\n\n');
+            return content.length > 500 && paragraphs.length >= 3;
+        }
+        
+        // Format code blocks with basic syntax coloring
+        function formatCodeBlocks(content) {
+            // Replace code blocks with formatted versions
+            return content.replace(/```(\w+)?\s*\n([\s\S]*?)```/g, (match, language, code) => {
+                const lang = language || 'text';
+                
+                // Escape HTML in code
+                let escapedCode = code
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                
+                // Apply basic syntax highlighting based on language
+                if (['js', 'javascript', 'typescript', 'ts'].includes(lang.toLowerCase())) {
+                    escapedCode = applyJavaScriptHighlighting(escapedCode);
+                } else if (['py', 'python'].includes(lang.toLowerCase())) {
+                    escapedCode = applyPythonHighlighting(escapedCode);
+                } else if (['html', 'xml'].includes(lang.toLowerCase())) {
+                    escapedCode = applyHtmlHighlighting(escapedCode);
+                } else if (['css', 'scss', 'sass'].includes(lang.toLowerCase())) {
+                    escapedCode = applyCssHighlighting(escapedCode);
+                }
+                
+                return `<pre class="code-block" data-language="${lang}"><code>${escapedCode}</code></pre>`;
+            });
+        }
+        
+        // Apply JavaScript/TypeScript syntax highlighting
+        function applyJavaScriptHighlighting(code) {
+            // Keywords
+            code = code.replace(/\b(const|let|var|function|class|extends|implements|import|export|from|return|if|else|for|while|do|switch|case|break|continue|new|this|super|try|catch|finally|throw|async|await|yield|typeof|instanceof|in|of|delete|void|null|undefined|true|false)\b/g, '<span class="keyword">$1</span>');
+            
+            // Strings
+            code = code.replace(/(['"`])(.*?)\1/g, '<span class="string">$1$2$1</span>');
+            
+            // Numbers
+            code = code.replace(/\b(\d+(\.\d+)?)\b/g, '<span class="number">$1</span>');
+            
+            // Functions
+            code = code.replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g, '<span class="function">$1</span>(');
+            
+            // Comments
+            code = code.replace(/(\/\/.*$)/gm, '<span class="comment">$1</span>');
+            code = code.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="comment">$1</span>');
+            
+            // Classes
+            code = code.replace(/\b(class)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g, '<span class="keyword">class</span> <span class="class">$2</span>');
+            
+            return code;
+        }
+        
+        // Apply Python syntax highlighting
+        function applyPythonHighlighting(code) {
+            // Keywords
+            code = code.replace(/\b(def|class|import|from|as|return|if|elif|else|for|while|break|continue|try|except|finally|raise|with|in|is|not|and|or|True|False|None|lambda|global|nonlocal|pass|assert)\b/g, '<span class="keyword">$1</span>');
+            
+            // Strings
+            code = code.replace(/(['"])(.*?)\1/g, '<span class="string">$1$2$1</span>');
+            
+            // Numbers
+            code = code.replace(/\b(\d+(\.\d+)?)\b/g, '<span class="number">$1</span>');
+            
+            // Functions
+            code = code.replace(/\b(def)\s+([a-zA-Z_][a-zA-Z0-9_]*)/g, '<span class="keyword">def</span> <span class="function">$2</span>');
+            
+            // Comments
+            code = code.replace(/(#.*$)/gm, '<span class="comment">$1</span>');
+            
+            // Classes
+            code = code.replace(/\b(class)\s+([a-zA-Z_][a-zA-Z0-9_]*)/g, '<span class="keyword">class</span> <span class="class">$2</span>');
+            
+            return code;
+        }
+        
+        // Apply HTML syntax highlighting
+        function applyHtmlHighlighting(code) {
+            // Tags
+            code = code.replace(/(&lt;\/?)([a-zA-Z0-9]+)(\s.*?)?(&gt;)/g, '$1<span class="keyword">$2</span>$3$4');
+            
+            // Attributes
+            code = code.replace(/(\s)([a-zA-Z0-9-]+)(=)(['"])(.*?)\4/g, '$1<span class="function">$2</span>$3<span class="string">$4$5$4</span>');
+            
+            return code;
+        }
+        
+        // Apply CSS syntax highlighting
+        function applyCssHighlighting(code) {
+            // Selectors
+            code = code.replace(/([a-zA-Z0-9_\-\.\#\[\]]+\s*\{)/g, '<span class="function">$1</span>');
+            
+            // Properties
+            code = code.replace(/(\s*)([a-zA-Z\-]+)(\s*:\s*)(.*?)(;|$)/g, '$1<span class="keyword">$2</span>$3<span class="string">$4</span>$5');
+            
+            // Values with units
+            code = code.replace(/(\d+)(px|em|rem|%|vh|vw|ex|ch|cm|mm|in|pt|pc|vmin|vmax)/g, '<span class="number">$1$2</span>');
+            
+            return code;
+        }
+
         function addMessage(role, content) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
@@ -399,8 +748,11 @@
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
+            // Only apply formatting to assistant messages
+            const formattedContent = role === 'assistant' ? formatMessageContent(content) : content;
+            
             messageDiv.innerHTML = `
-                <div class="message-content">${content}</div>
+                <div class="message-content">${formattedContent}</div>
                 <div class="message-time">${timeString}</div>
             `;
             
@@ -422,6 +774,49 @@
         function goBack() {
             window.history.back();
         }
+        
+        function toggleTheme() {
+            // We'll now use the status bar theme toggle implementation
+            if (window.trinityStatusBar) {
+                window.trinityStatusBar.toggleTheme();
+            } else if (window.trinityThemeSwitcher) {
+                const newTheme = window.trinityThemeSwitcher.toggleTheme();
+                console.log(`Switched to ${newTheme} theme`);
+            }
+        }
+
+        // Show recovery notification
+        function showRecoveryNotification() {
+            const notification = document.getElementById('recovery-notification');
+            if (!notification) return;
+            
+            notification.classList.add('show');
+            
+            // Auto-dismiss after 10 seconds
+            setTimeout(() => {
+                dismissRecoveryNotification();
+            }, 10000);
+        }
+
+        // Dismiss recovery notification
+        function dismissRecoveryNotification() {
+            const notification = document.getElementById('recovery-notification');
+            if (!notification) return;
+            
+            notification.classList.remove('show');
+        }
+
+        // Update recovery status indicator in status bar
+        function updateRecoveryStatusIndicator(status) {
+            const statusText = document.getElementById('statusText');
+            const statusDot = document.querySelector('.status-dot');
+            
+            if (status.recoveryNeeded && status.recoverySuccessful) {
+                statusText.textContent = 'Recovered';
+                statusDot.style.background = '#4caf50';
+                statusText.title = `Context recovered at ${new Date(status.lastTimestamp).toLocaleString()}`;
+            }
+        }
 
         // Initialize chat
         document.addEventListener('DOMContentLoaded', async () => {
@@ -438,11 +833,30 @@
                     statusText.textContent = 'Connecting...';
                 }
                 
+                // Check for recent auto-compact recovery
+                try {
+                    const autoCompactStatus = await window.trinityAPI.autoCompact.getStatus();
+                    console.log('Auto-compact status:', autoCompactStatus);
+                    
+                    if (autoCompactStatus.recoveryNeeded && autoCompactStatus.recoverySuccessful) {
+                        showRecoveryNotification();
+                        updateRecoveryStatusIndicator(autoCompactStatus);
+                    }
+                } catch (error) {
+                    console.error('Failed to check recovery status:', error);
+                }
+                
             } catch (error) {
                 console.error('Failed to get system info:', error);
                 statusText.textContent = 'Offline';
             }
         });
     </script>
+    
+    <!-- Trinity UI Components -->
+    <script src="theme-switcher.js"></script>
+    <script src="trinity-status-bar.js"></script>
+    <script src="theme-toggle-fix.js"></script>
+    <script src="auto-theme-toggle.js"></script>
 </body>
 </html>

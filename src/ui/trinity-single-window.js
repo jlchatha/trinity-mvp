@@ -592,13 +592,13 @@ class TrinitySingleWindow {
         display: grid;
         grid-template-columns: 1fr 300px;
         height: 100%;
-        background: #0f0f0f;
+        background: var(--trinity-bg-primary);
         gap: 1px;
       }
       
       /* Chat Panel (Primary) */
       .trinity-chat-panel {
-        background: #1a1a1a;
+        background: var(--trinity-bg-secondary);
         display: flex;
         flex-direction: column;
         height: 100%;
@@ -612,7 +612,7 @@ class TrinitySingleWindow {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: rgba(0, 0, 0, 0.3);
+        background: var(--trinity-bg-secondary, rgba(0, 0, 0, 0.3));
       }
       
       .trinity-chat-header h2 {
@@ -680,8 +680,8 @@ class TrinitySingleWindow {
       }
       
       .trinity-quick-start {
-        background: rgba(79, 195, 247, 0.1);
-        border: 1px solid rgba(79, 195, 247, 0.3);
+        background: var(--trinity-bg-highlight, rgba(79, 195, 247, 0.1));
+        border: 1px solid var(--trinity-accent-primary, rgba(79, 195, 247, 0.3));
         border-radius: 8px;
         padding: 16px;
         text-align: left;
@@ -701,7 +701,7 @@ class TrinitySingleWindow {
       .trinity-chat-input-area {
         padding: 16px 20px;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(0, 0, 0, 0.2);
+        background: var(--trinity-bg-secondary, rgba(0, 0, 0, 0.2));
         flex-shrink: 0; /* Prevent input area from shrinking */
         position: relative;
         z-index: 10; /* Ensure input stays on top */
@@ -715,11 +715,11 @@ class TrinitySingleWindow {
       
       #trinity-chat-input {
         flex: 1;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: var(--trinity-bg-input, rgba(255, 255, 255, 0.1));
+        border: 1px solid var(--trinity-border-primary, rgba(255, 255, 255, 0.2));
         border-radius: 8px;
         padding: 12px;
-        color: #e0e0e0;
+        color: var(--trinity-text-primary);
         font-family: inherit;
         font-size: 14px;
         resize: vertical;
@@ -729,8 +729,8 @@ class TrinitySingleWindow {
       
       #trinity-chat-input:focus {
         outline: none;
-        border-color: rgba(79, 195, 247, 0.5);
-        background: rgba(255, 255, 255, 0.15);
+        border-color: var(--trinity-accent-primary, rgba(79, 195, 247, 0.5));
+        background: var(--trinity-bg-input-focus, rgba(255, 255, 255, 0.15));
       }
       
       .trinity-send-btn {
@@ -783,9 +783,9 @@ class TrinitySingleWindow {
       }
       
       .trinity-message.assistant .trinity-message-content {
-        background: rgba(255, 255, 255, 0.1);
-        color: #e0e0e0;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--trinity-bg-message, rgba(255, 255, 255, 0.1));
+        color: var(--trinity-text-primary);
+        border: 1px solid var(--trinity-border-subtle, rgba(255, 255, 255, 0.1));
         border-bottom-left-radius: 4px;
       }
       
@@ -949,7 +949,7 @@ class TrinitySingleWindow {
       
       /* Side Panels */
       .trinity-side-panels {
-        background: #161616;
+        background: var(--trinity-bg-tertiary);
         display: flex;
         flex-direction: column;
         height: 100%;

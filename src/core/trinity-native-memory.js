@@ -135,11 +135,12 @@ class TrinityNativeMemory {
    * Build context for Claude Code to read
    * Core functionality: selective file loading with relevance scoring
    */
-  async buildContextForClaude(message) {
+  async buildContextForClaude(message, sessionContext = null) {
 
     console.log(`🔍 MEMORY_TRACE: buildContextForClaude called with: "${message}" (type: ${typeof message})`);
     console.log(`🔍 MEMORY_TRACE: message length: ${message?.length}`);
     console.log(`🔍 MEMORY_TRACE: message constructor: ${message?.constructor?.name}`);
+    console.log(`🔍 MEMORY_TRACE: sessionContext:`, sessionContext);
     
     if (!message || typeof message !== 'string') {
       console.log('🚨 MEMORY_TRACE: Invalid message parameter!');
@@ -165,7 +166,7 @@ class TrinityNativeMemory {
       
       // Find relevant conversation IDs
       this.memoryTrace('SEARCH_START', 'Finding relevant conversations', message);
-      const relevantIds = this.findRelevantConversations(message);
+      const relevantIds = this.findRelevantConversations(message, sessionContext);
       this.memoryTrace('SEARCH_RESULT', 'Found relevant conversations', relevantIds);
       
       if (relevantIds.length === 0) {
@@ -339,12 +340,14 @@ class TrinityNativeMemory {
   /**
    * Find relevant conversations based on message content
    * Uses topic matching, content type, and recency scoring
+   * Now includes session context awareness for current session prioritization
    */
-  findRelevantConversations(message) {
+  findRelevantConversations(message, sessionContext = null) {
     const relevantIds = new Set();
     
     // AGGRESSIVE TRACE: Log all parameters received
     console.log(`[TRACE] findRelevantConversations called with: "${message}" (type: ${typeof message})`);
+    console.log(`[TRACE] sessionContext:`, sessionContext);
     console.log(`[TRACE] Stack trace:`, new Error().stack.split('\n').slice(1, 4).join('\n'));
     
     // CRITICAL: Validate message parameter before processing
@@ -355,11 +358,49 @@ class TrinityNativeMemory {
     
     const messageTokens = this.tokenize(message.toLowerCase());
     
-    // EMERGENCY FIX: Handle "just wrote" clarification queries with temporal proximity
+    // SESSION PRIORITY: Check if this is a current session query
+    const isCurrentSessionQuery = /\b(this\s+conversation|this\s+session|just\s+wrote|you\s+wrote)\b/i.test(message);
+    const isLineQuery = /\b(line|verse)\s+\d+/i.test(message) || /what('?s|\s+is)\s+(line|verse)/i.test(message);
+    
+    // PRIORITY #1: Current session conversations (if session context provided)
+    if (sessionContext && isCurrentSessionQuery) {
+      // Handle both string and object session context
+      const sessionId = typeof sessionContext === 'string' ? sessionContext : sessionContext.sessionId;
+      const sessionTimestamp = typeof sessionContext === 'object' ? sessionContext.timestamp : null;
+      
+      console.log(`[SESSION-PRIORITY] Prioritizing current session: ${sessionId || 'unknown'}`);
+      
+      // DEBUG: Log all conversation sessions for debugging
+      console.log(`[SESSION-DEBUG] Available conversations:`);
+      Array.from(this.conversations.values()).forEach(conv => {
+        console.log(`  - ${conv.id}: sessionId="${conv.sessionId}", timestamp=${conv.timestamp}`);
+      });
+      
+      // Find conversations from current session
+      const currentSessionConvs = Array.from(this.conversations.values())
+        .filter(conv => {
+          const matchesSession = sessionId && conv.sessionId === sessionId;
+          const isRecent = sessionTimestamp && 
+            Math.abs(new Date(conv.timestamp) - new Date(sessionTimestamp)) < (10 * 60 * 1000); // 10 minutes
+          console.log(`[SESSION-FILTER] Checking ${conv.id}: sessionId="${conv.sessionId}" vs "${sessionId}" = ${matchesSession}`);
+          return matchesSession || isRecent;
+        })
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      if (currentSessionConvs.length > 0) {
+        console.log(`[SESSION-PRIORITY] Found ${currentSessionConvs.length} current session conversations`);
+        currentSessionConvs.forEach(conv => relevantIds.add(conv.id));
+        // Return early for current session queries - prioritize session over global search
+        if (relevantIds.size > 0) {
+          return Array.from(relevantIds);
+        }
+      }
+    }
+    
+    // FALLBACK: Original logic for historical/global search
     const isJustWroteQuery = /\b(just\s+wrote|recently\s+wrote|you\s+wrote|you\s+just\s+wrote)\b/i.test(message);
     const isTheOneQuery = /\b(the\s+one|that\s+one)\s+you\s+.*\b(wrote|created|made)\b/i.test(message);
     const isClarificationQuery = /^(no|not|that|the)\s+/i.test(message.trim());
-    const isLineQuery = /\b(line|verse)\s+\d+/i.test(message) || /what('?s|\s+is)\s+(line|verse)/i.test(message);
     
     // Handle clarification queries OR line queries about recent content
     if ((isJustWroteQuery || isTheOneQuery) && isClarificationQuery || isLineQuery) {
@@ -663,7 +704,10 @@ class TrinityNativeMemory {
         const hasFullContent = conv.assistantResponse.length > 200 && 
                               (conv.assistantResponse.includes('```') || 
                                conv.assistantResponse.includes('contents of the poem') ||
-                               conv.assistantResponse.includes('display it'));
+                               conv.assistantResponse.includes('display it') ||
+                               // 🔧 CONTENT PARSING FIX: Include creative content as authoritative
+                               (conv.contentType === 'poem') ||
+                               (conv.contentType === 'story'));
         
         if (hasFullContent) {
           authoritativeContent.push(conv);
@@ -680,7 +724,49 @@ class TrinityNativeMemory {
         authoritativeContent.forEach((conv, index) => {
           contextText += `--- Source ${index + 1}: ${conv.contentType || 'content display'} ---\n`;
           contextText += `User: ${conv.userMessage}\n`;
-          contextText += `Assistant: ${conv.assistantResponse}\n\n`;
+          contextText += `Assistant: ${conv.assistantResponse}\n`;
+          
+          // 🔧 CONTENT PARSING FIX: Extract pure creative content for line queries
+          if (conv.contentType === 'poem' && isLineQuery) {
+            const extractedPoem = this.extractPureCreativeContent(conv.assistantResponse, 'poem');
+            if (extractedPoem !== conv.assistantResponse) {
+              contextText += `\n--- PURE POEM CONTENT (for line counting) ---\n`;
+              contextText += `${extractedPoem}\n`;
+            }
+          }
+          
+          // 🔧 STORY CONTENT ENHANCEMENT: Add pure content section for story line queries
+          if (conv.contentType === 'story' && isLineQuery) {
+            try {
+              // Apply evidence-based extraction
+              const extractedStory = this.extractPureCreativeContent(conv.assistantResponse, 'story');
+              
+              // VALIDATION: Only add separate section if extraction was successful
+              if (extractedStory && extractedStory !== conv.assistantResponse) {
+                // Add clear separation section
+                contextText += `\n--- PURE STORY CONTENT (for line counting) ---\n`;
+                contextText += `${extractedStory}\n`;
+                
+                // QUALITY GATE: Log successful separation
+                this.memoryTrace?.('SEPARATION_SUCCESS', 'Story content separated successfully', { 
+                  originalLength: conv.assistantResponse.length,
+                  extractedLength: extractedStory.length
+                });
+              } else {
+                // QUALITY GATE: Log extraction failure
+                this.memoryTrace?.('SEPARATION_FAILED', 'Story extraction returned unchanged content', { 
+                  contentType: conv.contentType
+                });
+              }
+            } catch (error) {
+              // QUALITY GATE: Error handling following Trinity standards
+              this.memoryTrace?.('SEPARATION_ERROR', 'Error in story content separation', { 
+                error: error.message
+              });
+            }
+          }
+          
+          contextText += `\n`;
         });
       }
       
@@ -736,6 +822,202 @@ class TrinityNativeMemory {
     return contextText;
   }
   
+  /**
+   * Extract pure creative content from conversational wrappers
+   * @param {string} response - Full assistant response
+   * @param {string} contentType - Type of content (poem, story, etc.)
+   * @returns {string} - Extracted creative content or original response
+   */
+  extractPureCreativeContent(response, contentType) {
+    if (contentType === 'poem') {
+      // Pattern 1: Markdown-style poems with --- separator (NEW - for current bug)
+      const markdownMatch = response.match(/^(.*?)\n---\n/s);
+      if (markdownMatch) {
+        let content = markdownMatch[1].trim();
+        // Remove markdown header if present
+        content = content.replace(/^#[^#\n]*\n/, '');
+        return content.trim();
+      }
+      
+      // Pattern 2: "Here's a poem for you:" format (NEW - most recent bug)
+      const poemForYouMatch = response.match(/Here's a poem for you:\s*\n([^\n]+)\s*\n\n(.*?)(?:\n\nWould you like|I find poetry|$)/s);
+      if (poemForYouMatch) {
+        // Extract title and content
+        const title = poemForYouMatch[1].trim();
+        let content = poemForYouMatch[2].trim();
+        
+        // If title isn't already in content, add it for completeness
+        if (!content.startsWith(title)) {
+          content = title + '\n\n' + content;
+        }
+        
+        return content;
+      }
+      
+      // Pattern 3: Extract content between poem title and closing comment
+      const poemMatch = response.match(/Here's "([^"]+)":\s*\n\n(.*?)\n\n(?:I hope|This poem|Enjoy|Beautiful)/s);
+      if (poemMatch) {
+        return poemMatch[2].trim();
+      }
+      
+      // Pattern 4: Extract content after title until conversational ending
+      const titleMatch = response.match(/(?:Here's|Title:)\s*"?([^":\n]+)"?:?\s*\n\n(.*?)(?:\n\n(?:I\s|This\s|Hope)|$)/s);
+      if (titleMatch) {
+        return titleMatch[2].trim();
+      }
+      
+      // Pattern 5: Extract simple poem without formal title
+      const simpleMatch = response.match(/(?:Here's a poem|I wrote you).*?:\s*\n([A-Z][^\n]*\n(?:[^\n]*\n)*?[^\n]*)\n(?:Hope|This)/s);
+      if (simpleMatch) {
+        return simpleMatch[1].trim();
+      }
+      
+      // Pattern 6: Look for poem structure without clear title (relaxed)
+      const poemStructureMatch = response.match(/\n\n([A-Z][^\n]*\n(?:[^\n]*\n){2,}[^\n]*)\n\n/);
+      if (poemStructureMatch) {
+        return poemStructureMatch[1].trim();
+      }
+      
+      // Pattern 7: Haiku or very short poems
+      const haikuMatch = response.match(/Here's "([^"]+)":\s*\n\n((?:[^\n]*\n){2,4}[^\n]*)\n\n/);
+      if (haikuMatch) {
+        return haikuMatch[2].trim();
+      }
+      
+      // Pattern 8: Fallback - extract everything before the last paragraph
+      // This is useful when all other patterns fail
+      const lines = response.split('\n');
+      const nonEmptyLines = lines.filter(line => line.trim().length > 0);
+      
+      // If we have multiple paragraphs, assume the last one is the conversational wrapper
+      if (nonEmptyLines.length > 5) {
+        // Find the last empty line index from the end
+        let lastEmptyLineIndex = lines.length - 1;
+        for (let i = lines.length - 1; i >= 0; i--) {
+          if (lines[i].trim() === '') {
+            lastEmptyLineIndex = i;
+            break;
+          }
+        }
+        
+        // Extract everything before the last paragraph
+        if (lastEmptyLineIndex > 0) {
+          return lines.slice(0, lastEmptyLineIndex).join('\n').trim();
+        }
+      }
+    }
+    
+    if (contentType === 'story') {
+      // Pattern 1: Standard story format - "Here's a story about..."
+      const standardStory = response.match(/Here's a (?:short |quick )?story.*?:\s*\n(?:([^\n]+)\s*\n\n)?(.*?)(?:\n\n(?:The End|I hope|Would you like|This story))/s);
+      if (standardStory) {
+        this.memoryTrace?.('PATTERN_MATCH', 'Standard story pattern matched', { pattern: 'standard' });
+        // For regression test compatibility, only return the content
+        return standardStory[2].trim();
+      }
+      
+      // Pattern 2: Titled story format - "Here's 'Title':"
+      const titledStory = response.match(/Here's "([^"]+)":\s*\n\n(?:[^\n]+\n\n)?(.*?)(?:\n\n(?:The End|I hope|Would you like|This story))/s);
+      if (titledStory) {
+        this.memoryTrace?.('PATTERN_MATCH', 'Titled story pattern matched', { pattern: 'titled' });
+        // For regression test compatibility - just extract the main text without title repetition
+        return titledStory[2].trim();
+      }
+      
+      // Pattern 3: Story with explicit title line
+      const explicitTitleStory = response.match(/^([^:\n]+):\s*\n\n(.*?)(?:\n\n(?:The End|I hope|Would you like|This story)|$)/s);
+      if (explicitTitleStory) {
+        this.memoryTrace?.('PATTERN_MATCH', 'Explicit title story pattern matched', { pattern: 'explicitTitle' });
+        return explicitTitleStory[2].trim();
+      }
+      
+      // Pattern 4: Chapter-based stories
+      const chapterStory = response.match(/(?:Chapter \d+[:\s]*\n\n)(.*?)(?:\n\n(?:The End|I hope|Would you like|This story|Chapter \d+)|$)/s);
+      if (chapterStory) {
+        this.memoryTrace?.('PATTERN_MATCH', 'Chapter story pattern matched', { pattern: 'chapter' });
+        // For multi-chapter stories, we need to extract all chapters
+        const chapters = response.match(/Chapter \d+[:\s]*\n\n(.*?)(?=\n\nChapter \d+|\n\nThe End|\n\nI hope|\n\nWould you like|\n\nThis story|$)/sg);
+        if (chapters && chapters.length > 1) {
+          return chapters.map(chapter => {
+            const content = chapter.match(/Chapter \d+[:\s]*\n\n(.*)/s);
+            return content ? content[1].trim() : chapter.trim();
+          }).join('\n\n');
+        }
+        return chapterStory[1].trim();
+      }
+      
+      // Pattern 5: Once upon a time format
+      const onceUponATimeStory = response.match(/Once upon a time[^.]*\.(.*?)(?:\n\n(?:The End|I hope|Would you like|This story)|$)/s);
+      if (onceUponATimeStory) {
+        this.memoryTrace?.('PATTERN_MATCH', 'Once upon a time pattern matched', { pattern: 'onceUponATime' });
+        return `Once upon a time${onceUponATimeStory[0]}`.trim();
+      }
+      
+      // Pattern 6: Scene break format with *** separators
+      const sceneBreakStory = response.match(/(.*?\n\s*\*\*\*+\s*\n.*?)(?:\n\n(?:The End|I hope|Would you like|This story)|$)/s);
+      if (sceneBreakStory) {
+        this.memoryTrace?.('PATTERN_MATCH', 'Scene break pattern matched', { pattern: 'sceneBreak' });
+        return sceneBreakStory[1].trim();
+      }
+      
+      // Pattern 7: Dialogue-heavy stories
+      const dialogueStory = response.match(/.*?["'][^"']+["'].*?(?:said|asked|replied|whispered|shouted|exclaimed).*?(.*?)(?:\n\n(?:The End|I hope|Would you like|This story)|$)/s);
+      if (dialogueStory) {
+        this.memoryTrace?.('PATTERN_MATCH', 'Dialogue story pattern matched', { pattern: 'dialogue' });
+        // Get the whole response up to the conclusion
+        const endMatch = response.match(/(.*?)(?:\n\n(?:The End|I hope|Would you like|This story)|$)/s);
+        return endMatch ? endMatch[1].trim() : response.trim();
+      }
+      
+      // CRITICAL: Fallback pattern for unrecognized formats
+      const fallbackStory = this.extractStoryFallback(response);
+      if (fallbackStory) {
+        this.memoryTrace?.('PATTERN_MATCH', 'Fallback pattern used', { pattern: 'fallback' });
+        return fallbackStory;
+      }
+      
+      // If no pattern matches, return the original response
+      this.memoryTrace?.('EXTRACTION_FAILED', 'No story patterns matched', { contentType: 'story' });
+    }
+    
+    // Return original if no pattern matches
+    return response;
+  }
+
+  /**
+   * Helper method for fallback story extraction
+   * Attempts to extract story content when standard patterns fail
+   */
+  extractStoryFallback(response) {
+    // Extract everything before the last paragraph (likely the wrapper)
+    const paragraphs = response.split('\n\n');
+    if (paragraphs.length > 1) {
+      // Check if the last paragraph looks like a conclusion
+      const lastParagraph = paragraphs[paragraphs.length - 1].toLowerCase();
+      if (lastParagraph.includes('hope you') || 
+          lastParagraph.includes('would you like') || 
+          lastParagraph.includes('enjoy') || 
+          lastParagraph.includes('this story')) {
+        // Return everything except the last paragraph
+        return paragraphs.slice(0, -1).join('\n\n').trim();
+      }
+    }
+    
+    // Try to find a narrative structure
+    const narrativeStart = response.match(/((?:In a|Long ago|There (?:once )?was|It was|The).*?\.)(.+)/s);
+    if (narrativeStart) {
+      // Find the end of the narrative
+      const endMatch = narrativeStart[2].match(/(.*?)(?:\n\n(?:I hope|Would you like|This story|If you))/s);
+      if (endMatch) {
+        return (narrativeStart[1] + endMatch[1]).trim();
+      }
+      return response.trim();
+    }
+    
+    // No clear pattern found, return null to indicate fallback failed
+    return null;
+  }
+
   /**
    * Helper methods
    */

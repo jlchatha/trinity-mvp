@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trinity Bubble Component Demo</title>
+    <link rel="stylesheet" href="trinity-bubble.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .demo-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .demo-title {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            background: linear-gradient(45deg, #4a9eff, #7c3aed, #f59e0b);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 3s ease infinite;
+            margin-bottom: 1rem;
+        }
+
+        .demo-subtitle {
+            font-size: 1.2rem;
+            color: #a0a0a0;
+            font-weight: 300;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .demo-section {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .demo-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+
+        .demo-section p {
+            color: #a0a0a0;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .demo-button {
+            padding: 12px 24px;
+            background: rgba(74, 158, 255, 0.2);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            border-radius: 8px;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .demo-button:hover {
+            background: rgba(74, 158, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .demo-button--success {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .demo-button--success:hover {
+            background: rgba(34, 197, 94, 0.3);
+        }
+
+        .demo-button--warning {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .demo-button--warning:hover {
+            background: rgba(245, 158, 11, 0.3);
+        }
+
+        .demo-button--error {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .demo-button--error:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .code-example {
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 14px;
+            color: #a0a0a0;
+            overflow-x: auto;
+        }
+
+        .position-demo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            position: relative;
+        }
+
+        .center-target {
+            padding: 16px 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .floating-buttons {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 1000;
+        }
+
+        .floating-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(74, 158, 255, 0.2);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .floating-button:hover {
+            background: rgba(74, 158, 255, 0.3);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <header class="demo-header">
+            <h1 class="demo-title">Trinity Bubble Component</h1>
+            <p class="demo-subtitle">Professional UI bubbles with glass morphism design</p>
+        </header>
+
+        <!-- Basic Tooltips Section -->
+        <section class="demo-section">
+            <h2>Basic Tooltips</h2>
+            <p>Hover over these buttons to see basic tooltip functionality.</p>
+            
+            <div class="demo-grid">
+                <button class="demo-button" id="tooltip-top">Top Tooltip</button>
+                <button class="demo-button" id="tooltip-bottom">Bottom Tooltip</button>
+                <button class="demo-button" id="tooltip-left">Left Tooltip</button>
+                <button class="demo-button" id="tooltip-right">Right Tooltip</button>
+            </div>
+
+            <div class="code-example">
+// Basic tooltip usage
+TrinityBubble.tooltip(document.getElementById('tooltip-top'), 'This tooltip appears on top!');
+            </div>
+        </section>
+
+        <!-- Theme Variants Section -->
+        <section class="demo-section">
+            <h2>Theme Variants</h2>
+            <p>Different visual themes for various use cases.</p>
+            
+            <div class="demo-grid">
+                <button class="demo-button" id="theme-default">Default Theme</button>
+                <button class="demo-button demo-button--success" id="theme-success">Success Theme</button>
+                <button class="demo-button demo-button--warning" id="theme-warning">Warning Theme</button>
+                <button class="demo-button demo-button--error" id="theme-error">Error Theme</button>
+            </div>
+        </section>
+
+        <!-- Interactive Bubbles Section -->
+        <section class="demo-section">
+            <h2>Interactive Bubbles</h2>
+            <p>Click-triggered bubbles with interactive content.</p>
+            
+            <div class="demo-grid">
+                <button class="demo-button" id="click-bubble">Click Me</button>
+                <button class="demo-button" id="html-content">Rich Content</button>
+                <button class="demo-button" id="action-bubble">With Actions</button>
+            </div>
+        </section>
+
+        <!-- Notifications Section -->
+        <section class="demo-section">
+            <h2>Notifications</h2>
+            <p>Center-screen notifications with auto-hide functionality.</p>
+            
+            <div class="demo-grid">
+                <button class="demo-button" id="notification-info">Info Notification</button>
+                <button class="demo-button demo-button--success" id="notification-success">Success Notification</button>
+                <button class="demo-button demo-button--warning" id="notification-warning">Warning Notification</button>
+                <button class="demo-button demo-button--error" id="notification-error">Error Notification</button>
+            </div>
+        </section>
+
+        <!-- Position Demo Section -->
+        <section class="demo-section">
+            <h2>Position Demo</h2>
+            <p>Click the center element to cycle through different positions.</p>
+            
+            <div class="position-demo">
+                <div class="center-target" id="position-target">Click to cycle positions</div>
+            </div>
+        </section>
+
+        <!-- API Documentation Section -->
+        <section class="demo-section">
+            <h2>API Documentation</h2>
+            <p>Quick reference for using the Trinity Bubble component.</p>
+            
+            <div class="code-example">
+// Create a basic bubble
+const bubble = new TrinityBubble({
+    target: document.getElementById('my-button'),
+    content: 'Hello Trinity!',
+    position: 'top',
+    theme: 'default',
+    trigger: 'hover'
+});
+
+// Static helper methods
+TrinityBubble.tooltip(element, 'Tooltip text');
+TrinityBubble.notification('Success message', { theme: 'success' });
+
+// Update content dynamically
+bubble.updateContent('New content');
+bubble.show(); // Manual show
+bubble.hide(); // Manual hide
+bubble.destroy(); // Clean up
+            </div>
+        </section>
+    </div>
+
+    <!-- Floating action buttons -->
+    <div class="floating-buttons">
+        <div class="floating-button" id="floating-help" title="Help">?</div>
+        <div class="floating-button" id="floating-settings" title="Settings">⚙</div>
+    </div>
+
+    <!-- Include the Trinity Bubble component -->
+    <script src="trinity-bubble.js"></script>
+    
+    <script>
+        // Initialize demo functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Basic tooltips
+            TrinityBubble.tooltip(document.getElementById('tooltip-top'), 'This tooltip appears on top!', { position: 'top' });
+            TrinityBubble.tooltip(document.getElementById('tooltip-bottom'), 'This tooltip appears on bottom!', { position: 'bottom' });
+            TrinityBubble.tooltip(document.getElementById('tooltip-left'), 'This tooltip appears on left!', { position: 'left' });
+            TrinityBubble.tooltip(document.getElementById('tooltip-right'), 'This tooltip appears on right!', { position: 'right' });
+
+            // Theme variants
+            TrinityBubble.tooltip(document.getElementById('theme-default'), 'Default theme with professional dark styling', { theme: 'default' });
+            TrinityBubble.tooltip(document.getElementById('theme-success'), 'Success theme for positive feedback', { theme: 'success' });
+            TrinityBubble.tooltip(document.getElementById('theme-warning'), 'Warning theme for important notices', { theme: 'warning' });
+            TrinityBubble.tooltip(document.getElementById('theme-error'), 'Error theme for critical alerts', { theme: 'error' });
+
+            // Interactive bubbles
+            new TrinityBubble({
+                target: document.getElementById('click-bubble'),
+                content: 'This bubble was triggered by clicking! Click outside to hide.',
+                trigger: 'click',
+                position: 'top',
+                theme: 'info'
+            });
+
+            new TrinityBubble({
+                target: document.getElementById('html-content'),
+                content: '<strong>Rich Content</strong><br>This bubble supports <em>HTML</em> content with <code>code formatting</code>.',
+                html: true,
+                trigger: 'click',
+                position: 'bottom',
+                size: 'large'
+            });
+
+            new TrinityBubble({
+                target: document.getElementById('action-bubble'),
+                content: `
+                    <div>
+                        <strong>Confirm Action</strong><br>
+                        Are you sure you want to proceed?
+                        <div class="trinity-bubble__actions">
+                            <button class="trinity-bubble__button" onclick="this.closest('.trinity-bubble').style.display='none'">Cancel</button>
+                            <button class="trinity-bubble__button trinity-bubble__button--primary" onclick="alert('Confirmed!'); this.closest('.trinity-bubble').style.display='none'">Confirm</button>
+                        </div>
+                    </div>
+                `,
+                html: true,
+                trigger: 'click',
+                position: 'top',
+                theme: 'warning',
+                size: 'large'
+            });
+
+            // Notifications
+            document.getElementById('notification-info').addEventListener('click', () => {
+                TrinityBubble.notification('This is an info notification that will auto-hide in 3 seconds.', { theme: 'info' }).show();
+            });
+
+            document.getElementById('notification-success').addEventListener('click', () => {
+                TrinityBubble.notification('Operation completed successfully!', { theme: 'success' }).show();
+            });
+
+            document.getElementById('notification-warning').addEventListener('click', () => {
+                TrinityBubble.notification('Warning: Please check your settings.', { theme: 'warning', duration: 5000 }).show();
+            });
+
+            document.getElementById('notification-error').addEventListener('click', () => {
+                TrinityBubble.notification('Error: Something went wrong. Please try again.', { theme: 'error', duration: 4000 }).show();
+            });
+
+            // Position cycling demo
+            const positions = ['top', 'bottom', 'left', 'right'];
+            let currentPosition = 0;
+            const positionTarget = document.getElementById('position-target');
+            
+            const positionBubble = new TrinityBubble({
+                target: positionTarget,
+                content: `Position: ${positions[currentPosition]}`,
+                trigger: 'manual',
+                position: positions[currentPosition]
+            });
+
+            positionTarget.addEventListener('click', () => {
+                currentPosition = (currentPosition + 1) % positions.length;
+                positionBubble.updateContent(`Position: ${positions[currentPosition]}`);
+                positionBubble.options.position = positions[currentPosition];
+                positionBubble.element.className = positionBubble.buildClasses();
+                positionBubble.show();
+                
+                setTimeout(() => positionBubble.hide(), 2000);
+            });
+
+            // Floating action buttons
+            TrinityBubble.tooltip(document.getElementById('floating-help'), 
+                'Trinity Bubble Component Demo<br>Explore different bubble types and interactions.', 
+                { html: true, position: 'left', theme: 'info' }
+            );
+
+            TrinityBubble.tooltip(document.getElementById('floating-settings'), 
+                'Settings & Configuration<br>Customize bubble behavior and appearance.', 
+                { html: true, position: 'left', theme: 'default' }
+            );
+
+            // Welcome notification
+            setTimeout(() => {
+                TrinityBubble.notification(
+                    'Welcome to Trinity Bubble Component Demo! Explore the examples above.',
+                    { theme: 'info', duration: 4000 }
+                ).show();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

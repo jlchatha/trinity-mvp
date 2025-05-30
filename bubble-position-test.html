@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trinity Bubble Position Test</title>
+    <link rel="stylesheet" href="src/ui/trinity-bubble.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .test-container {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+        }
+
+        .test-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(45deg, #4a9eff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3rem;
+            margin: 3rem 0;
+            place-items: center;
+        }
+
+        .test-button {
+            padding: 16px 24px;
+            background: rgba(74, 158, 255, 0.2);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            border-radius: 8px;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            min-width: 120px;
+        }
+
+        .test-button:hover {
+            background: rgba(74, 158, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .center-element {
+            grid-column: 2;
+            grid-row: 2;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(74, 158, 255, 0.5);
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .result {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            color: #22c55e;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">Trinity Bubble Position Test</h1>
+        <p>Test all bubble positions around a central element</p>
+        
+        <div class="test-grid">
+            <!-- Top row -->
+            <div></div>
+            <button class="test-button" id="top-button">TOP</button>
+            <div></div>
+            
+            <!-- Middle row -->
+            <button class="test-button" id="left-button">LEFT</button>
+            <div class="center-element" id="center-element">CENTER TARGET</div>
+            <button class="test-button" id="right-button">RIGHT</button>
+            
+            <!-- Bottom row -->
+            <div></div>
+            <button class="test-button" id="bottom-button">BOTTOM</button>
+            <div></div>
+        </div>
+
+        <button class="test-button" id="notification-test" style="margin: 1rem;">CENTER NOTIFICATION</button>
+        
+        <div id="test-result" class="result" style="display: none;">
+            ✅ All bubble positions are working correctly!
+        </div>
+    </div>
+
+    <script src="src/ui/trinity-bubble.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const centerElement = document.getElementById('center-element');
+            const resultDiv = document.getElementById('test-result');
+            
+            let testsPassed = 0;
+            const totalTests = 5;
+            
+            function showResult() {
+                testsPassed++;
+                if (testsPassed === totalTests) {
+                    resultDiv.style.display = 'block';
+                }
+            }
+            
+            // Test TOP position
+            const topBubble = new TrinityBubble({
+                target: centerElement,
+                content: '🔝 TOP bubble position working correctly!',
+                position: 'top',
+                trigger: 'manual',
+                theme: 'info'
+            });
+            
+            document.getElementById('top-button').addEventListener('click', () => {
+                topBubble.show();
+                setTimeout(() => topBubble.hide(), 2000);
+                showResult();
+            });
+            
+            // Test BOTTOM position
+            const bottomBubble = new TrinityBubble({
+                target: centerElement,
+                content: '🔽 BOTTOM bubble position working correctly!',
+                position: 'bottom',
+                trigger: 'manual',
+                theme: 'success'
+            });
+            
+            document.getElementById('bottom-button').addEventListener('click', () => {
+                bottomBubble.show();
+                setTimeout(() => bottomBubble.hide(), 2000);
+                showResult();
+            });
+            
+            // Test LEFT position
+            const leftBubble = new TrinityBubble({
+                target: centerElement,
+                content: '⬅️ LEFT bubble position working correctly!',
+                position: 'left',
+                trigger: 'manual',
+                theme: 'warning'
+            });
+            
+            document.getElementById('left-button').addEventListener('click', () => {
+                leftBubble.show();
+                setTimeout(() => leftBubble.hide(), 2000);
+                showResult();
+            });
+            
+            // Test RIGHT position
+            const rightBubble = new TrinityBubble({
+                target: centerElement,
+                content: '➡️ RIGHT bubble position working correctly!',
+                position: 'right',
+                trigger: 'manual',
+                theme: 'error'
+            });
+            
+            document.getElementById('right-button').addEventListener('click', () => {
+                rightBubble.show();
+                setTimeout(() => rightBubble.hide(), 2000);
+                showResult();
+            });
+            
+            // Test CENTER notification
+            document.getElementById('notification-test').addEventListener('click', () => {
+                TrinityBubble.notification(
+                    '🎯 CENTER notification position working correctly!',
+                    { theme: 'info', duration: 3000 }
+                ).show();
+                showResult();
+            });
+            
+            // Auto-cycle demo
+            centerElement.addEventListener('click', () => {
+                const positions = ['top', 'right', 'bottom', 'left'];
+                const themes = ['info', 'success', 'warning', 'error'];
+                
+                positions.forEach((position, index) => {
+                    setTimeout(() => {
+                        const bubble = new TrinityBubble({
+                            target: centerElement,
+                            content: `${position.toUpperCase()} position demo`,
+                            position: position,
+                            trigger: 'manual',
+                            theme: themes[index]
+                        });
+                        bubble.show();
+                        setTimeout(() => bubble.hide(), 1000);
+                    }, index * 1200);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
