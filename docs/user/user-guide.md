@@ -15,6 +15,9 @@ Trinity MVP transforms your AI experience by providing **persistent memory** and
 
 ## Understanding Trinity's Memory System
 
+![Trinity Conversation Interface](../images/trinity-conversation-20250528.png)
+*Trinity's conversation interface demonstrates its ability to create and remember content*
+
 ### How Trinity Remembers
 
 Unlike traditional AI that forgets everything between sessions, Trinity maintains **four types of memory**:
@@ -89,6 +92,9 @@ Trinity learns:
 - ✅ You work incrementally on features
 
 ## Local System Integration
+
+![Trinity File Access](../images/trinity-file-access-20250528.png)
+*Trinity can access your local files with clear permission controls*
 
 ### File Operations
 
@@ -239,6 +245,9 @@ Trinity provides tools to explore what it remembers about you:
 ```
 
 ### Optimizing Memory Usage
+
+![Trinity Context Optimization Panel](../images/trinity-context-optimization-20250528.png)
+*Trinity's Context Intelligence panel showing memory usage and optimization metrics*
 
 **Regular Memory Maintenance:**
 ```

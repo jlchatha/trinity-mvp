@@ -2,6 +2,8 @@
 
 > **AI assistant that actually remembers - Perfect for anyone with ideas who wants AI that learns their style and grows with their projects**
 
+![Trinity MVP Main Interface](docs/images/trinity-main-interface-20250528.png)
+
 Trinity MVP transforms your interaction with AI by providing **persistent memory** and **local system integration**. Unlike traditional chat interfaces that forget previous conversations, Trinity builds cumulative knowledge about your projects, preferences, and working patterns.
 
 ## Choose Your Experience
@@ -9,9 +11,10 @@ Trinity MVP transforms your interaction with AI by providing **persistent memory
 🌟 **New to AI/Coding?** Perfect! Trinity is designed for anyone with ideas
 - [Quick Start Guide](docs/user/quick-start.md) - no technical experience needed
 - [Current Features](#current-release-status) - see what's working now
+- [Before/After Comparison](#-before-trinity-vs-after-trinity) - see the difference
 
 🛠️ **Developer/Technical User?** You'll love the advanced features
-- Jump to [Technical Setup](#installation) for detailed configuration
+- Jump to [Technical Setup](#-quick-setup-5-minutes) for detailed configuration
 - Check out [API Reference](docs/developer/api-reference.md)
 
 ## ✨ **What Makes Trinity Different**
@@ -23,6 +26,40 @@ Trinity MVP transforms your interaction with AI by providing **persistent memory
 - 📁 Direct file system access - read, write, and modify your files  
 - 🔄 Maintains project context and working patterns
 - ⚡ Local integration with 4-6 second response times
+
+## 🔄 **Before Trinity vs. After Trinity**
+
+### Context Management
+| **Traditional AI** | **Trinity MVP** |
+|:------------------|:----------------|
+| ❌ Limited context window causes "amnesia" | ✅ Persistent memory across all sessions |
+| ❌ Constant need to re-explain project details | ✅ Real-time context optimization metrics |
+| ❌ No visibility into context usage | ✅ Accurate recall of previous conversations |
+| ❌ Conversations restart from scratch each session | ✅ Transparent memory management interface |
+
+### File Access
+| **Traditional AI** | **Trinity MVP** |
+|:------------------|:----------------|
+| ❌ Manual file upload for each session | ✅ Direct access to your local file system |
+| ❌ Limited file size restrictions | ✅ Read, write and modify files in conversation |
+| ❌ Can't modify or create files directly | ✅ Project structure understanding |
+| ❌ No project directory structure awareness | ✅ Secure permission controls for file access |
+
+### Privacy Approach
+| **Traditional AI** | **Trinity MVP** |
+|:------------------|:----------------|
+| ❌ All conversations stored in the cloud | ✅ Hybrid local-first privacy approach |
+| ❌ Unclear data retention policies | ✅ Conversation history stored locally |
+| ❌ No control over what data is sent to API | ✅ Smart context selection for API requests |
+| ❌ No transparency about data usage | ✅ Complete transparency about data flow |
+
+### User Experience
+| **Traditional AI** | **Trinity MVP** |
+|:------------------|:----------------|
+| ❌ Browser-only interface with tab limitations | ✅ Native desktop application performance |
+| ❌ Connection drops lose conversation state | ✅ Full memory explorer with search capabilities |
+| ❌ Limited history browsing and management | ✅ 4-6 second response times consistently |
+| ❌ No native desktop integration | ✅ System-wide integration possibilities |
 
 ## 🤝 AI Built With Integrity (No BS)
 
@@ -62,6 +99,8 @@ Most AI assistants are glorified chatbots that forget everything, can't touch yo
 🚀 **Project Workflows**: Advanced project management features (in beta)  
 
 ## What Makes Trinity Different Right Now
+
+![Trinity Context Optimization Panel](docs/images/trinity-context-optimization-20250528.png)
 
 - **Only AI that shows you its memory usage** - See exactly what Trinity remembers
 - **Real-time context optimization** - Watch your token efficiency improve  
@@ -108,6 +147,8 @@ npm start
 
 ### First Conversation
 
+![Trinity Conversation](docs/images/trinity-conversation-20250528.png)
+
 1. **Launch Trinity**: The interface loads with a professional chat interface
 2. **Start Chatting**: Begin with any question - Trinity learns your style as you interact
 3. **Access Files**: Ask Trinity to read, create, or modify files in your projects
@@ -122,6 +163,8 @@ npm start
 - **Context Optimization**: Loads only relevant information for each conversation
 
 ### Local System Integration
+![Trinity File Access](docs/images/trinity-file-access-20250528.png)
+
 - **File Operations**: Read, write, and modify files in your projects
 - **Command Execution**: Run development commands, scripts, and tools
 - **Project Navigation**: Understand and work with your existing project structure
